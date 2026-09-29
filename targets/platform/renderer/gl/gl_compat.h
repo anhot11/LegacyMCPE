@@ -656,3 +656,5 @@ inline void glReadPixels_4J(int x, int y, int width, int height, int format,
 #define glLight(a, b, c) glLight_4J(a, b, c)
 #define glLightModel(a, b) glLightModel_4J(a, b)
 #define glTexGen(a, b, c) glTexGen_4J(a, b, c)
+#define glTexGeni(coord, pname, param) do { } while (0)
+#define glTexGenfv(coord, pname, params) do { } while (0)

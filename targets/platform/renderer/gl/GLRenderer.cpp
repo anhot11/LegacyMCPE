@@ -20,6 +20,8 @@
 #undef glLight
 #undef glLightModel
 #undef glTexGen
+#undef glTexGeni
+#undef glTexGenfv
 #undef glTexCoordPointer
 #undef glNormalPointer
 #undef glColorPointer
