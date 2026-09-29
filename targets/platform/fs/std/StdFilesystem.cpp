@@ -92,7 +92,17 @@ std::size_t StdFilesystem::fileSize(const std::filesystem::path& path) {
 }
 
 std::filesystem::path StdFilesystem::getBasePath() {
-#if defined(_WIN32)
+#if defined(__ANDROID__) || defined(ANDROID)
+    const char* mcPath = std::getenv("MC_PATH");
+    if (mcPath && *mcPath) {
+        return std::filesystem::path(mcPath);
+    }
+    const char* home = std::getenv("HOME");
+    if (home && *home) {
+        return std::filesystem::path(home);
+    }
+    return std::filesystem::path("/sdcard/LegacyMCPE");
+#elif defined(_WIN32)
     wchar_t buf[4096];
     DWORD len = GetModuleFileNameW(nullptr, buf, sizeof(buf) / sizeof(wchar_t));
     if (len > 0) {
