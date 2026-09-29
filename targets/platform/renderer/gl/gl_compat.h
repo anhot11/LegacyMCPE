@@ -426,6 +426,16 @@
         PlatformRenderer.StateSetColour(r, g, b, 1.0f); \
     } while (0)
 
+#undef glNormal3f
+#define glNormal3f(x, y, z) \
+    do {                    \
+    } while (0)
+
+#undef glNormal3b
+#define glNormal3b(x, y, z) \
+    do {                    \
+    } while (0)
+
 #undef glAlphaFunc
 #define glAlphaFunc(func, ref)                         \
     do {                                               \
