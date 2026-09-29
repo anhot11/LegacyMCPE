@@ -43,7 +43,7 @@ jobs:
         run: |
           cd android-launcher
           export PREFIX=/usr
-          mkdir -p /usr/lib/android-sdk/platforms/android-30
+          sudo mkdir -p /usr/lib/android-sdk/platforms/android-30
           wget -q https://dl.google.com/android/repository/platform-30_r03.zip -O /tmp/platform-30.zip
           unzip -q /tmp/platform-30.zip -d /tmp/platform-30-extract
           sudo mv /tmp/platform-30-extract/android-11/* /usr/lib/android-sdk/platforms/android-30/ || true
