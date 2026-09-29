@@ -37,7 +37,10 @@ jobs:
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r26d
-          add-to-path: true
+
+      - name: Add NDK Toolchain to PATH
+        run: |
+          echo "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
       - name: Build libMinecraftClient.so
         continue-on-error: true
