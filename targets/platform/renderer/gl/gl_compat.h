@@ -345,6 +345,20 @@
     } while (0)
 #endif
 
+#undef glColorMaterial
+#define glColorMaterial(face, mode) \
+    do {                            \
+    } while (0)
+
+#ifdef GLES
+#ifndef glClearDepth
+#define glClearDepth(d) glClearDepthf((float)(d))
+#endif
+#ifndef glDepthRange
+#define glDepthRange(n, f) glDepthRangef((float)(n), (float)(f))
+#endif
+#endif
+
 #undef glTranslatef
 #define glTranslatef(x, y, z)                      \
     do {                                           \

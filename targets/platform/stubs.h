@@ -46,10 +46,11 @@ class GL11 {
 public:
     static const int GL_SMOOTH = 0x1D01;
     static const int GL_FLAT = 0x1D00;
-#ifdef GLES
-    static void glShadeModel(int mode) { PlatformRenderer.glShadeModel(mode); }
-#else
 #undef glShadeModel
+#ifdef GLES
+    static void glShadeModel(int mode) {}
+#define glShadeModel(mode) do { } while (0)
+#else
 #define GL_SHADEMODEL_IS_FUNCTION
     static void glShadeModel(int mode) { ::glShadeModel(mode); }
 #endif
