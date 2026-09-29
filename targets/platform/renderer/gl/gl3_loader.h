@@ -8,7 +8,12 @@
 #include <windows.h>
 #endif
 
+#ifdef GLES
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#else
 #include <GL/glew.h>
+#endif
 
 #include <cstdio>
 
@@ -32,6 +37,9 @@
 #endif
 
 static inline bool gl3_load() {
+#ifdef GLES
+    return true;
+#else
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         fprintf(stderr, "[gl_loader] ERROR: glewInit failed: %s\n",
@@ -47,4 +55,5 @@ static inline bool gl3_load() {
     fprintf(stderr, "[gl_loader] GL %s loaded successfully.\n",
             (const char*)glewGetString(GLEW_VERSION));
     return true;
+#endif
 }
