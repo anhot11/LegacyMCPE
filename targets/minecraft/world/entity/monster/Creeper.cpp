@@ -1,0 +1,182 @@
+#include "Creeper.h"
+
+#include <stdint.h>
+
+#include <memory>
+#include <string>
+
+#include "app/common/Audio/SoundTypes.h"
+#include "java/Random.h"
+#include "minecraft/stats/GenericStats.h"
+#include "minecraft/world/damageSource/DamageSource.h"
+#include "minecraft/world/entity/Entity.h"
+#include "minecraft/world/entity/SyncedEntityData.h"
+#include "minecraft/world/entity/ai/attributes/AttributeInstance.h"
+#include "minecraft/world/entity/ai/goal/AvoidPlayerGoal.h"
+#include "minecraft/world/entity/ai/goal/FloatGoal.h"
+#include "minecraft/world/entity/ai/goal/GoalSelector.h"
+#include "minecraft/world/entity/ai/goal/LookAtPlayerGoal.h"
+#include "minecraft/world/entity/ai/goal/MeleeAttackGoal.h"
+#include "minecraft/world/entity/ai/goal/RandomLookAroundGoal.h"
+#include "minecraft/world/entity/ai/goal/RandomStrollGoal.h"
+#include "minecraft/world/entity/ai/goal/SwellGoal.h"
+#include "minecraft/world/entity/ai/goal/target/HurtByTargetGoal.h"
+#include "minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.h"
+#include "minecraft/world/entity/animal/Ocelot.h"
+#include "minecraft/world/entity/monster/Monster.h"
+#include "minecraft/world/entity/monster/SharedMonsterAttributes.h"
+#include "minecraft/world/entity/player/Player.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/level/GameRules.h"
+#include "minecraft/world/level/Level.h"
+#include "nbt/CompoundTag.h"
+
+void Creeper::_init() {
+    swell = 0;
+    oldSwell = 0;
+    maxSwell = 30;
+    explosionRadius = 3;
+}
+
+Creeper::Creeper(Level* level) : Monster(level) {
+    // 4J Stu - This function call had to be moved here from the Entity ctor to
+    // ensure that the derived version of the function is called
+    this->defineSynchedData();
+    registerAttributes();
+    setHealth(getMaxHealth());
+
+    _init();
+
+    goalSelector.addGoal(1, new FloatGoal(this));
+    goalSelector.addGoal(2, new SwellGoal(this));
+    goalSelector.addGoal(
+        3, new AvoidPlayerGoal(this, typeid(Ocelot), 6, 1.0, 1.2));
+    goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0, false));
+    goalSelector.addGoal(5, new RandomStrollGoal(this, 0.8));
+    goalSelector.addGoal(6, new LookAtPlayerGoal(this, typeid(Player), 8));
+    goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+
+    targetSelector.addGoal(
+        1, new NearestAttackableTargetGoal(this, typeid(Player), 0, true));
+    targetSelector.addGoal(2, new HurtByTargetGoal(this, false));
+}
+
+void Creeper::registerAttributes() {
+    Monster::registerAttributes();
+
+    getAttribute(SharedMonsterAttributes::MOVEMENT_SPEED)->setBaseValue(0.25f);
+}
+
+bool Creeper::useNewAi() { return true; }
+
+int Creeper::getMaxFallDistance() {
+    if (getTarget() == nullptr) return 3;
+    // As long as they survive the fall they should try.
+    return 3 + (int)(getHealth() - 1);
+}
+
+void Creeper::causeFallDamage(float distance) {
+    Monster::causeFallDamage(distance);
+
+    swell += distance * 1.5f;
+    if (swell > maxSwell - 5) swell = maxSwell - 5;
+}
+
+void Creeper::defineSynchedData() {
+    Monster::defineSynchedData();
+
+    entityData->define(DATA_SWELL_DIR, (uint8_t)-1);
+    entityData->define(DATA_IS_POWERED, (uint8_t)0);
+}
+
+void Creeper::addAdditonalSaveData(CompoundTag* entityTag) {
+    Monster::addAdditonalSaveData(entityTag);
+    if (entityData->getByte(DATA_IS_POWERED) == 1)
+        entityTag->putBoolean("powered", true);
+    entityTag->putShort("Fuse", (short)maxSwell);
+    entityTag->putByte("ExplosionRadius", (uint8_t)explosionRadius);
+}
+
+void Creeper::readAdditionalSaveData(CompoundTag* tag) {
+    Monster::readAdditionalSaveData(tag);
+    entityData->set(DATA_IS_POWERED,
+                    (uint8_t)(tag->getBoolean("powered") ? 1 : 0));
+    if (tag->contains("Fuse")) maxSwell = tag->getShort("Fuse");
+    if (tag->contains("ExplosionRadius"))
+        explosionRadius = tag->getByte("ExplosionRadius");
+}
+
+void Creeper::tick() {
+    oldSwell = swell;
+    if (isAlive()) {
+        int swellDir = getSwellDir();
+        if (swellDir > 0 && swell == 0) {
+            playSound(eSoundType_RANDOM_FUSE, 1, 0.5f);
+        }
+        swell += swellDir;
+        if (swell < 0) swell = 0;
+        if (swell >= maxSwell) {
+            swell = maxSwell;
+            if (!level->isClientSide) {
+                bool destroyBlocks = level->getGameRules()->getBoolean(
+                    GameRules::RULE_MOBGRIEFING);
+                if (isPowered())
+                    level->explode(shared_from_this(), x, y, z,
+                                   explosionRadius * 2, destroyBlocks);
+                else
+                    level->explode(shared_from_this(), x, y, z, explosionRadius,
+                                   destroyBlocks);
+                remove();
+            }
+        }
+    }
+    Monster::tick();
+}
+
+int Creeper::getHurtSound() { return eSoundType_MOB_CREEPER_HURT; }
+
+int Creeper::getDeathSound() { return eSoundType_MOB_CREEPER_DEATH; }
+
+void Creeper::die(DamageSource* source) {
+    Monster::die(source);
+
+    if (source->getEntity() != nullptr &&
+        source->getEntity()->instanceof(eTYPE_SKELETON)) {
+        int recordId =
+            Item::record_01_Id +
+            random->nextInt(Item::record_12_Id - Item::record_01_Id + 1);
+        spawnAtLocation(recordId, 1);
+    }
+
+    if (source->getDirectEntity() != nullptr &&
+        source->getDirectEntity()->instanceof(eTYPE_ARROW) &&
+        source->getEntity() != nullptr &&
+        source->getEntity()->instanceof(eTYPE_PLAYER)) {
+        std::shared_ptr<Player> player =
+            std::dynamic_pointer_cast<Player>(source->getEntity());
+        player->awardStat(GenericStats::archer(), GenericStats::param_archer());
+    }
+}
+
+bool Creeper::doHurtTarget(std::shared_ptr<Entity> target) { return true; }
+
+bool Creeper::isPowered() { return entityData->getByte(DATA_IS_POWERED) == 1; }
+
+float Creeper::getSwelling(float a) {
+    return (oldSwell + (swell - oldSwell) * a) / (maxSwell - 2);
+}
+
+int Creeper::getDeathLoot() { return Item::gunpowder_Id; }
+
+int Creeper::getSwellDir() {
+    return (int)(char)entityData->getByte(DATA_SWELL_DIR);
+}
+
+void Creeper::setSwellDir(int dir) {
+    entityData->set(DATA_SWELL_DIR, (uint8_t)dir);
+}
+
+void Creeper::thunderHit(const LightningBolt* lightningBolt) {
+    Monster::thunderHit(lightningBolt);
+    entityData->set(DATA_IS_POWERED, (uint8_t)1);
+}

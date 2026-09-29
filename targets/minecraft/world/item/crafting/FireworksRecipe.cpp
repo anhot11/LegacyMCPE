@@ -1,0 +1,341 @@
+#include "FireworksRecipe.h"
+
+#include <stdint.h>
+
+#include <vector>
+
+#include "minecraft/world/inventory/CraftingContainer.h"
+#include "minecraft/world/item/DyePowderItem.h"
+#include "minecraft/world/item/FireworksItem.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "nbt/CompoundTag.h"
+#include "nbt/ListTag.h"
+
+thread_local FireworksRecipe::ThreadStorage* FireworksRecipe::m_tlsStorage =
+    nullptr;
+FireworksRecipe::ThreadStorage* FireworksRecipe::m_defaultThreadStorage =
+    nullptr;
+
+FireworksRecipe::ThreadStorage::ThreadStorage() { resultItem = nullptr; }
+
+void FireworksRecipe::CreateNewThreadStorage() {
+    ThreadStorage* tls = new ThreadStorage();
+
+    if (m_defaultThreadStorage == nullptr) {
+        m_defaultThreadStorage = tls;
+    }
+
+    m_tlsStorage = tls;
+}
+
+void FireworksRecipe::UseDefaultThreadStorage() {
+    m_tlsStorage = m_defaultThreadStorage;
+}
+
+void FireworksRecipe::ReleaseThreadStorage() {
+    if (m_tlsStorage != m_defaultThreadStorage) {
+        delete m_tlsStorage;
+    }
+}
+
+void FireworksRecipe::setResultItem(std::shared_ptr<ItemInstance> item) {
+    m_tlsStorage->resultItem = item;
+}
+
+FireworksRecipe::FireworksRecipe() {
+    // resultItem = nullptr;
+}
+
+bool FireworksRecipe::matches(std::shared_ptr<CraftingContainer> craftSlots,
+                              Level* level) {
+    std::shared_ptr<ItemInstance> resultItem = nullptr;
+
+    int paperCount = 0;
+    int sulphurCount = 0;
+    int colorCount = 0;
+    int chargeCount = 0;
+    int chargeComponents = 0;
+    int typeComponents = 0;
+
+    for (int slot = 0; slot < craftSlots->getContainerSize(); slot++) {
+        std::shared_ptr<ItemInstance> item = craftSlots->getItem(slot);
+        if (item == nullptr) continue;
+
+        if (item->id == Item::gunpowder_Id) {
+            sulphurCount++;
+        } else if (item->id == Item::fireworksCharge_Id) {
+            chargeCount++;
+        } else if (item->id == Item::dye_powder_Id) {
+            colorCount++;
+        } else if (item->id == Item::paper_Id) {
+            paperCount++;
+        } else if (item->id == Item::yellowDust_Id) {
+            // glowstone dust gives flickering
+            chargeComponents++;
+        } else if (item->id == Item::diamond_Id) {
+            // diamonds give trails
+            chargeComponents++;
+        } else if (item->id == Item::fireball_Id) {
+            // fireball gives larger explosion
+            typeComponents++;
+        } else if (item->id == Item::feather_Id) {
+            // burst
+            typeComponents++;
+        } else if (item->id == Item::goldNugget_Id) {
+            // star
+            typeComponents++;
+        } else if (item->id == Item::skull_Id) {
+            // creeper
+            typeComponents++;
+        } else {
+            setResultItem(resultItem);
+            return false;
+        }
+    }
+    chargeComponents += colorCount + typeComponents;
+
+    if (sulphurCount > 3 || paperCount > 1) {
+        setResultItem(resultItem);
+        return false;
+    }
+
+    // create fireworks
+    if (sulphurCount >= 1 && paperCount == 1 && chargeComponents == 0) {
+        resultItem = std::make_shared<ItemInstance>(Item::fireworks);
+        if (chargeCount > 0) {
+            CompoundTag* itemTag = new CompoundTag();
+            CompoundTag* fireTag =
+                new CompoundTag(FireworksItem::TAG_FIREWORKS);
+            ListTag<CompoundTag>* expTags =
+                new ListTag<CompoundTag>(FireworksItem::TAG_EXPLOSIONS);
+
+            for (int slot = 0; slot < craftSlots->getContainerSize(); slot++) {
+                std::shared_ptr<ItemInstance> item = craftSlots->getItem(slot);
+                if (item == nullptr || item->id != Item::fireworksCharge_Id)
+                    continue;
+
+                if (item->hasTag() &&
+                    item->getTag()->contains(FireworksItem::TAG_EXPLOSION)) {
+                    expTags->add((CompoundTag*)item->getTag()
+                                     ->getCompound(FireworksItem::TAG_EXPLOSION)
+                                     ->copy());
+                }
+            }
+
+            fireTag->put(FireworksItem::TAG_EXPLOSIONS, expTags);
+            fireTag->putByte(FireworksItem::TAG_FLIGHT, (uint8_t)sulphurCount);
+            itemTag->put(FireworksItem::TAG_FIREWORKS, fireTag);
+
+            resultItem->setTag(itemTag);
+        }
+        setResultItem(resultItem);
+        return true;
+    }
+    // create firecharge
+    if (sulphurCount == 1 && paperCount == 0 && chargeCount == 0 &&
+        colorCount > 0 && typeComponents <= 1) {
+        resultItem = std::shared_ptr<ItemInstance>(
+            new ItemInstance(Item::fireworksCharge));
+        CompoundTag* itemTag = new CompoundTag();
+        CompoundTag* expTag = new CompoundTag(FireworksItem::TAG_EXPLOSION);
+
+        uint8_t type = 0;
+
+        std::vector<int> colors;
+        for (int slot = 0; slot < craftSlots->getContainerSize(); slot++) {
+            std::shared_ptr<ItemInstance> item = craftSlots->getItem(slot);
+            if (item == nullptr) continue;
+
+            if (item->id == Item::dye_powder_Id) {
+                colors.push_back(DyePowderItem::COLOR_RGB[item->getAuxValue()]);
+            } else if (item->id == Item::yellowDust_Id) {
+                // glowstone dust gives flickering
+                expTag->putBoolean(FireworksItem::TAG_E_FLICKER, true);
+            } else if (item->id == Item::diamond_Id) {
+                // diamonds give trails
+                expTag->putBoolean(FireworksItem::TAG_E_TRAIL, true);
+            } else if (item->id == Item::fireball_Id) {
+                type = FireworksItem::TYPE_BIG;
+            } else if (item->id == Item::feather_Id) {
+                type = FireworksItem::TYPE_BURST;
+            } else if (item->id == Item::goldNugget_Id) {
+                type = FireworksItem::TYPE_STAR;
+            } else if (item->id == Item::skull_Id) {
+                type = FireworksItem::TYPE_CREEPER;
+            }
+        }
+        std::vector<int> colorArray(colors.size());
+        for (int i = 0; i < colorArray.size(); i++) {
+            colorArray[i] = colors.at(i);
+        }
+        expTag->putIntArray(FireworksItem::TAG_E_COLORS, colorArray);
+
+        expTag->putByte(FireworksItem::TAG_E_TYPE, type);
+
+        itemTag->put(FireworksItem::TAG_EXPLOSION, expTag);
+        resultItem->setTag(itemTag);
+
+        setResultItem(resultItem);
+        return true;
+    }
+    // apply fade colors to firecharge
+    if (sulphurCount == 0 && paperCount == 0 && chargeCount == 1 &&
+        colorCount > 0 && colorCount == chargeComponents) {
+        std::vector<int> colors;
+        for (int slot = 0; slot < craftSlots->getContainerSize(); slot++) {
+            std::shared_ptr<ItemInstance> item = craftSlots->getItem(slot);
+            if (item == nullptr) continue;
+
+            if (item->id == Item::dye_powder_Id) {
+                colors.push_back(DyePowderItem::COLOR_RGB[item->getAuxValue()]);
+            } else if (item->id == Item::fireworksCharge_Id) {
+                resultItem = item->copy();
+                resultItem->count = 1;
+            }
+        }
+        std::vector<int> colorArray(colors.size());
+        for (int i = 0; i < colorArray.size(); i++) {
+            colorArray[i] = colors.at(i);
+        }
+        if (resultItem != nullptr && resultItem->hasTag()) {
+            CompoundTag* compound =
+                resultItem->getTag()->getCompound(FireworksItem::TAG_EXPLOSION);
+            if (compound == nullptr) {
+                setResultItem(resultItem);
+                return false;
+            }
+            compound->putIntArray(FireworksItem::TAG_E_FADECOLORS, colorArray);
+        } else {
+            setResultItem(resultItem);
+            return false;
+        }
+
+        setResultItem(resultItem);
+        return true;
+    }
+
+    setResultItem(resultItem);
+    return false;
+}
+
+std::shared_ptr<ItemInstance> FireworksRecipe::assemble(
+    std::shared_ptr<CraftingContainer> craftSlots) {
+    return m_tlsStorage->resultItem->copy();
+    // return resultItem->copy();
+}
+
+int FireworksRecipe::size() { return 10; }
+
+const ItemInstance* FireworksRecipe::getResultItem() {
+    return m_tlsStorage->resultItem.get();
+    // return resultItem.get();
+}
+
+void FireworksRecipe::updatePossibleRecipes(
+    std::shared_ptr<CraftingContainer> craftSlots, bool* firework, bool* charge,
+    bool* fade) {
+    *firework = false;
+    *charge = false;
+    *fade = false;
+
+    int paperCount = 0;
+    int sulphurCount = 0;
+    int colorCount = 0;
+    int chargeCount = 0;
+    int chargeComponents = 0;
+    int typeComponents = 0;
+
+    for (int slot = 0; slot < craftSlots->getContainerSize(); slot++) {
+        std::shared_ptr<ItemInstance> item = craftSlots->getItem(slot);
+        if (item == nullptr) continue;
+
+        if (item->id == Item::gunpowder_Id) {
+            sulphurCount++;
+        } else if (item->id == Item::fireworksCharge_Id) {
+            chargeCount++;
+        } else if (item->id == Item::dye_powder_Id) {
+            colorCount++;
+        } else if (item->id == Item::paper_Id) {
+            paperCount++;
+        } else if (item->id == Item::yellowDust_Id) {
+            // glowstone dust gives flickering
+            chargeComponents++;
+        } else if (item->id == Item::diamond_Id) {
+            // diamonds give trails
+            chargeComponents++;
+        } else if (item->id == Item::fireball_Id) {
+            // fireball gives larger explosion
+            typeComponents++;
+        } else if (item->id == Item::feather_Id) {
+            // burst
+            typeComponents++;
+        } else if (item->id == Item::goldNugget_Id) {
+            // star
+            typeComponents++;
+        } else if (item->id == Item::skull_Id) {
+            // creeper
+            typeComponents++;
+        } else {
+            return;
+        }
+    }
+    chargeComponents += colorCount + typeComponents;
+
+    if (sulphurCount > 3 || paperCount > 1) {
+        return;
+    }
+
+    // create fireworks
+    if (paperCount <= 1 && chargeComponents == 0) {
+        *firework = true;
+    }
+    // create firecharge
+    if (sulphurCount <= 1 && colorCount >= 0 && paperCount == 0 &&
+        chargeCount == 0 && typeComponents <= 1) {
+        *charge = true;
+    }
+    // apply fade colors to firecharge
+    if (sulphurCount == 0 && paperCount == 0 && chargeCount <= 1 &&
+        colorCount >= 0) {
+        *fade = true;
+    }
+}
+
+bool FireworksRecipe::isValidIngredient(std::shared_ptr<ItemInstance> item,
+                                        bool firework, bool charge, bool fade) {
+    bool valid = false;
+    switch (item->id) {
+        case Item::gunpowder_Id:
+            valid = firework || charge;
+            break;
+        case Item::fireworksCharge_Id:
+            valid = firework || fade;
+            break;
+        case Item::dye_powder_Id:
+            valid = charge || fade;
+            break;
+        case Item::paper_Id:
+            valid = firework;
+            break;
+        case Item::yellowDust_Id:
+            valid = charge;
+            break;
+        case Item::diamond_Id:
+            valid = charge;
+            break;
+        case Item::fireball_Id:
+            valid = charge;
+            break;
+        case Item::feather_Id:
+            valid = charge;
+            break;
+        case Item::goldNugget_Id:
+            valid = charge;
+            break;
+        case Item::skull_Id:
+            valid = charge;
+            break;
+    }
+    return valid;
+}

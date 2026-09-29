@@ -1,0 +1,78 @@
+name: "Build Meson"
+description: "Builds the project using Meson"
+
+inputs:
+  dir_name:
+    description: "The name of the directory to setup meson in"
+    required: true
+    type: string
+
+  setup_args:
+    description: "The args to additionally pass to meson"
+    required: false
+    type: string
+
+  upload:
+    description: "Upload the executable"
+    required: false
+    default: true
+    type: boolean
+
+  nix-enabled:
+    description: "Use nix shell"
+    required: false
+    default: true
+    type: boolean
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup build-directory
+      if: ${{ (runner.os == 'Linux' || runner.os == 'macOS') && matrix.build-type!='optimized' }}
+      shell: nix develop --command bash -e {0}
+      run: meson setup ${{ inputs.dir_name }} --wipe ${{ inputs.setup_args }}
+
+    - name: Setup build-directory
+      if: ${{ runner.os == 'Windows' }}
+      shell: bash -e {0}
+      run: |
+        CC="cl" CXX="cl" meson setup ${{ inputs.dir_name }} --wipe ${{ inputs.setup_args }}
+
+    - name: Compile directory
+      if: ${{ (runner.os == 'Linux' || runner.os == 'macOS') && matrix.build-type != 'optimized' }}
+      shell: nix develop --command bash -e {0}
+      run: |
+        meson compile -C ${{ inputs.dir_name }} -j $(nproc) -v
+
+      # Nix is not availabile in optimized as nix
+      # causes some linkage problems
+    - name: Setup build-directory
+      if: ${{ (runner.os == 'Linux' || runner.os == 'macOS') && matrix.build-type == 'optimized' }}
+      shell: bash -e {0}
+      run: meson setup ${{ inputs.dir_name }} --wipe ${{ inputs.setup_args }}
+
+    - name: Compile directory
+      if: ${{ (runner.os == 'Linux' || runner.os == 'macOS') && matrix.build-type == 'optimized' }}
+      shell: bash -e {0}
+      run: |
+        meson compile -C ${{ inputs.dir_name }} -j $(getconf _NPROCESSORS_ONLN) -v
+
+    - name: Compile directory
+      if: ${{ runner.os == 'Windows' }}
+      shell: bash -e {0}
+      run: |
+        meson compile -C ${{ inputs.dir_name }} -j $(nproc) -v
+
+    - name: Upload executable
+      if: ${{ inputs.upload && (runner.os == 'Linux' || runner.os == 'macOS' )}}
+      uses: actions/upload-artifact@v7
+      with:
+        name: minecraft-client-${{ runner.os }}-${{ inputs.dir_name }}-${{ github.sha }}
+        path: ${{ inputs.dir_name }}/targets/app/Minecraft.Client
+
+    - name: Upload executable
+      if: ${{ inputs.upload && runner.os == 'Windows' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: minecraft-client-${{ runner.os }}-${{ inputs.dir_name }}-${{ github.sha }}
+        path: ${{ inputs.dir_name }}/targets/app/Minecraft.Client.exe

@@ -1,0 +1,13 @@
+#pragma once
+#define IDC_icon "icon"
+#define IDC_itemName "itemName"
+#define IDC_itemId "itemId"
+#define IDC_XuiLabel1 "XuiLabel1"
+#define IDC_itemAuxValue "itemAuxValue"
+#define IDC_XuiLabel2 "XuiLabel2"
+#define IDC_itemCount "itemCount"
+#define IDC_XuiLabel3 "XuiLabel3"
+#define IDC_item4JData "item4JData"
+#define IDC_XuiLabel4 "XuiLabel4"
+#define IDC_ruleXml "ruleXml"
+#define IDC_DebugItemEditor "DebugItemEditor"

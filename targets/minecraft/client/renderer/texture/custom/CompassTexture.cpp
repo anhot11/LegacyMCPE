@@ -1,0 +1,130 @@
+#include "CompassTexture.h"
+
+#include <math.h>
+
+#include <memory>
+#include <numbers>
+#include <string>
+#include <vector>
+
+#include "java/JavaMath.h"
+#include "minecraft/Pos.h"
+#include "minecraft/client/Minecraft.h"
+#include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
+#include "minecraft/client/renderer/texture/StitchedTexture.h"
+#include "minecraft/client/renderer/texture/Texture.h"
+#include "minecraft/world/level/Level.h"
+#include "minecraft/world/level/dimension/Dimension.h"
+#include "platform/PlatformTypes.h"
+
+CompassTexture* CompassTexture::instance = nullptr;
+
+CompassTexture::CompassTexture() : StitchedTexture("compass", "compass") {
+    instance = this;
+
+    m_dataTexture = nullptr;
+    m_iPad = XUSER_INDEX_ANY;
+
+    rot = rota = 0.0;
+}
+
+CompassTexture::CompassTexture(int iPad, CompassTexture* dataTexture)
+    : StitchedTexture("compass", "compass") {
+    m_dataTexture = dataTexture;
+    m_iPad = iPad;
+
+    rot = rota = 0.0;
+}
+
+void CompassTexture::cycleFrames() {
+    Minecraft* mc = Minecraft::GetInstance();
+
+    if (m_iPad >= 0 && m_iPad < XUSER_MAX_COUNT && mc->level != nullptr &&
+        mc->localplayers[m_iPad] != nullptr) {
+        updateFromPosition(mc->localplayers[m_iPad]->level,
+                           mc->localplayers[m_iPad]->x,
+                           mc->localplayers[m_iPad]->z,
+                           mc->localplayers[m_iPad]->yRot, false, false);
+    } else {
+        frame = 1;
+        updateFromPosition(nullptr, 0, 0, 0, false, true);
+    }
+}
+
+void CompassTexture::updateFromPosition(Level* level, double x, double z,
+                                        double yRot, bool noNeedle,
+                                        bool instant) {
+    double rott = 0;
+    if (level != nullptr && !noNeedle) {
+        Pos* spawnPos = level->getSharedSpawnPos();
+        double xa = spawnPos->x - x;
+        double za = spawnPos->z - z;
+        delete spawnPos;
+        yRot = (int)yRot % 360;
+        rott = -((yRot - 90) * std::numbers::pi / 180 - atan2(za, xa));
+        if (!level->dimension->isNaturalDimension()) {
+            rott = Math::random() * std::numbers::pi * 2;
+        }
+    }
+
+    if (instant) {
+        rot = rott;
+    } else {
+        double rotd = rott - rot;
+        while (rotd < -std::numbers::pi) rotd += std::numbers::pi * 2;
+        while (rotd >= std::numbers::pi) rotd -= std::numbers::pi * 2;
+        if (rotd < -1) rotd = -1;
+        if (rotd > 1) rotd = 1;
+        rota += rotd * 0.1;
+        rota *= 0.8;
+        rot += rota;
+    }
+
+    // 4J Stu - We share data with another texture
+    if (m_dataTexture != nullptr) {
+        int newFrame = (int)(((rot / (std::numbers::pi * 2)) + 1.0) *
+                             m_dataTexture->frames->size()) %
+                       m_dataTexture->frames->size();
+        while (newFrame < 0) {
+            newFrame = (newFrame + m_dataTexture->frames->size()) %
+                       m_dataTexture->frames->size();
+        }
+        if (newFrame != frame) {
+            frame = newFrame;
+            m_dataTexture->source->blit(this->x, this->y,
+                                        m_dataTexture->frames->at(this->frame),
+                                        rotated);
+        }
+    } else {
+        int newFrame =
+            (int)(((rot / (std::numbers::pi * 2)) + 1.0) * frames->size()) %
+            frames->size();
+        while (newFrame < 0) {
+            newFrame = (newFrame + frames->size()) % frames->size();
+        }
+        if (newFrame != frame) {
+            frame = newFrame;
+            source->blit(this->x, this->y, frames->at(this->frame), rotated);
+        }
+    }
+}
+
+int CompassTexture::getSourceWidth() const { return source->getWidth(); }
+
+int CompassTexture::getSourceHeight() const { return source->getHeight(); }
+
+int CompassTexture::getFrames() {
+    if (m_dataTexture == nullptr) {
+        return StitchedTexture::getFrames();
+    } else {
+        return m_dataTexture->getFrames();
+    }
+}
+
+void CompassTexture::freeFrameTextures() {
+    if (m_dataTexture == nullptr) {
+        StitchedTexture::freeFrameTextures();
+    }
+}
+
+bool CompassTexture::hasOwnData() { return m_dataTexture == nullptr; }

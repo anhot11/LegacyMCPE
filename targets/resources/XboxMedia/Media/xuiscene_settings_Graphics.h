@@ -1,0 +1,11 @@
+#pragma once
+#define IDC_XuiSlider "XuiSlider"
+#define IDC_FocusSink "FocusSink"
+#define IDC_XuiSliderInterfaceOpacity "XuiSliderInterfaceOpacity"
+#define IDC_XuiSlider "XuiSlider"
+#define IDC_FocusSink "FocusSink"
+#define IDC_XuiSliderGamma "XuiSliderGamma"
+#define IDC_XuiCustomSkinAnim "XuiCustomSkinAnim"
+#define IDC_XuiBedrockFog "XuiBedrockFog"
+#define IDC_XuiClouds "XuiClouds"
+#define IDC_SceneSettingsGraphics "SceneSettingsGraphics"

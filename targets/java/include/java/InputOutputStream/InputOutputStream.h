@@ -1,0 +1,18 @@
+#pragma once
+
+#include "BufferedOutputStream.h"
+#include "BufferedReader.h"
+#include "ByteArrayInputStream.h"
+#include "ByteArrayOutputStream.h"
+#include "DataInput.h"
+#include "DataInputStream.h"
+#include "DataOutput.h"
+#include "DataOutputStream.h"
+#include "FileInputStream.h"
+#include "FileOutputStream.h"
+#include "GZIPInputStream.h"
+#include "GZIPOutputStream.h"
+#include "InputStream.h"
+#include "InputStreamReader.h"
+#include "OutputStream.h"
+#include "Reader.h"

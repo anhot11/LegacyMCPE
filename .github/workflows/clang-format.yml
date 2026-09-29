@@ -1,0 +1,58 @@
+name: Format Check
+
+on:
+  push:
+    paths: &workflow_paths
+      - "**.cpp"
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.cxx"
+      - "**.hh"
+      - "**.hpp"
+      - "**.hxx"
+      - "**.inl"
+      - ".clang-format"
+      - ".github/workflows/clang-format.yml"
+      - ".github/scripts/check-clang-format.sh"
+
+  pull_request:
+    paths: *workflow_paths
+
+  workflow_dispatch:
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: clang-format-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Check changed files
+        env:
+          CLANG_FORMAT_BIN: clang-format
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          BASE_SHA=""
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags origin "$PR_BASE_REF"
+            BASE_SHA="$(git merge-base "origin/$PR_BASE_REF" "$CURRENT_SHA")"
+          elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$BEFORE_SHA"
+          fi
+
+          bash ./.github/scripts/check-clang-format.sh "$BASE_SHA" "$CURRENT_SHA"

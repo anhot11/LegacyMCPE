@@ -1,0 +1,304 @@
+#include "ItemEntity.h"
+
+#include <stdint.h>
+
+#include <algorithm>
+#include <numbers>
+#include <vector>
+
+#include "SharedConstants.h"
+#include "app/common/Audio/SoundTypes.h"
+#include "java/JavaMath.h"
+#include "java/Random.h"
+#include "minecraft/stats/GenericStats.h"
+#include "minecraft/util/Log.h"
+#include "minecraft/util/Mth.h"
+#include "minecraft/world/damageSource/DamageSource.h"
+#include "minecraft/world/entity/Entity.h"
+#include "minecraft/world/entity/SyncedEntityData.h"
+#include "minecraft/world/entity/player/Inventory.h"
+#include "minecraft/world/entity/player/Player.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/level/Level.h"
+#include "minecraft/world/level/material/Material.h"
+#include "minecraft/world/level/tile/Tile.h"
+#include "minecraft/world/phys/AABB.h"
+#include "nbt/CompoundTag.h"
+
+void ItemEntity::_init() {
+    age = 0;
+    throwTime = 0;
+    health = 5;
+    bobOffs = (float)(Math::random() * std::numbers::pi * 2);
+
+    // 4J Stu - This function call had to be moved here from the Entity ctor to
+    // ensure that the derived version of the function is called
+    this->defineSynchedData();
+
+    setSize(0.25f, 0.25f);
+    heightOffset = bbHeight / 2.0f;
+}
+
+void ItemEntity::_init(Level* level, double x, double y, double z) {
+    _init();
+
+    setPos(x, y, z);
+
+    yRot = (float)(Math::random() * 360);
+
+    xd = (float)(Math::random() * 0.2f - 0.1f);
+    yd = +0.2f;
+    zd = (float)(Math::random() * 0.2f - 0.1f);
+}
+
+ItemEntity::ItemEntity(Level* level, double x, double y, double z)
+    : Entity(level) {
+    _init(level, x, y, z);
+}
+
+ItemEntity::ItemEntity(Level* level, double x, double y, double z,
+                       std::shared_ptr<ItemInstance> item)
+    : Entity(level) {
+    _init(level, x, y, z);
+    setItem(item);
+}
+
+bool ItemEntity::makeStepSound() { return false; }
+
+ItemEntity::ItemEntity(Level* level) : Entity(level) { _init(); }
+
+void ItemEntity::defineSynchedData() {
+    getEntityData()->defineNULL(DATA_ITEM, nullptr);
+}
+
+void ItemEntity::tick() {
+    Entity::tick();
+
+    if (throwTime > 0) throwTime--;
+    xo = x;
+    yo = y;
+    zo = z;
+
+    yd -= 0.04f;
+    noPhysics = checkInTile(x, (bb.y0 + bb.y1) / 2, z);
+
+    // 4J - added parameter here so that these don't care about colliding with
+    // other entities
+    move(xd, yd, zd, true);
+
+    bool moved = (int)xo != (int)x || (int)yo != (int)y || (int)zo != (int)z;
+
+    if (moved || tickCount % 25 == 0) {
+        if (level->getMaterial(Mth::floor(x), Mth::floor(y), Mth::floor(z)) ==
+            Material::lava) {
+            yd = 0.2f;
+            xd = (random->nextFloat() - random->nextFloat()) * 0.2f;
+            zd = (random->nextFloat() - random->nextFloat()) * 0.2f;
+            playSound(eSoundType_RANDOM_FIZZ, 0.4f,
+                      2.0f + random->nextFloat() * 0.4f);
+        }
+
+        if (!level->isClientSide) {
+            mergeWithNeighbours();
+        }
+    }
+
+    float friction = 0.98f;
+    if (onGround) {
+        friction = 0.6f * 0.98f;
+        int t =
+            level->getTile(Mth::floor(x), Mth::floor(bb.y0) - 1, Mth::floor(z));
+        if (t > 0) {
+            friction = Tile::tiles[t]->friction * 0.98f;
+        }
+    }
+
+    xd *= friction;
+    yd *= 0.98f;
+    zd *= friction;
+
+    if (onGround) {
+        yd *= -0.5f;
+    }
+
+    tickCount++;
+    age++;
+    if (!level->isClientSide && age >= LIFETIME) {
+        remove();
+    }
+}
+
+void ItemEntity::mergeWithNeighbours() {
+    AABB grown = bb.grow(0.5, 0, 0.5);
+    std::vector<std::shared_ptr<Entity> >* neighbours =
+        level->getEntitiesOfClass(typeid(*this), &grown);
+    for (auto it = neighbours->begin(); it != neighbours->end(); ++it) {
+        std::shared_ptr<ItemEntity> entity =
+            std::dynamic_pointer_cast<ItemEntity>(*it);
+        merge(entity);
+    }
+    delete neighbours;
+}
+
+bool ItemEntity::merge(std::shared_ptr<ItemEntity> target) {
+    if (target == shared_from_this()) return false;
+    if (!target->isAlive() || !this->isAlive()) return false;
+    std::shared_ptr<ItemInstance> myItem = this->getItem();
+    std::shared_ptr<ItemInstance> targetItem = target->getItem();
+
+    if (targetItem->getItem() != myItem->getItem()) return false;
+    if (targetItem->hasTag() ^ myItem->hasTag()) return false;
+    if (targetItem->hasTag() && !targetItem->getTag()->equals(myItem->getTag()))
+        return false;
+    if (targetItem->getItem()->isStackedByData() &&
+        targetItem->getAuxValue() != myItem->getAuxValue())
+        return false;
+    if (targetItem->count < myItem->count)
+        return target->merge(
+            std::dynamic_pointer_cast<ItemEntity>(shared_from_this()));
+    if (targetItem->count + myItem->count > targetItem->getMaxStackSize())
+        return false;
+
+    targetItem->count += myItem->count;
+    target->throwTime = std::max(target->throwTime, this->throwTime);
+    target->age = std::min(target->age, this->age);
+    target->setItem(targetItem);
+    remove();
+
+    return true;
+}
+
+void ItemEntity::setShortLifeTime() {
+    // reduce lifetime to one minute
+    age = LIFETIME - (60 * SharedConstants::TICKS_PER_SECOND);
+}
+
+bool ItemEntity::updateInWaterState() {
+    return level->checkAndHandleWater(&bb, Material::water, shared_from_this());
+}
+
+void ItemEntity::burn(int dmg) { hurt(DamageSource::inFire, dmg); }
+
+bool ItemEntity::hurt(DamageSource* source, float damage) {
+    // 4J - added next line: found whilst debugging an issue with item entities
+    // getting into a bad state when being created by a cactus, since entities
+    // insides cactuses get hurt and therefore depending on the timing of things
+    // they could get removed from the client when they weren't supposed to be.
+    // Are there really any cases were we would want an itemEntity to be locally
+    // hurt?
+    if (level->isClientSide) return false;
+
+    if (isInvulnerable()) return false;
+    if (getItem() != nullptr && getItem()->id == Item::netherStar_Id &&
+        source->isExplosion())
+        return false;
+    markHurt();
+    health -= damage;
+    if (health <= 0) {
+        remove();
+    }
+    return false;
+}
+
+void ItemEntity::addAdditonalSaveData(CompoundTag* entityTag) {
+    entityTag->putShort("Health", (uint8_t)health);
+    entityTag->putShort("Age", (short)age);
+    if (getItem() != nullptr)
+        entityTag->putCompound("Item", getItem()->save(new CompoundTag()));
+}
+
+void ItemEntity::readAdditionalSaveData(CompoundTag* tag) {
+    health = tag->getShort("Health") & 0xff;
+    age = tag->getShort("Age");
+    CompoundTag* itemTag = tag->getCompound("Item");
+    setItem(ItemInstance::fromTag(itemTag));
+    if (getItem() == nullptr) remove();
+}
+
+void ItemEntity::playerTouch(std::shared_ptr<Player> player) {
+    if (level->isClientSide) return;
+
+    std::shared_ptr<ItemInstance> item = getItem();
+
+    // 4J Stu - Fix for duplication glitch
+    if (item->count <= 0) {
+        remove();
+        return;
+    }
+
+    int orgCount = item->count;
+    if (throwTime == 0 && player->inventory->add(item)) {
+        // if (item.id == Tile.treeTrunk.id)
+        // player.awardStat(Achievements.mineWood); if (item.id ==
+        // Item.leather.id) player.awardStat(Achievements.killCow); if (item.id
+        // == Item.diamond.id) player.awardStat(Achievements.diamonds); if
+        // (item.id == Item.blazeRod.id)
+        // player.awardStat(Achievements.blazeRod);
+        if (item->id == Item::diamond_Id) {
+            player->awardStat(GenericStats::diamonds(),
+                              GenericStats::param_diamonds());
+
+#ifdef _EXTENDED_ACHIEVEMENTS
+            if (getItem()->getItem()->id) {
+                std::shared_ptr<Player> pThrower =
+                    level->getPlayerByName(getThrower());
+                if ((pThrower != nullptr) && (pThrower != player)) {
+                    pThrower->awardStat(GenericStats::diamondsToYou(),
+                                        GenericStats::param_diamondsToYou());
+                }
+            }
+#endif
+        }
+        if (item->id == Item::blazeRod_Id)
+            player->awardStat(GenericStats::blazeRod(),
+                              GenericStats::param_blazeRod());
+
+        playSound(
+            eSoundType_RANDOM_POP, 0.2f,
+            ((random->nextFloat() - random->nextFloat()) * 0.7f + 1.0f) * 2.0f);
+        player->take(shared_from_this(), orgCount);
+        //            System.out.println(item.count + ", " + orgCount);
+        if (item->count <= 0) remove();
+    }
+}
+
+std::string ItemEntity::getAName() {
+    return "";  // "item." + getItem()->getDescriptionId();
+    // return I18n.get("item." + item.getDescriptionId());
+}
+
+void ItemEntity::changeDimension(int i) {
+    Entity::changeDimension(i);
+
+    if (!level->isClientSide) mergeWithNeighbours();
+}
+
+std::shared_ptr<ItemInstance> ItemEntity::getItem() {
+    std::shared_ptr<ItemInstance> result =
+        getEntityData()->getItemInstance(DATA_ITEM);
+
+    if (result == nullptr) {
+        if (level != nullptr) {
+            Log::info("Item entity %d has no item?!\n", entityId);
+            // level.getLogger().severe("Item entity " + entityId + " has no
+            // item?!");
+        }
+        return std::make_shared<ItemInstance>(Tile::stone);
+    }
+
+    return result;
+}
+
+void ItemEntity::setItem(std::shared_ptr<ItemInstance> item) {
+    getEntityData()->set(DATA_ITEM, item);
+    getEntityData()->markDirty(DATA_ITEM);
+}
+
+bool ItemEntity::isAttackable() { return false; }
+
+void ItemEntity::setThrower(const std::string& thrower) {
+    this->thrower = thrower;
+}
+
+std::string ItemEntity::getThrower() { return this->thrower; }

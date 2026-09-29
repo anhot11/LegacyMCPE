@@ -1,0 +1,18 @@
+name: "Enter Nix dev-shell"
+description: "Enters a Nix dev-shell"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Verify flake integrity
+      shell: bash
+      run: nix flake check
+
+    - name: Enter Nix dev-shell
+      shell: bash
+      run: nix develop

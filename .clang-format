@@ -1,0 +1,4 @@
+BasedOnStyle: Google
+IndentWidth: 4
+AccessModifierOffset: -4
+# SortIncludes: false # FIXME: https://github.com/portable-lce/portable-lce/issues/225

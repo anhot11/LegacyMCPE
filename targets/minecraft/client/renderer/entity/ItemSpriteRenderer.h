@@ -1,0 +1,22 @@
+#pragma once
+#include "EntityRenderer.h"
+
+class Item;
+class Icon;
+class Tesselator;
+
+class ItemSpriteRenderer : public EntityRenderer {
+private:
+    Item* sourceItem;
+    int sourceItemAuxValue;
+
+public:
+    ItemSpriteRenderer(Item* sourceItem, int sourceItemAuxValue = 0);
+    // ItemSpriteRenderer(Item *icon);
+    virtual void render(std::shared_ptr<Entity> e, double x, double y, double z,
+                        float rot, float a);
+    virtual ResourceLocation* getTextureLocation(std::shared_ptr<Entity> mob);
+
+private:
+    void renderIcon(Tesselator* t, Icon* icon);
+};

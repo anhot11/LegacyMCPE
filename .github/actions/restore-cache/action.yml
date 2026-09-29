@@ -1,0 +1,27 @@
+name: "Restore cache"
+description: "Restores the cache for ccache and Meson"
+
+inputs:
+  ccache_dir:
+    description: "The directory used by ccache"
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Restore ccache cache
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/ccache
+        key: ${{ runner.os }}-ccache-${{ matrix.build-type }}-${{ hashFiles('**/meson.build') }}
+
+    - name: Create ccache dir
+      shell: bash
+      run: mkdir -p ${{ inputs.ccache_dir }}
+
+    - name: Restore meson cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/build_${{ matrix.build-type }}
+        key: ${{ runner.os }}-meson-${{ matrix.build-type }}-${{ hashFiles('**/meson.build') }}

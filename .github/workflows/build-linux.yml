@@ -1,0 +1,116 @@
+name: Linux
+
+# TODO: test with only pull-request
+on:
+  push:
+    paths: &workflow_paths
+      - "**.cppm"
+      - "**.ixx"
+      - "**.inl"
+      - "**.mpp"
+      - "**.ipp"
+      - "**.tpp"
+      - "**.txx"
+      - "**.inc"
+      - "**.cpp"
+      - "**.hpp"
+      - "**.cxx"
+      - "**.hxx"
+      - "**.cc"
+      - "**.hh"
+      - "**.c"
+      - "**.h"
+      - ".github/workflows/build-linux.yml"
+      - ".github/workflows/actions/build-meson/action.yml"
+      - "**/meson.build"
+      - "flake.nix"
+
+  pull_request:
+    paths: *workflow_paths
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !contains(github.ref, 'dev/') }}
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: ["amalgam", "full", "optimized"]
+        arch: ["x86-64"]
+
+    steps:
+      - name: Cache .git folder
+        uses: actions/cache@v5
+        with:
+          path: .git
+          key: ${{ runner.os }}-git-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-git-
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Enter dev-shell
+        if: ${{ matrix.build-type != 'optimized' }}
+        uses: ./.github/actions/enter-devshell
+
+      - name: Download tooling
+        if: ${{ matrix.build-type == 'optimized' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache python3 python3-pip ninja-build libsdl2-dev libgl-dev libglu1-mesa-dev libpthread-stubs0-dev libglm-dev
+          python -m pip install meson
+          ccache -M 5G || true
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
+          sudo apt-get install -y libc++-20-dev libc++abi-20-dev
+
+      - name: Restore build cache
+        uses: ./.github/actions/restore-cache
+        with:
+          ccache_dir: ~/.cache/ccache
+
+      - name: Compile unity
+        if: ${{ matrix.build-type=='amalgam' }}
+        uses: ./.github/actions/build-meson
+        with:
+          dir_name: "build_${{ matrix.build-type }}"
+          setup_args: "-Dunity=on -Dunity_size=99999"
+
+      - name: Compile
+        if: ${{ matrix.build-type=='full' }}
+        uses: ./.github/actions/build-meson
+        with:
+          dir_name: "build_${{ matrix.build-type }}"
+          setup_args: "-Dunity=off"
+
+      - name: Compile optimized
+        if: ${{ matrix.build-type=='optimized' }}
+        uses: ./.github/actions/build-meson
+        with:
+          dir_name: "build_${{ matrix.build-type }}"
+          setup_args: "-Dunity=on -Dunity_size=99999 -Dbuildtype=release -Doptimization=3"
+
+      - name: Package artifact
+        run: |
+          cd build_${{ matrix.build-type }}/targets/app
+          zip -r ../../../minecraft-client-linux-${{ matrix.arch }}.zip * -x "./Minecraft.Client.p/"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: minecraft-client-linux-${{ matrix.build-type }}-${{ github.sha }}
+          path: minecraft-client-linux-${{ matrix.arch }}.zip
+          retention-days: 7
+
+      - name: Release Nightly
+        if: ${{ matrix.build-type=='optimized' }}
+        uses: softprops/action-gh-release@v3
+        continue-on-error: true
+        with:
+          tag_name: nightly
+          name: Nightly
+          prerelease: true
+          files: minecraft-client-linux-${{ matrix.arch }}.zip

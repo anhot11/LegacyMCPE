@@ -1,0 +1,83 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "app/common/Iggy/include/rrCore.h"
+#include "app/common/Network/GameNetworkManager.h"
+#include "app/common/UI/All Platforms/UIEnums.h"
+#include "app/common/UI/Controls/UIControl_Button.h"
+#include "app/common/UI/Controls/UIControl_Label.h"
+#include "app/common/UI/Controls/UIControl_PlayerList.h"
+#include "app/common/UI/UIScene.h"
+#include "platform/storage/storage.h"
+
+class INetworkPlayer;
+class UILayer;
+
+class UIScene_InGameInfoMenu : public UIScene {
+private:
+    enum EControls {
+        eControl_GameOptions,
+        eControl_GamePlayers,
+    };
+
+    typedef struct _PlayerInfo {
+        uint8_t m_smallId;
+        char m_voiceStatus;
+        short m_colorState;
+        std::string m_name;
+
+    } PlayerInfo;
+
+    bool m_isHostPlayer;
+    // int m_playersCount;
+    std::vector<PlayerInfo*> m_players;  // A std::vector of player info structs
+    // char m_playersVoiceState[MINECRAFT_NET_MAX_PLAYERS];
+    // short m_playersColourState[MINECRAFT_NET_MAX_PLAYERS];
+    // std::string m_playerNames[MINECRAFT_NET_MAX_PLAYERS];
+
+    UIControl_Button m_buttonGameOptions;
+    UIControl_PlayerList m_playerList;
+    UIControl_Label m_labelTitle;
+    UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
+    UI_MAP_ELEMENT(m_buttonGameOptions, "GameOptions")
+    UI_MAP_ELEMENT(m_playerList, "GamePlayers")
+    UI_MAP_ELEMENT(m_labelTitle, "Title")
+    UI_END_MAP_ELEMENTS_AND_NAMES()
+public:
+    UIScene_InGameInfoMenu(int iPad, void* initData, UILayer* parentLayer);
+    virtual ~UIScene_InGameInfoMenu();
+
+    virtual EUIScene getSceneType() { return eUIScene_InGameInfoMenu; }
+    virtual void updateTooltips();
+
+    virtual void handleReload();
+
+    virtual void tick();
+
+protected:
+    // TODO: This should be pure virtual in this class
+    virtual std::string getMoviePath();
+
+public:
+    // INPUT
+    virtual void handleInput(int iPad, int key, bool repeat, bool pressed,
+                             bool released, bool& handled);
+
+protected:
+    virtual void handleGainFocus(bool navBack);
+    void handlePress(F64 controlId, F64 childId);
+    virtual void handleDestroy();
+    virtual void handleFocusChange(F64 controlId, F64 childId);
+
+public:
+    static int KickPlayerReturned(void* pParam, int iPad,
+                                  IPlatformStorage::EMessageResult result);
+    static void OnPlayerChanged(void* callbackParam, INetworkPlayer* pPlayer,
+                                bool leaving);
+
+private:
+    PlayerInfo* BuildPlayerInfo(INetworkPlayer* player);
+};

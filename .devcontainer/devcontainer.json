@@ -1,0 +1,17 @@
+{
+  "name": "Portable-LCE Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "mesonbuild.mesonbuild"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}

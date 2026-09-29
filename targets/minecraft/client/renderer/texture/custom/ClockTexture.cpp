@@ -1,0 +1,99 @@
+#include "ClockTexture.h"
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "java/JavaMath.h"
+#include "minecraft/client/Minecraft.h"
+#include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
+#include "minecraft/client/renderer/texture/StitchedTexture.h"
+#include "minecraft/client/renderer/texture/Texture.h"
+#include "minecraft/world/level/Level.h"
+#include "minecraft/world/level/dimension/Dimension.h"
+#include "platform/PlatformTypes.h"
+
+ClockTexture::ClockTexture() : StitchedTexture("clock", "clock") {
+    rot = rota = 0.0;
+    m_dataTexture = nullptr;
+    m_iPad = XUSER_INDEX_ANY;
+}
+
+ClockTexture::ClockTexture(int iPad, ClockTexture* dataTexture)
+    : StitchedTexture("clock", "clock") {
+    rot = rota = 0.0;
+    m_dataTexture = dataTexture;
+    m_iPad = iPad;
+}
+
+void ClockTexture::cycleFrames() {
+    Minecraft* mc = Minecraft::GetInstance();
+
+    double rott = 0;
+    if (m_iPad >= 0 && m_iPad < XUSER_MAX_COUNT && mc->level != nullptr &&
+        mc->localplayers[m_iPad] != nullptr) {
+        float time = mc->localplayers[m_iPad]->level->getTimeOfDay(1);
+        rott = time;
+        if (!mc->localplayers[m_iPad]->level->dimension->isNaturalDimension()) {
+            rott = Math::random();
+        }
+    } else {
+        // 4J Stu - For the static version, pretend we are already on a frame
+        // other than 0
+        frame = 1;
+    }
+
+    double rotd = rott - rot;
+    while (rotd < -.5) rotd += 1.0;
+    while (rotd >= .5) rotd -= 1.0;
+    if (rotd < -1) rotd = -1;
+    if (rotd > 1) rotd = 1;
+    rota += rotd * 0.1;
+    rota *= 0.8;
+
+    rot += rota;
+
+    // 4J Stu - We share data with another texture
+    if (m_dataTexture != nullptr) {
+        int newFrame = (int)((rot + 1.0) * m_dataTexture->frames->size()) %
+                       m_dataTexture->frames->size();
+        while (newFrame < 0) {
+            newFrame = (newFrame + m_dataTexture->frames->size()) %
+                       m_dataTexture->frames->size();
+        }
+        if (newFrame != frame) {
+            frame = newFrame;
+            m_dataTexture->source->blit(
+                x, y, m_dataTexture->frames->at(this->frame), rotated);
+        }
+    } else {
+        int newFrame = (int)((rot + 1.0) * frames->size()) % frames->size();
+        while (newFrame < 0) {
+            newFrame = (newFrame + frames->size()) % frames->size();
+        }
+        if (newFrame != frame) {
+            frame = newFrame;
+            source->blit(x, y, frames->at(this->frame), rotated);
+        }
+    }
+}
+
+int ClockTexture::getSourceWidth() const { return source->getWidth(); }
+
+int ClockTexture::getSourceHeight() const { return source->getHeight(); }
+
+int ClockTexture::getFrames() {
+    if (m_dataTexture == nullptr) {
+        return StitchedTexture::getFrames();
+    } else {
+        return m_dataTexture->getFrames();
+    }
+}
+
+void ClockTexture::freeFrameTextures() {
+    if (m_dataTexture == nullptr) {
+        StitchedTexture::freeFrameTextures();
+    }
+}
+
+bool ClockTexture::hasOwnData() { return m_dataTexture == nullptr; }

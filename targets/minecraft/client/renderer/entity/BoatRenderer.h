@@ -1,0 +1,20 @@
+#pragma once
+#include "EntityRenderer.h"
+
+class Model;
+class ResourceLocation;
+
+class BoatRenderer : public EntityRenderer {
+private:
+    static ResourceLocation BOAT_LOCATION;
+
+protected:
+    Model* model;
+
+public:
+    BoatRenderer();
+
+    virtual void render(std::shared_ptr<Entity> boat, double x, double y,
+                        double z, float rot, float a);
+    virtual ResourceLocation* getTextureLocation(std::shared_ptr<Entity> mob);
+};

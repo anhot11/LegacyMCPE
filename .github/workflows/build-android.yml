@@ -1,0 +1,73 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ninja-build zip aapt zipalign apksigner dalvik-exchange libgl-dev libglu1-mesa-dev libsdl2-dev
+          python3 -m pip install meson
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+          add-to-path: true
+
+      - name: Build Launcher APK
+        run: |
+          cd android-launcher
+          export PREFIX=/usr
+          mkdir -p /usr/lib/android-sdk/platforms/android-30
+          wget -q https://dl.google.com/android/repository/platform-30_r03.zip -O /tmp/platform-30.zip
+          unzip -q /tmp/platform-30.zip -d /tmp/platform-30-extract
+          sudo mv /tmp/platform-30-extract/android-11/* /usr/lib/android-sdk/platforms/android-30/ || true
+          sudo mkdir -p /usr/share/java
+          sudo ln -sf /usr/lib/android-sdk/platforms/android-30/android.jar /usr/share/java/android.jar
+          which dx || sudo ln -sf /usr/lib/android-sdk/build-tools/debian/dx /usr/bin/dx || true
+          
+          python3 waf configure -T release --termux
+          python3 waf build
+          ls -lh build/android/mod-signed.apk
+          cp build/android/mod-signed.apk ../LegacyMCPE-arm64.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LegacyMCPE-arm64-apk
+          path: LegacyMCPE-arm64.apk
+          retention-days: 14
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        with:
+          tag_name: android-build
+          name: LegacyMCPE Android Release
+          files: LegacyMCPE-arm64.apk

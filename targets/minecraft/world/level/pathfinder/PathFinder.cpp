@@ -1,0 +1,289 @@
+#include "PathFinder.h"
+
+#include <cmath>
+#include <utility>
+#include <vector>
+
+#include "Path.h"
+#include "minecraft/util/Mth.h"
+#include "minecraft/world/entity/Entity.h"
+#include "minecraft/world/level/Level.h"
+#include "minecraft/world/level/LevelSource.h"
+#include "minecraft/world/level/material/Material.h"
+#include "minecraft/world/level/pathfinder/BinaryHeap.h"
+#include "minecraft/world/level/pathfinder/Node.h"
+#include "minecraft/world/level/tile/Tile.h"
+#include "minecraft/world/phys/AABB.h"
+
+PathFinder::PathFinder(LevelSource* level, bool canPassDoors, bool canOpenDoors,
+                       bool avoidWater, bool canFloat) {
+    neighbors = new std::vector<Node*>(32);
+
+    this->canPassDoors = canPassDoors;
+    this->canOpenDoors = canOpenDoors;
+    this->avoidWater = avoidWater;
+    this->canFloat = canFloat;
+    this->level = level;
+}
+
+PathFinder::~PathFinder() {
+    // All the nodes should be uniquely referenced in the nodes map, and
+    // everything else should just be duplicate references to the same things,
+    // so just need to destroy their containers
+    delete neighbors;
+    auto itEnd = nodes.end();
+    for (auto it = nodes.begin(); it != itEnd; it++) {
+        delete it->second;
+    }
+}
+
+Path* PathFinder::findPath(Entity* from, Entity* to, float maxDist) {
+    return findPath(from, to->x, to->bb.y0, to->z, maxDist);
+}
+
+Path* PathFinder::findPath(Entity* from, int x, int y, int z, float maxDist) {
+    return findPath(from, x + 0.5f, y + 0.5f, z + 0.5f, maxDist);
+}
+
+Path* PathFinder::findPath(Entity* e, double xt, double yt, double zt,
+                           float maxDist) {
+    openSet.clear();
+    nodes.clear();
+
+    bool resetAvoidWater = avoidWater;
+    int startY = Mth::floor(e->bb.y0 + 0.5f);
+    if (canFloat && e->isInWater()) {
+        startY = (int)(e->bb.y0);
+        int tileId = level->getTile((int)Mth::floor(e->x), startY,
+                                    (int)Mth::floor(e->z));
+        while (tileId == Tile::water_Id || tileId == Tile::calmWater_Id) {
+            ++startY;
+            tileId = level->getTile((int)Mth::floor(e->x), startY,
+                                    (int)Mth::floor(e->z));
+        }
+        resetAvoidWater = avoidWater;
+        avoidWater = false;
+    } else
+        startY = Mth::floor(e->bb.y0 + 0.5f);
+
+    Node* from = getNode((int)floor(e->bb.x0), startY, (int)floor(e->bb.z0));
+    Node* to = getNode((int)floor(xt - e->bbWidth / 2), (int)floor(yt),
+                       (int)floor(zt - e->bbWidth / 2));
+
+    Node* size =
+        new Node((int)floor(e->bbWidth + 1), (int)floor(e->bbHeight + 1),
+                 (int)floor(e->bbWidth + 1));
+    Path* path = findPath(e, from, to, size, maxDist);
+    delete size;
+
+    avoidWater = resetAvoidWater;
+    return path;
+}
+
+// function A*(start,goal)
+Path* PathFinder::findPath(Entity* e, Node* from, Node* to, Node* size,
+                           float maxDist) {
+    from->g = 0;
+    from->h = from->distanceToSqr(to);
+    from->f = from->h;
+
+    openSet.clear();
+    openSet.insert(from);
+
+    Node* closest = from;
+
+    while (!openSet.isEmpty()) {
+        Node* x = openSet.pop();
+
+        if (x->equals(to)) {
+            return reconstruct_path(from, to);
+        }
+
+        if (x->distanceToSqr(to) < closest->distanceToSqr(to)) {
+            closest = x;
+        }
+        x->closed = true;
+
+        int neighborCount = getNeighbors(e, x, size, to, maxDist);
+        for (int i = 0; i < neighborCount; i++) {
+            Node* y = (*neighbors)[i];
+
+            float tentative_g_score = x->g + x->distanceToSqr(y);
+            if (!y->inOpenSet() || tentative_g_score < y->g) {
+                y->cameFrom = x;
+                y->g = tentative_g_score;
+                y->h = y->distanceToSqr(to);
+                if (y->inOpenSet()) {
+                    openSet.changeCost(y, y->g + y->h);
+                } else {
+                    y->f = y->g + y->h;
+                    openSet.insert(y);
+                }
+            }
+        }
+    }
+
+    if (closest == from) return nullptr;
+    return reconstruct_path(from, closest);
+}
+
+int PathFinder::getNeighbors(Entity* entity, Node* pos, Node* size,
+                             Node* target, float maxDist) {
+    int p = 0;
+
+    int jumpSize = 0;
+    if (isFree(entity, pos->x, pos->y + 1, pos->z, size) == TYPE_OPEN)
+        jumpSize = 1;
+
+    Node* n = getNode(entity, pos->x, pos->y, pos->z + 1, size, jumpSize);
+    Node* w = getNode(entity, pos->x - 1, pos->y, pos->z, size, jumpSize);
+    Node* e = getNode(entity, pos->x + 1, pos->y, pos->z, size, jumpSize);
+    Node* s = getNode(entity, pos->x, pos->y, pos->z - 1, size, jumpSize);
+
+    if (n != nullptr && !n->closed && n->distanceTo(target) < maxDist)
+        (*neighbors)[p++] = n;
+    if (w != nullptr && !w->closed && w->distanceTo(target) < maxDist)
+        (*neighbors)[p++] = w;
+    if (e != nullptr && !e->closed && e->distanceTo(target) < maxDist)
+        (*neighbors)[p++] = e;
+    if (s != nullptr && !s->closed && s->distanceTo(target) < maxDist)
+        (*neighbors)[p++] = s;
+
+    return p;
+}
+
+Node* PathFinder::getNode(Entity* entity, int x, int y, int z, Node* size,
+                          int jumpSize) {
+    Node* best = nullptr;
+    int pathType = isFree(entity, x, y, z, size);
+    if (pathType == TYPE_WALKABLE) return getNode(x, y, z);
+    if (pathType == TYPE_OPEN) best = getNode(x, y, z);
+    if (best == nullptr && jumpSize > 0 && pathType != TYPE_FENCE &&
+        pathType != TYPE_TRAP &&
+        isFree(entity, x, y + jumpSize, z, size) == TYPE_OPEN) {
+        best = getNode(x, y + jumpSize, z);
+        y += jumpSize;
+    }
+
+    if (best != nullptr) {
+        int drop = 0;
+        int cost = 0;
+        while (y > 0) {
+            cost = isFree(entity, x, y - 1, z, size);
+            if (avoidWater && cost == TYPE_WATER) return nullptr;
+            if (cost != TYPE_OPEN) break;
+            // fell too far?
+            if (++drop >= 4)
+                return nullptr;  // 4J - rolling this back to pre-java 1.6.4
+                                 // version as we're suspicious of the
+                                 // performance implications of this
+                                 //			if (drop++ >=
+                                 // entity->getMaxFallDistance()) return
+                                 // nullptr;
+            y--;
+
+            if (y > 0) best = getNode(x, y, z);
+        }
+        // fell into lava?
+        if (cost == TYPE_LAVA) return nullptr;
+    }
+
+    return best;
+}
+
+/*final*/ Node* PathFinder::getNode(int x, int y, int z) {
+    int i = Node::createHash(x, y, z);
+    Node* node;
+    auto it = nodes.find(i);
+    if (it == nodes.end()) {
+        node = new Node(x, y, z);
+        nodes.insert(std::unordered_map<int, Node*>::value_type(i, node));
+    } else {
+        node = (*it).second;
+    }
+    return node;
+}
+
+int PathFinder::isFree(Entity* entity, int x, int y, int z, Node* size) {
+    return isFree(entity, x, y, z, size, avoidWater, canOpenDoors,
+                  canPassDoors);
+}
+
+int PathFinder::isFree(Entity* entity, int x, int y, int z, Node* size,
+                       bool avoidWater, bool canOpenDoors, bool canPassDoors) {
+    bool walkable = false;
+    for (int xx = x; xx < x + size->x; xx++)
+        for (int yy = y; yy < y + size->y; yy++)
+            for (int zz = z; zz < z + size->z; zz++) {
+                int tileId = entity->level->getTile(xx, yy, zz);
+                if (tileId <= 0) continue;
+                if (tileId == Tile::trapdoor_Id)
+                    walkable = true;
+                else if (tileId == Tile::water_Id ||
+                         tileId == Tile::calmWater_Id) {
+                    if (avoidWater)
+                        return TYPE_WATER;
+                    else
+                        walkable = true;
+                } else if (!canPassDoors && tileId == Tile::door_wood_Id) {
+                    return TYPE_BLOCKED;
+                }
+
+                Tile* tile = Tile::tiles[tileId];
+
+                // 4J Stu - Use new getTileRenderShape passing in the tileId we
+                // have already got
+                if (entity->level->getTileRenderShape(tileId) ==
+                    Tile::SHAPE_RAIL) {
+                    int xt = Mth::floor(entity->x);
+                    int yt = Mth::floor(entity->y);
+                    int zt = Mth::floor(entity->z);
+                    if (entity->level->getTileRenderShape(xt, yt, zt) ==
+                            Tile::SHAPE_RAIL ||
+                        entity->level->getTileRenderShape(xt, yt - 1, zt) ==
+                            Tile::SHAPE_RAIL) {
+                        continue;
+                    } else {
+                        return TYPE_FENCE;
+                    }
+                }
+
+                if (tile->isPathfindable(entity->level, xx, yy, zz)) continue;
+                if (canOpenDoors && tileId == Tile::door_wood_Id) continue;
+
+                int renderShape = tile->getRenderShape();
+                if (renderShape == Tile::SHAPE_FENCE ||
+                    tileId == Tile::fenceGate_Id ||
+                    renderShape == Tile::SHAPE_WALL)
+                    return TYPE_FENCE;
+                if (tileId == Tile::trapdoor_Id) return TYPE_TRAP;
+                Material* m = tile->material;
+                if (m == Material::lava) {
+                    if (entity->isInLava()) continue;
+                    return TYPE_LAVA;
+                }
+                return TYPE_BLOCKED;
+            }
+
+    return walkable ? TYPE_WALKABLE : TYPE_OPEN;
+}
+
+// function reconstruct_path(came_from,current_node)
+Path* PathFinder::reconstruct_path(Node* from, Node* to) {
+    int count = 1;
+    Node* n = to;
+    while (n->cameFrom != nullptr) {
+        count++;
+        n = n->cameFrom;
+    }
+
+    std::vector<Node*> nodes = std::vector<Node*>(count);
+    n = to;
+    nodes[--count] = n;
+    while (n->cameFrom != nullptr) {
+        n = n->cameFrom;
+        nodes[--count] = n;
+    }
+    Path* ret = new Path(nodes);
+    return ret;
+}
