@@ -46,7 +46,7 @@ jobs:
         run: |
           meson subprojects download || true
           find subprojects -name "SDL_steam_virtual_gamepad.h" -exec sed -i '1s/^/#pragma once\n/' {} + || true
-          find subprojects -name "meson.build" -path "*/SDL2-*/meson.build" -exec sed -i 's/if platform_is_winrt or platform_is_haiku/if platform_is_winrt or platform_is_haiku or platform_is_android/g' {} + || true
+          python3 scripts/patch_sdl2_android.py
           meson setup build_android --cross-file scripts/android_arm64.ini \
             -Drenderer=gles \
             -Dui_backend=java \
