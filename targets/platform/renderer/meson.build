@@ -8,7 +8,7 @@ platform_renderer_gl_defs = []
 
 if get_option('renderer') == 'gles'
     if host_machine.system() == 'android'
-        platform_renderer_gl_dependencies += cc.find_library('GLESv2', required: true)
+        platform_renderer_gl_dependencies += cc.find_library('GLESv3', required: true)
     else
         platform_renderer_gl_dependencies += dependency('glesv2')
     endif

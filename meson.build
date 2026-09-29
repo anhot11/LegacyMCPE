@@ -58,6 +58,10 @@ endif
 
 # MARK: meson options
 
+if get_option('renderer') == 'gles'
+    global_cpp_defs += ['-DGLES']
+endif
+
 if get_option('enable_vsync')
     global_cpp_defs += ['-DENABLE_VSYNC']
 endif
