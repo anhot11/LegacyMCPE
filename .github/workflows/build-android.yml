@@ -45,12 +45,15 @@ jobs:
       - name: Build libMinecraftClient.so
         continue-on-error: true
         run: |
+          meson subprojects download || true
+          find subprojects -name "SDL_steam_virtual_gamepad.h" -exec sed -i '1s/^/#pragma once\n/' {} + || true
           meson setup build_android --cross-file scripts/android_arm64.ini \
             -Drenderer=gles \
             -Dui_backend=java \
             -Dbuildtype=release \
+            -Dsdl2:unity=off \
             -Denable_mimalloc=disabled
-          ninja -C build_android targets/app/libMinecraftClient.so || true
+          ninja -C build_android targets/app/libMinecraftClient.so
           if [ -f build_android/targets/app/libMinecraftClient.so ]; then
             cp build_android/targets/app/libMinecraftClient.so android-launcher/android/lib/arm64-v8a/
             echo "Successfully built and copied libMinecraftClient.so"
