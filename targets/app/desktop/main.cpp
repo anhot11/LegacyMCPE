@@ -401,7 +401,13 @@ void DefineActions(void) {
                                     _360_JOY_BUTTON_DPAD_DOWN);
 }
 
-int main(int argc, const char* argv[]) {
+#if defined(__GNUC__) || defined(__clang__)
+#define MC_EXPORT __attribute__((visibility("default")))
+#else
+#define MC_EXPORT
+#endif
+
+extern "C" MC_EXPORT int main(int argc, const char* argv[]) {
 #if defined(__linux__) && defined(__GLIBC__) || defined(__APPLE__)
     struct sigaction sa;
     sa.sa_handler = sigsegv_handler;
@@ -637,3 +643,7 @@ int main(int argc, const char* argv[]) {
     PlatformRenderer.Shutdown();
     _exit(0);
 }  // end main
+
+extern "C" MC_EXPORT int SDL_main(int argc, char* argv[]) {
+    return main(argc, (const char**)argv);
+}

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <atomic>
+#include "util/AtomicRef.h"
 #include <vector>
 
 #include "java/InputOutputStream/DataInputStream.h"

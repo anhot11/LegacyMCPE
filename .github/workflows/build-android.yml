@@ -43,7 +43,6 @@ jobs:
           echo "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
       - name: Build libMinecraftClient.so
-        continue-on-error: true
         run: |
           meson subprojects download || true
           find subprojects -name "SDL_steam_virtual_gamepad.h" -exec sed -i '1s/^/#pragma once\n/' {} + || true
@@ -59,6 +58,7 @@ jobs:
             echo "Successfully built and copied libMinecraftClient.so"
           else
             echo "libMinecraftClient.so not found or build failed"
+            exit 1
           fi
 
       - name: Build Launcher APK

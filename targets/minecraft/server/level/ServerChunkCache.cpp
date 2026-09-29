@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include "util/AtomicRef.h"
 
 #include "ServerLevel.h"
 #include "minecraft/IGameServices.h"

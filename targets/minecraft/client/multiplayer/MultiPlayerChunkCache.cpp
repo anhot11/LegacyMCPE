@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <atomic>
+#include "util/AtomicRef.h"
 
 #include "minecraft/network/INetworkService.h"
 #include "minecraft/server/MinecraftServer.h"
