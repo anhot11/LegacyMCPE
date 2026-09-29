@@ -32,7 +32,13 @@ app_dependencies += [
     dependency('miniaudio'),  # todo: remove once PlatformSound is used
     dependency('stb'),
     dependency('simdutf'),
-    dependency('glew'),  # TODO remove
+]
+
+if get_option('renderer') != 'gles'
+    app_dependencies += dependency('glew')
+endif
+
+app_dependencies += [
     java_dep,
     nbt_dep,
     util_dep,

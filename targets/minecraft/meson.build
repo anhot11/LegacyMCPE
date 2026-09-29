@@ -6,26 +6,31 @@
 fs = import('fs')
 minecraft_sources = files(fs.read('sources.txt').strip().split('\n'))
 
+minecraft_deps = [
+    # dependency('libcrypto'), # for MD5 in Hasher.cpp on Linux
+    dependency('zlib'),
+    dependency('glm'),
+    nbt_dep,
+    java_dep,
+    util_dep,
+    assets_localisation_dep,
+    platform_sound_dep,
+    platform_renderer_dep,
+    platform_input_dep,
+    platform_profile_dep,
+    platform_storage_dep,
+    platform_fs_dep,
+    platform_thread_dep,
+]
+
+if get_option('renderer') != 'gles'
+    minecraft_deps += dependency('glew')
+endif
+
 lib_minecraft = static_library(
     'minecraft',
     minecraft_sources,
-    dependencies: [
-        # dependency('libcrypto'), # for MD5 in Hasher.cpp on Linux
-        dependency('zlib'),
-        dependency('glm'),
-        dependency('glew'),  # TODO remove
-        nbt_dep,
-        java_dep,
-        util_dep,
-        assets_localisation_dep,
-        platform_sound_dep,
-        platform_renderer_dep,
-        platform_input_dep,
-        platform_profile_dep,
-        platform_storage_dep,
-        platform_fs_dep,
-        platform_thread_dep,
-    ],
+    dependencies: minecraft_deps,
     include_directories: include_directories('..'),
     cpp_args: global_cpp_args + global_cpp_defs,
 )

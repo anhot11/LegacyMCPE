@@ -51,16 +51,18 @@ public class MainActivity extends Activity
 
         dir.setText( saveddir );
 
-        b.setOnClickListener(v -> 
-        {
-            Intent intent = new Intent( this, MainActivity2.class );
-            SharedPreferences.Editor ed = sharedPerf.edit();
-            
-            ed.putString("dir_path", dir.getText().toString());
-            ed.apply();        
-            
-            intent.putExtra( "dir", dir.getText().toString() );
-            startActivity( intent );
+        b.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
+                SharedPreferences.Editor ed = sharedPerf.edit();
+                
+                ed.putString("dir_path", dir.getText().toString());
+                ed.apply();        
+                
+                intent.putExtra("dir", dir.getText().toString());
+                startActivity(intent);
+            }
         });
     }
 }
