@@ -718,7 +718,7 @@ public class VirtualControlsOverlay extends View {
     private final Runnable mReleaseMenuTouch = new Runnable() {
         @Override
         public void run() {
-            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
         }
     };
 
@@ -737,10 +737,8 @@ public class VirtualControlsOverlay extends View {
     private void releaseButton(VButton btn) {
         btn.pressed = false;
         btn.pointerId = -1;
-        if (btn == btnMine) {
-            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, false);
-        } else if (btn == btnUse) {
-            SDLActivity.onNativeMouse(2, MotionEvent.ACTION_UP, 0, 0, false);
+        if (btn == btnMine || btn == btnUse) {
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
         } else if (btn.keyCode != 0) {
             SDLActivity.onNativeKeyUp(btn.keyCode);
         }
