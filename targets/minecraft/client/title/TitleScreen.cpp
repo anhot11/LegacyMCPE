@@ -146,7 +146,7 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
                           new Button(2, btnX, topPos + spacing * 1, btnWidth, btnHeight,
                                      language->getElement("menu.multiplayer")));
     buttons.push_back(new Button(5, btnX, topPos + spacing * 2, btnWidth, btnHeight,
-                                 "\xa7b\xa7lMods (Lunar Client)"));
+                                 "\xC2\xA7" "bMods (Lunar Client)"));
     buttons.push_back(new Button(0, btnX, topPos + spacing * 3, btnWidth, btnHeight,
                                  language->getElement("menu.options")));
     buttons.push_back(new Button(4, btnX, topPos + spacing * 4, btnWidth, btnHeight,

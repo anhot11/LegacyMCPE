@@ -37,10 +37,10 @@ void LunarModsScreen::init() {
     int startTabX = width / 2 - (tabW * 4 + 12) / 2;
 
     // Tabs: IDs 10 to 13
-    tabSodiumBtn = new Button(10, startTabX, tabY, tabW, tabH, "\xa7e⚡ SODIUM");
-    tabOptifineBtn = new Button(11, startTabX + tabW + 4, tabY, tabW, tabH, "\xa76🛠️ OPTIFINE");
-    tabFullbrightBtn = new Button(12, startTabX + (tabW + 4) * 2, tabY, tabW, tabH, "\xa7e💡 FULLBRIGHT");
-    tabShadersBtn = new Button(13, startTabX + (tabW + 4) * 3, tabY, tabW, tabH, "\xa7b🎨 SHADERS");
+    tabSodiumBtn = new Button(10, startTabX, tabY, tabW, tabH, "\xC2\xA7" "eSODIUM");
+    tabOptifineBtn = new Button(11, startTabX + tabW + 4, tabY, tabW, tabH, "\xC2\xA7" "6OPTIFINE");
+    tabFullbrightBtn = new Button(12, startTabX + (tabW + 4) * 2, tabY, tabW, tabH, "\xC2\xA7" "eFULLBRIGHT");
+    tabShadersBtn = new Button(13, startTabX + (tabW + 4) * 3, tabY, tabW, tabH, "\xC2\xA7" "bSHADERS");
 
     buttons.push_back(tabSodiumBtn);
     buttons.push_back(tabOptifineBtn);
@@ -76,7 +76,7 @@ void LunarModsScreen::init() {
     buttons.push_back(optifineBetterGrassBtn);
 
     // Tab 2: Fullbright (ID 40)
-    int fbBtnW = (cardW > 300) ? 220 : (cardW - 20);
+    int fbBtnW = (cardW > 300) ? 240 : (cardW - 20);
     int fbBtnX = width / 2 - fbBtnW / 2;
     fullbrightToggleBtn = new Button(40, fbBtnX, startY + 50, fbBtnW, 30, "");
     buttons.push_back(fullbrightToggleBtn);
@@ -97,7 +97,6 @@ void LunarModsScreen::init() {
 }
 
 void LunarModsScreen::updateButtonVisibility() {
-    // Hide all tab sub-buttons first
     sodiumChunkEngineBtn->visible = (currentTab == 0);
     sodiumEntityCullingBtn->visible = (currentTab == 0);
     sodiumFogOcclusionBtn->visible = (currentTab == 0);
@@ -117,24 +116,24 @@ void LunarModsScreen::updateButtonLabels() {
     Options* opt = minecraft->options;
 
     // Sodium labels
-    sodiumChunkEngineBtn->msg = opt->modSodiumChunkEngine ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
-    sodiumEntityCullingBtn->msg = opt->modSodiumEntityCulling ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
-    sodiumFogOcclusionBtn->msg = opt->modSodiumFogOcclusion ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
+    sodiumChunkEngineBtn->msg = opt->modSodiumChunkEngine ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    sodiumEntityCullingBtn->msg = opt->modSodiumEntityCulling ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    sodiumFogOcclusionBtn->msg = opt->modSodiumFogOcclusion ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
 
     // OptiFine labels
-    optifineDynamicLightsBtn->msg = opt->modOptifineDynamicLights ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
-    optifineFastMathBtn->msg = opt->modOptifineFastMath ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
-    optifineClearWaterBtn->msg = opt->modOptifineClearWater ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
-    optifineBetterGrassBtn->msg = opt->modOptifineBetterGrass ? "\xa7a[ ACTIVADO ]" : "\xa7c[ DESACTIVADO ]";
+    optifineDynamicLightsBtn->msg = opt->modOptifineDynamicLights ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    optifineFastMathBtn->msg = opt->modOptifineFastMath ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    optifineClearWaterBtn->msg = opt->modOptifineClearWater ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    optifineBetterGrassBtn->msg = opt->modOptifineBetterGrass ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
 
     // Fullbright label
-    fullbrightToggleBtn->msg = opt->modFullbright ? "\xa7a\xa7lBRILLO SIEMPRE: ENCENDIDO" : "\xa7c\xa7lBRILLO SIEMPRE: APAGADO";
+    fullbrightToggleBtn->msg = opt->modFullbright ? "\xC2\xA7" "aBRILLO SIEMPRE: ENCENDIDO" : "\xC2\xA7" "cBRILLO SIEMPRE: APAGADO";
 
     // Shaders label
     static const char* s_shaderNames[] = {
         "Original Vanilla",
         "Colores Vivos",
-        "Cel-Shaded (Comic)",
+        "Cel-Shaded Comic",
         "Vision Nocturna",
         "Atardecer Calido"
     };
@@ -215,15 +214,14 @@ void LunarModsScreen::buttonClicked(Button* button) {
 }
 
 void LunarModsScreen::render(int xm, int ym, float a) {
-    // Translucent Lunar Client dark gradient backdrop
     fillGradient(0, 0, width, height, 0xf00b0e14, 0xf8111622);
 
     // Top Header Bar
     fill(0, 0, width, 56, 0xdd080b10);
     hLine(0, width, 56, 0xff253042);
 
-    drawCenteredString(font, "\xa7b\xa7lLUNAR CLIENT \xa77| \xa7fMODS & OPTIMIZACIONES", width / 2, 8, 0xffffff);
-    drawCenteredString(font, "\xa78Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
+    drawCenteredString(font, "\xC2\xA7" "b\xC2\xA7" "lLUNAR CLIENT \xC2\xA7" "7| \xC2\xA7" "fMODS & OPTIMIZACIONES", width / 2, 8, 0xffffff);
+    drawCenteredString(font, "\xC2\xA7" "8Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
 
     // Draw active tab indicator
     int tabW = 95;
@@ -241,69 +239,60 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     // Render Tab Content Cards
     if (currentTab == 0) {
         // Tab 0: Sodium Cards
-        // Card 1
         fill(cardX, startY, cardX + cardW, startY + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawString(font, "\xa7f\xa7lSodium Chunk Engine", cardX + 10, startY + 6, 0xffffff);
-        drawString(font, "\xa77Malla multihilo y cache de chunks sin tirones", cardX + 10, startY + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lSodium Chunk Engine", cardX + 10, startY + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Malla multihilo y cache de chunks sin tirones", cardX + 10, startY + 18, 0x8899aa);
 
-        // Card 2
         fill(cardX, startY + spacing, cardX + cardW, startY + spacing + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY + spacing, 0xff263345);
-        drawString(font, "\xa7f\xa7lEntity Culling (+FPS)", cardX + 10, startY + spacing + 6, 0xffffff);
-        drawString(font, "\xa77Oculta entidades detras de bloques y fuera de campo", cardX + 10, startY + spacing + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lEntity Culling (+FPS)", cardX + 10, startY + spacing + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Oculta entidades detras de bloques y fuera de campo", cardX + 10, startY + spacing + 18, 0x8899aa);
 
-        // Card 3
         fill(cardX, startY + spacing * 2, cardX + cardW, startY + spacing * 2 + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY + spacing * 2, 0xff263345);
-        drawString(font, "\xa7f\xa7lFog Occlusion", cardX + 10, startY + spacing * 2 + 6, 0xffffff);
-        drawString(font, "\xa77Descarta calculos de geometria oculta por la niebla", cardX + 10, startY + spacing * 2 + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lFog Occlusion", cardX + 10, startY + spacing * 2 + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Descarta calculos de geometria oculta por la niebla", cardX + 10, startY + spacing * 2 + 18, 0x8899aa);
     } else if (currentTab == 1) {
         // Tab 1: OptiFine Cards
-        // Card 1
         fill(cardX, startY, cardX + cardW, startY + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawString(font, "\xa7f\xa7lDynamic Lights", cardX + 10, startY + 6, 0xffffff);
-        drawString(font, "\xa77Antorcha e items emiten luz dinamica en mano", cardX + 10, startY + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lDynamic Lights", cardX + 10, startY + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Antorcha e items emiten luz dinamica en mano", cardX + 10, startY + 18, 0x8899aa);
 
-        // Card 2
         fill(cardX, startY + spacing, cardX + cardW, startY + spacing + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY + spacing, 0xff263345);
-        drawString(font, "\xa7f\xa7lFast Math", cardX + 10, startY + spacing + 6, 0xffffff);
-        drawString(font, "\xa77Trigonometria acelerada por CPU sin fmodf (+15% FPS)", cardX + 10, startY + spacing + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lFast Math", cardX + 10, startY + spacing + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Trigonometria acelerada por CPU sin fmodf (+15% FPS)", cardX + 10, startY + spacing + 18, 0x8899aa);
 
-        // Card 3
         fill(cardX, startY + spacing * 2, cardX + cardW, startY + spacing * 2 + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY + spacing * 2, 0xff263345);
-        drawString(font, "\xa7f\xa7lClear Water", cardX + 10, startY + spacing * 2 + 6, 0xffffff);
-        drawString(font, "\xa77Agua cristalina y sin niebla espesa bajo el agua", cardX + 10, startY + spacing * 2 + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lClear Water", cardX + 10, startY + spacing * 2 + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Agua cristalina y sin niebla espesa bajo el agua", cardX + 10, startY + spacing * 2 + 18, 0x8899aa);
 
-        // Card 4
         fill(cardX, startY + spacing * 3, cardX + cardW, startY + spacing * 3 + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY + spacing * 3, 0xff263345);
-        drawString(font, "\xa7f\xa7lBetter Grass", cardX + 10, startY + spacing * 3 + 6, 0xffffff);
-        drawString(font, "\xa77Pasto completo conectado en los bordes", cardX + 10, startY + spacing * 3 + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lBetter Grass", cardX + 10, startY + spacing * 3 + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Pasto completo conectado en los bordes", cardX + 10, startY + spacing * 3 + 18, 0x8899aa);
     } else if (currentTab == 2) {
         // Tab 2: Fullbright Card
         int fbCardH = 100;
         fill(cardX, startY, cardX + cardW, startY + fbCardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawCenteredString(font, "\xa7e\xa7lMOD BRILLO SIEMPRE (FULLBRIGHT)", width / 2, startY + 12, 0xffffff);
-        drawCenteredString(font, "\xa77Mantiene la iluminacion ambiental al 100% de dia y noche.", width / 2, startY + 26, 0xaabbcc);
-        drawCenteredString(font, "\xa78Permite ver dentro de cuevas oscuras y minerias sin colocar antorchas.", width / 2, startY + 38, 0x8899aa);
+        drawCenteredString(font, "\xC2\xA7" "e\xC2\xA7" "lMOD BRILLO SIEMPRE (FULLBRIGHT)", width / 2, startY + 12, 0xffffff);
+        drawCenteredString(font, "\xC2\xA7" "7Mantiene la iluminacion ambiental al 100% de dia y noche.", width / 2, startY + 26, 0xaabbcc);
+        drawCenteredString(font, "\xC2\xA7" "8Permite ver dentro de cuevas oscuras y minerias sin colocar antorchas.", width / 2, startY + 38, 0x8899aa);
     } else if (currentTab == 3) {
         // Tab 3: Shaders & Textures Cards
-        // Card 1: Shaders
         fill(cardX, startY, cardX + cardW, startY + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawString(font, "\xa7b\xa7lShader Preset (GLSL)", cardX + 10, startY + 6, 0xffffff);
-        drawString(font, "\xa77Post-procesado de color e iluminacion en GPU", cardX + 10, startY + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "b\xC2\xA7" "lShader Preset (GLSL)", cardX + 10, startY + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Post-procesado de color e iluminacion en GPU", cardX + 10, startY + 18, 0x8899aa);
 
-        // Card 2: Texture Pack
         fill(cardX, startY + spacing, cardX + cardW, startY + spacing + cardH, 0xc0141923);
         hLine(cardX, cardX + cardW, startY + spacing, 0xff263345);
-        drawString(font, "\xa76\xa7lTexture Pack Integrado", cardX + 10, startY + spacing + 6, 0xffffff);
-        drawString(font, "\xa77Paquete visual seleccionado", cardX + 10, startY + spacing + 18, 0x8899aa);
+        drawString(font, "\xC2\xA7" "6\xC2\xA7" "lTexture Pack Integrado", cardX + 10, startY + spacing + 6, 0xffffff);
+        drawString(font, "\xC2\xA7" "7Paquete visual seleccionado", cardX + 10, startY + spacing + 18, 0x8899aa);
     }
 
     // Bottom bar divider
