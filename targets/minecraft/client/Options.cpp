@@ -188,7 +188,7 @@ void Options::init() {
     modOptifineBetterGrass = false;
     modShaderPreset = 0;
     modTexturePack = 0;
-    modThermalProtection = 0;
+    modThermalProtection = 3;
     touchControlStyle = 0;
     touchControlScale = 1;
     touchControlOpacity = 1;

@@ -137,14 +137,14 @@ void SelectWorldScreen::postInit() {
     selectButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::arrow)));
 
     buttons.push_back(deleteButton = new Button(
-                          BUTTON_RENAME_ID, width / 2 - 154, height - 28, 70,
-                          20, language->getElement("selectWorld.rename")));
+                          BUTTON_DELETE_ID, width / 2 - 154, height - 28, 70,
+                          20, language->getElement("selectWorld.delete")));
     deleteButton->setTextureIcon(32, 0, 16);
     deleteButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::feather)));
 
     buttons.push_back(renameButton = new Button(
-                          BUTTON_DELETE_ID, width / 2 - 74, height - 28, 70, 20,
-                          language->getElement("selectWorld.delete")));
+                          BUTTON_RENAME_ID, width / 2 - 74, height - 28, 70, 20,
+                          language->getElement("selectWorld.rename")));
     renameButton->setTextureIcon(48, 0, 16);
     renameButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::tnt)));
 
