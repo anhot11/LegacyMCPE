@@ -443,9 +443,9 @@ void TitleScreen::render(int xm, int ym, float a) {
 
         glPushMatrix();
         glTranslatef((float)playerX, (float)playerY, 50.0f);
-        float ss = (height >= 300) ? 55.0f : 44.0f;
-        glScalef(-ss, ss, ss);
-        glRotatef(180.0f, 0, 0, 1);
+        float ss = (height >= 300) ? 80.0f : 60.0f;
+        glScalef(-ss, -ss, ss);
+        glRotatef(180.0f, 0, 1, 0);
 
         Lighting::turnOn();
 

@@ -238,6 +238,15 @@ public class VirtualControlsOverlay extends View {
     private float mDownX = 0;
     private float mDownY = 0;
     private boolean mIsDragging = false;
+    private long mMenuTouchDownTime = 0;
+    private float mLastMenuTouchX = 0;
+    private float mLastMenuTouchY = 0;
+    private final Runnable mReleaseMenuTouch = new Runnable() {
+        @Override
+        public void run() {
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
+        }
+    };
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -260,9 +269,15 @@ public class VirtualControlsOverlay extends View {
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_POINTER_DOWN:
+                    removeCallbacks(mReleaseMenuTouch);
+                    mMenuTouchDownTime = SystemClock.uptimeMillis();
+                    mLastMenuTouchX = x;
+                    mLastMenuTouchY = y;
                     SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, x, y, false);
                     return true;
                 case MotionEvent.ACTION_MOVE:
+                    mLastMenuTouchX = x;
+                    mLastMenuTouchY = y;
                     for (int i = 0; i < event.getPointerCount(); i++) {
                         SDLActivity.onNativeMouse(1, MotionEvent.ACTION_MOVE, event.getX(i), event.getY(i), false);
                     }
@@ -270,7 +285,14 @@ public class VirtualControlsOverlay extends View {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, x, y, false);
+                    mLastMenuTouchX = x;
+                    mLastMenuTouchY = y;
+                    long elapsed = SystemClock.uptimeMillis() - mMenuTouchDownTime;
+                    if (elapsed < 80) {
+                        postDelayed(mReleaseMenuTouch, 80 - elapsed);
+                    } else {
+                        mReleaseMenuTouch.run();
+                    }
                     return true;
             }
             return true;
