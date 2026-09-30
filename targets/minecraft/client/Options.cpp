@@ -227,8 +227,10 @@ void Options::set(const Options::Option* item, float fVal) {
 
 void Options::toggle(const Options::Option* option, int dir) {
     if (option == Option::INVERT_MOUSE) invertYMouse = !invertYMouse;
-    if (option == Option::RENDER_DISTANCE)
+    if (option == Option::RENDER_DISTANCE) {
         viewDistance = (viewDistance + dir) & 3;
+        if (minecraft->level) minecraft->levelRenderer->allChanged();
+    }
     if (option == Option::GUI_SCALE) guiScale = (guiScale + dir) & 3;
     if (option == Option::PARTICLES) particles = (particles + dir) % 3;
 

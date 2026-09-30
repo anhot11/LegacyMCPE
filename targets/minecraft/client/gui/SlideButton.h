@@ -17,6 +17,9 @@ private:
 public:
     SlideButton(int id, int x, int y, const Options::Option* option,
                 const std::string& msg, float value);
+    SlideButton(int id, int x, int y, int width, int height,
+                const Options::Option* option, const std::string& msg,
+                float value);
 
 protected:
     virtual int getYImage(bool hovered) override;

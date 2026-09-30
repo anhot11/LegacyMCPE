@@ -29,34 +29,39 @@ void VideoSettingsScreen::init() {
         Options::Option::RENDER_DISTANCE,
         Options::Option::AMBIENT_OCCLUSION,
         Options::Option::FRAMERATE_LIMIT,
-        Options::Option::ANAGLYPH,
+        Options::Option::RENDER_CLOUDS,
         Options::Option::VIEW_BOBBING,
         Options::Option::GUI_SCALE,
         Options::Option::ADVANCED_OPENGL,
         Options::Option::GAMMA,
         Options::Option::FOV};
 
+    int btnW = 160;
+    int btnH = 24;
+    int rowSpacing = 27;
+    int startY = height / 6 - 6;
+
     for (int i = 0; i < ITEM_COUNT; i++) {
         const Options::Option* item = items[i];
-        int xPos = width / 2 - 155 + (i % 2 * 160);
-        int yPos = height / 6 + 24 * (i / 2);
+        int xPos = width / 2 - 165 + (i % 2 * 170);
+        int yPos = startY + rowSpacing * (i / 2);
 
         if (!item->isProgress()) {
-            buttons.push_back(new SmallButton(item->getId(), xPos, yPos, item,
+            buttons.push_back(new SmallButton(item->getId(), xPos, yPos, btnW, btnH, item,
                                               options->getMessage(item)));
         } else {
-            buttons.push_back(new SlideButton(item->getId(), xPos, yPos, item,
+            buttons.push_back(new SlideButton(item->getId(), xPos, yPos, btnW, btnH, item,
                                               options->getMessage(item),
                                               options->getProgressValue(item)));
         }
     }
 
     // Profile button (Row 5): Quick preset selector for performance vs high-end
-    profileButton = new Button(300, width / 2 - 155, height / 6 + 24 * 5, 310, 20, "");
+    profileButton = new Button(300, width / 2 - 165, startY + rowSpacing * 5, 330, btnH, "");
     buttons.push_back(profileButton);
     updateProfileButton();
 
-    buttons.push_back(new Button(200, width / 2 - 100, height / 6 + 24 * 6,
+    buttons.push_back(new Button(200, width / 2 - 110, startY + rowSpacing * 6, 220, btnH,
                                  language->getElement("gui.done")));
 }
 
@@ -76,14 +81,14 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
     if (button->id == 300) {
         // Preset cycle: Rendimiento -> Equilibrado -> Alta Calidad -> Rendimiento
         if (!options->fancyGraphics && !options->ambientOcclusion && options->viewDistance >= 2) {
-            // Switch to Equilibrado
+            // Currently Rendimiento -> Switch to Equilibrado
             options->fancyGraphics = true;
             options->ambientOcclusion = true;
             options->renderClouds = true;
             options->viewDistance = 2; // Short
             options->particles = 1;
         } else if (options->fancyGraphics && options->ambientOcclusion && options->viewDistance <= 1) {
-            // Switch to Rendimiento (FPS+ for low-end phones)
+            // Currently Alta Calidad -> Switch to Rendimiento (FPS+ for low-end phones)
             options->fancyGraphics = false;
             options->ambientOcclusion = false;
             options->renderClouds = false;
@@ -91,7 +96,7 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
             options->particles = 2; // Minimal
             options->advancedOpengl = false;
         } else {
-            // Switch to Alta Calidad (High-end phones)
+            // Currently Equilibrado (or custom) -> Switch to Alta Calidad (High-end phones)
             options->fancyGraphics = true;
             options->ambientOcclusion = true;
             options->renderClouds = true;
@@ -102,6 +107,7 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
         if (minecraft->level) {
             minecraft->levelRenderer->allChanged();
         }
+        minecraft->options->save();
 
         // Refresh existing button labels
         for (auto b : buttons) {
@@ -118,6 +124,10 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
     if (button->id < 100 && (dynamic_cast<SmallButton*>(button) != nullptr)) {
         options->toggle(((SmallButton*)button)->getOption(), 1);
         button->msg = options->getMessage(Options::Option::getItem(button->id));
+        if (minecraft->level) {
+            minecraft->levelRenderer->allChanged();
+        }
+        minecraft->options->save();
         updateProfileButton();
         return;
     }

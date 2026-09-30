@@ -123,21 +123,21 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
     Language* language = Language::getInstance();
 
     // Bedrock / PE style: Enlarge buttons and place them on the LEFT side
-    int btnWidth = 150;
+    int btnWidth = 195;
     if (width >= 600) {
-        btnWidth = 170;
+        btnWidth = 210;
     } else if (width < 400) {
-        btnWidth = 120;
+        btnWidth = 175;
     }
-    int btnHeight = 24;
-    int spacing = 28;
-    int btnX = 30;
+    int btnHeight = 28;
+    int spacing = 33;
+    int btnX = 35;
     if (width >= 600) {
-        btnX = 40;
+        btnX = 45;
     }
 
-    int topPos = height / 2 - (spacing * 4) / 2 + 15;
-    if (topPos < 50) topPos = 50;
+    int topPos = height / 2 - (spacing * 4) / 2 + 10;
+    if (topPos < 45) topPos = 45;
 
     buttons.push_back(new Button(1, btnX, topPos, btnWidth, btnHeight,
                                  language->getElement("menu.singleplayer")));
@@ -429,45 +429,57 @@ void TitleScreen::render(int xm, int ym, float a) {
 
     // 3D Player Character on the right side (Bedrock / PE style)
     if (playerModel != nullptr) {
+        float ss = (height >= 300) ? 68.0f : 52.0f;
         int playerX = width * 3 / 4;
         if (width < 450) {
-            playerX = width - 75;
+            playerX = width - 80;
         }
-        int playerY = height * 3 / 4 + 15;
-        if (playerY > height - 25) {
-            playerY = height - 25;
-        }
+        // HumanoidModel origin is at neck/shoulders.
+        // Feet are at +1.5 * ss below origin.
+        // We position feet comfortably above the bottom bar.
+        int playerY = (int)((float)height - 24.0f - 1.5f * ss);
 
-        glEnable(GL_RESCALE_NORMAL);
+        // Reset OpenGL color so yellow splash text doesn't tint the skin
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         glEnable(GL_COLOR_MATERIAL);
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+        glEnable(GL_RESCALE_NORMAL);
 
         glPushMatrix();
         glTranslatef((float)playerX, (float)playerY, 50.0f);
-        float ss = (height >= 300) ? 80.0f : 60.0f;
-        glScalef(-ss, -ss, ss);
-        glRotatef(180.0f, 0, 1, 0);
+        glScalef(ss, ss, ss);
 
-        Lighting::turnOn();
+        // Gentle Bedrock/PE style angle towards screen center
+        glRotatef(22.0f, 0, 1, 0);
+
+        // Natural GUI lighting
+        Lighting::turnOnGui();
 
         // Interactive tracking & idle sway
         float xd = (float)playerX - (float)xm;
-        float yd = (float)(playerY - 45) - (float)ym;
-        float rotY = -(float)atan2(xd, 40.0f) * 20.0f;
-        float rotX = -(float)atan2(yd, 40.0f) * 12.0f;
-        rotY += sinf(vo * 0.035f) * 6.0f; // breathing sway
-
-        glRotatef(rotY, 0, 1, 0);
-        glRotatef(rotX, 1, 0, 0);
+        float yd = (float)playerY - (float)ym;
+        float lookY = -(float)atan2(xd, 50.0f) * 20.0f;
+        float lookX = -(float)atan2(yd, 50.0f) * 15.0f;
+        lookY += sinf(vo * 0.035f) * 5.0f; // breathing sway
 
         glBindTexture(GL_TEXTURE_2D,
                       minecraft->textures->loadTexture(TN_MOB_CHAR));
         glEnable(GL_ALPHA_TEST);
+        glAlphaFunc(GL_GREATER, 0.1f);
+        glDisable(GL_CULL_FACE);
 
-        playerModel->render(nullptr, 0, 0, 0, 0, 0, 1.0f / 16.0f, false);
+        playerModel->young = false;
+        playerModel->holdingRightHand = 0;
+        playerModel->holdingLeftHand = 0;
+        playerModel->sneaking = false;
+
+        // Render Steve upright with head looking towards touch/cursor
+        playerModel->render(nullptr, 0, 0, 0, lookY, lookX, 1.0f / 16.0f, false);
 
         glPopMatrix();
         Lighting::turnOff();
         glDisable(GL_RESCALE_NORMAL);
+        glDisable(GL_COLOR_MATERIAL);
     }
 
     drawString(

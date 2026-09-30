@@ -31,30 +31,35 @@ void OptionsScreen::init() {
         Options::Option::MUSIC, Options::Option::SOUND,
         Options::Option::INVERT_MOUSE, Options::Option::SENSITIVITY,
         Options::Option::DIFFICULTY};
+    int btnW = 160;
+    int btnH = 24;
+    int rowSpacing = 27;
+    int startY = height / 6 - 6;
+
     for (int i = 0; i < 5; i++) {
         const Options::Option* item = items[i];
+        int xPos = width / 2 - 165 + (position % 2 * 170);
+        int yPos = startY + rowSpacing * (position >> 1);
         if (!item->isProgress()) {
             buttons.push_back(new SmallButton(
-                item->getId(), width / 2 - 155 + position % 2 * 160,
-                height / 6 + 24 * (position >> 1), item,
+                item->getId(), xPos, yPos, btnW, btnH, item,
                 options->getMessage(item)));
         } else {
             buttons.push_back(new SlideButton(
-                item->getId(), width / 2 - 155 + position % 2 * 160,
-                height / 6 + 24 * (position >> 1), item,
+                item->getId(), xPos, yPos, btnW, btnH, item,
                 options->getMessage(item), options->getProgressValue(item)));
         }
         position++;
     }
 
-    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - 100,
-                                 height / 6 + 24 * 4 + 12,
+    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - 110,
+                                 startY + rowSpacing * 3 + 4, 220, btnH,
                                  language->getElement("options.video")));
-    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - 100,
-                                 height / 6 + 24 * 5 + 12,
+    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - 110,
+                                 startY + rowSpacing * 4 + 4, 220, btnH,
                                  language->getElement("options.controls")));
-    buttons.push_back(new Button(200, width / 2 - 100, height / 6 + 24 * 7,
-                                 language->getElement("gui.done")));
+    buttons.push_back(new Button(200, width / 2 - 110, startY + rowSpacing * 5 + 10,
+                                 220, btnH, language->getElement("gui.done")));
 }
 
 void OptionsScreen::buttonClicked(Button* button) {

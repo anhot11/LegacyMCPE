@@ -244,7 +244,7 @@ public class VirtualControlsOverlay extends View {
     private final Runnable mReleaseMenuTouch = new Runnable() {
         @Override
         public void run() {
-            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
+            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
         }
     };
 

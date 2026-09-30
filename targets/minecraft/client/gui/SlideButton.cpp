@@ -14,6 +14,15 @@ SlideButton::SlideButton(int id, int x, int y, const Options::Option* option,
     this->value = value;
 }
 
+SlideButton::SlideButton(int id, int x, int y, int width, int height,
+                         const Options::Option* option, const std::string& msg,
+                         float value)
+    : Button(id, x, y, width, height, msg) {
+    this->sliding = false;
+    this->option = option;
+    this->value = value;
+}
+
 int SlideButton::getYImage(bool hovered) { return 0; }
 
 void SlideButton::renderBg(Minecraft* minecraft, int xm, int ym) {
@@ -26,8 +35,8 @@ void SlideButton::renderBg(Minecraft* minecraft, int xm, int ym) {
         msg = minecraft->options->getMessage(option);
     }
     glColor4f(1, 1, 1, 1);
-    blit(x + (int)(value * (w - 8)), y, 0, 46 + 1 * 20, 4, 20);
-    blit(x + (int)(value * (w - 8)) + 4, y, 196, 46 + 1 * 20, 4, 20);
+    blit(x + (int)(value * (w - 8)), y, 0, 46 + 1 * 20, 4, h);
+    blit(x + (int)(value * (w - 8)) + 4, y, 196, 46 + 1 * 20, 4, h);
 }
 
 bool SlideButton::clicked(Minecraft* minecraft, int mx, int my) {

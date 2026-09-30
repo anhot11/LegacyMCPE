@@ -20,4 +20,10 @@ SmallButton::SmallButton(int id, int x, int y, const Options::Option* item,
     this->option = item;
 }
 
+SmallButton::SmallButton(int id, int x, int y, int width, int height,
+                         const Options::Option* item, const std::string& msg)
+    : Button(id, x, y, width, height, msg) {
+    this->option = item;
+}
+
 const Options::Option* SmallButton::getOption() { return option; }
