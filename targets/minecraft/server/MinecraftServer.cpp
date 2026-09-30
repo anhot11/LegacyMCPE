@@ -303,6 +303,7 @@ int MinecraftServer::runPostUpdate(void* lpParam) {
         std::unique_lock<std::mutex> lock(server->m_postProcessCS);
         int maxRequests = server->m_postProcessRequests.size();
         while (
+            maxRequests-- > 0 &&
             server->m_postProcessRequests.size() &&
             ShutdownManager::ShouldRun(ShutdownManager::ePostProcessThread)) {
             MinecraftServer::postProcessRequest request =
@@ -540,8 +541,9 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     int64_t startTime = System::currentTimeMillis();
 
-    // 4J Stu - Added this to temporarily make starting games on vita faster
-    int r = 196;
+    // Android/Mobile optimization: Spawn radius 64 blocks (4 chunks = 9x9 chunks)
+    // Avoids multi-minute CPU locks during world generation on mobile devices.
+    int r = 64;
 
     //  4J JEV: load gameRules.
     ConsoleSavePath filepath(GAME_RULE_SAVENAME);
@@ -580,12 +582,10 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
     }
 #endif
 
-    // 4J Stu - This loop is changed in 1.0.1 to only process the first level
-    // (ie the overworld), but I think we still want to do them all
-    int i = 0;
-    for (int i = 0; i < levels.size(); i++) {
-        //        logger.info("Preparing start region for level " + i);
-        if (i == 0 || settings->getBoolean("allow-nether", true)) {
+    // Android/Mobile: only generate start region for Overworld (i = 0) at world creation.
+    // Nether and The End generate on-demand when visited.
+    for (int i = 0; i < 1; i++) {
+        if (true) {
             ServerLevel* level = levels[i];
             if (levelChunksNeedConverted) {
                 // 				storage->getSaveFile()->convertLevelChunks(level)
