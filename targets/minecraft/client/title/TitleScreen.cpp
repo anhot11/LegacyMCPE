@@ -146,7 +146,7 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
                           new Button(2, btnX, topPos + spacing * 1, btnWidth, btnHeight,
                                      language->getElement("menu.multiplayer")));
     buttons.push_back(new Button(5, btnX, topPos + spacing * 2, btnWidth, btnHeight,
-                                 "\xC2\xA7" "bMods (Lunar Client)"));
+                                 "Mods (Lunar Client)"));
     buttons.push_back(new Button(0, btnX, topPos + spacing * 3, btnWidth, btnHeight,
                                  language->getElement("menu.options")));
     buttons.push_back(new Button(4, btnX, topPos + spacing * 4, btnWidth, btnHeight,
@@ -462,12 +462,26 @@ void TitleScreen::render(int xm, int ym, float a) {
         // Natural GUI lighting
         Lighting::turnOnGui();
 
-        // Interactive tracking & idle sway
-        float xd = (float)playerX - (float)xm;
-        float yd = (float)playerY - (float)ym;
-        float lookY = (float)atan2(xd, 50.0f) * 20.0f;
-        float lookX = -(float)atan2(yd, 50.0f) * 15.0f;
-        lookY += sinf(vo * 0.035f) * 5.0f; // breathing sway
+        // Interactive head tracking towards touch & idle breathing sway
+        float steveEyeX = (float)playerX;
+        float steveEyeY = (float)playerY + 0.2f * ss;
+        float dx = (float)xm - steveEyeX; // negative = left (towards buttons), positive = right
+        float dy = (float)ym - steveEyeY; // negative = up, positive = down
+
+        // Yaw: body is rotated 202 degrees (22 degrees facing screen-left).
+        // Negative dx (touch on left) turns head left (+lookY).
+        // When touching Steve directly (dx == 0), Steve looks straight out towards the player.
+        float targetAngleY = -(float)atan2(dx, 140.0f) * 57.29578f - 22.0f;
+        if (targetAngleY > 45.0f) targetAngleY = 45.0f;
+        if (targetAngleY < -45.0f) targetAngleY = -45.0f;
+        float lookY = targetAngleY + sinf(vo * 0.035f) * 3.0f;
+
+        // Pitch: negative dy (touch above) tilts head up (+lookX).
+        // Positive dy (touch below) tilts head down (-lookX).
+        float targetAngleX = -(float)atan2(dy, 140.0f) * 57.29578f;
+        if (targetAngleX > 28.0f) targetAngleX = 28.0f;
+        if (targetAngleX < -28.0f) targetAngleX = -28.0f;
+        float lookX = targetAngleX + cosf(vo * 0.035f) * 1.5f;
 
         glBindTexture(GL_TEXTURE_2D,
                       minecraft->textures->loadTexture(TN_MOB_CHAR));

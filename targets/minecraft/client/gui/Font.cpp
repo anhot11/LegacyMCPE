@@ -185,28 +185,32 @@ void Font::draw(const std::string& str, bool dropShadow) {
         // Map character
         unsigned char c = cleanStr.at(i);
 
-        // 4jcraft: this is a check for §. This was easy in UTF-16, since a
-        // single widechar can fit §, but it's encoded as 0xA7 0xC2 in UTF-8, so
-        // we need to check both characters.
-        if (i + 2 < cleanStr.length() && c == 0xC2u &&
-            (unsigned char)cleanStr[i + 1] == 0xA7u) {
-            // 4J - following block was:
-            // int colorN =
-            // "0123456789abcdefk".indexOf(str.toLowerCase().charAt(i + 1));
-            char ca = cleanStr[i + 1];
-            int colorN = 16;
+        // Check for § formatting code (supports UTF-8 0xC2 0xA7 or single byte 0xA7)
+        bool isUtf8Sec = (i + 2 < (int)cleanStr.length() && c == 0xC2u &&
+                          (unsigned char)cleanStr[i + 1] == 0xA7u);
+        bool isSingleSec = (i + 1 < (int)cleanStr.length() && c == 0xA7u);
+
+        if (isUtf8Sec || isSingleSec) {
+            char ca = isUtf8Sec ? cleanStr[i + 2] : cleanStr[i + 1];
+            int colorN = -1;
+            bool isNoise = false;
+
             if ((ca >= '0') && (ca <= '9'))
                 colorN = ca - '0';
             else if ((ca >= 'a') && (ca <= 'f'))
                 colorN = (ca - 'a') + 10;
             else if ((ca >= 'A') && (ca <= 'F'))
                 colorN = (ca - 'A') + 10;
+            else if (ca == 'k' || ca == 'K')
+                isNoise = true;
+            else if (ca == 'r' || ca == 'R')
+                colorN = 15;
 
-            if (colorN == 16) {
+            if (isNoise) {
                 noise = true;
-            } else {
+            } else if (colorN >= 0) {
                 noise = false;
-                if (colorN < 0 || colorN > 15) colorN = 15;
+                if (colorN > 15) colorN = 15;
 
                 if (dropShadow) colorN += 16;
 
@@ -215,7 +219,7 @@ void Font::draw(const std::string& str, bool dropShadow) {
                           (color & 255) / 255.0F);
             }
 
-            i += 1;
+            i += isUtf8Sec ? 2 : 1;
             continue;
         }
 
@@ -259,14 +263,15 @@ int Font::width(const std::string& str) {
     if (cleanStr == "") return 0;  // 4J - was nullptr comparison
     int len = 0;
 
-    for (int i = 0; i < cleanStr.length(); ++i) {
+    for (int i = 0; i < (int)cleanStr.length(); ++i) {
         unsigned char c = cleanStr.at(i);
 
         // skip § (used for color codes)
-        // 4jcraft: modified for UTF-8
         if (i + 2 < (int)cleanStr.length() && c == 0xC2 &&
             (unsigned char)cleanStr[i + 1] == 0xA7) {
             i += 2;
+        } else if (i + 1 < (int)cleanStr.length() && c == 0xA7) {
+            i += 1;
         } else {
             len += charWidths[c];
         }
@@ -279,6 +284,18 @@ std::string Font::sanitize(const std::string& str) {
     std::string sb = str;
 
     for (unsigned int i = 0; i < sb.length(); i++) {
+        // Skip UTF-8 section sign § (0xC2 0xA7) and following formatting character
+        if (i + 2 < sb.length() && (unsigned char)sb[i] == 0xC2 &&
+            (unsigned char)sb[i + 1] == 0xA7) {
+            i += 2;
+            continue;
+        }
+        // Skip 1-byte section sign 0xA7 and following formatting character
+        if (i + 1 < sb.length() && (unsigned char)sb[i] == 0xA7) {
+            i += 1;
+            continue;
+        }
+
         if (CharacterExists(sb[i])) {
             sb[i] = MapCharacter(sb[i]);
         } else {
@@ -424,10 +441,12 @@ bool Font::AllCharactersValid(const std::string& str) {
         unsigned char c = str.at(i);
 
         // skip § (used for color codes)
-        // 4jcraft: modified for UTF-8
         if (i + 2 < (int)str.length() && c == 0xC2 &&
             (unsigned char)str[i + 1] == 0xA7) {
             i += 2;
+            continue;
+        } else if (i + 1 < (int)str.length() && c == 0xA7) {
+            i += 1;
             continue;
         }
 

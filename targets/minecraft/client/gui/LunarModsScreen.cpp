@@ -37,10 +37,10 @@ void LunarModsScreen::init() {
     int startTabX = width / 2 - (tabW * 4 + 12) / 2;
 
     // Tabs: IDs 10 to 13
-    tabSodiumBtn = new Button(10, startTabX, tabY, tabW, tabH, "\xC2\xA7" "eSODIUM");
-    tabOptifineBtn = new Button(11, startTabX + tabW + 4, tabY, tabW, tabH, "\xC2\xA7" "6OPTIFINE");
-    tabFullbrightBtn = new Button(12, startTabX + (tabW + 4) * 2, tabY, tabW, tabH, "\xC2\xA7" "eFULLBRIGHT");
-    tabShadersBtn = new Button(13, startTabX + (tabW + 4) * 3, tabY, tabW, tabH, "\xC2\xA7" "bSHADERS");
+    tabSodiumBtn = new Button(10, startTabX, tabY, tabW, tabH, "SODIUM");
+    tabOptifineBtn = new Button(11, startTabX + tabW + 4, tabY, tabW, tabH, "OPTIFINE");
+    tabFullbrightBtn = new Button(12, startTabX + (tabW + 4) * 2, tabY, tabW, tabH, "FULLBRIGHT");
+    tabShadersBtn = new Button(13, startTabX + (tabW + 4) * 3, tabY, tabW, tabH, "SHADERS");
 
     buttons.push_back(tabSodiumBtn);
     buttons.push_back(tabOptifineBtn);
@@ -116,18 +116,18 @@ void LunarModsScreen::updateButtonLabels() {
     Options* opt = minecraft->options;
 
     // Sodium labels
-    sodiumChunkEngineBtn->msg = opt->modSodiumChunkEngine ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
-    sodiumEntityCullingBtn->msg = opt->modSodiumEntityCulling ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
-    sodiumFogOcclusionBtn->msg = opt->modSodiumFogOcclusion ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    sodiumChunkEngineBtn->msg = opt->modSodiumChunkEngine ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
+    sodiumEntityCullingBtn->msg = opt->modSodiumEntityCulling ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
+    sodiumFogOcclusionBtn->msg = opt->modSodiumFogOcclusion ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
 
     // OptiFine labels
-    optifineDynamicLightsBtn->msg = opt->modOptifineDynamicLights ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
-    optifineFastMathBtn->msg = opt->modOptifineFastMath ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
-    optifineClearWaterBtn->msg = opt->modOptifineClearWater ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
-    optifineBetterGrassBtn->msg = opt->modOptifineBetterGrass ? "\xC2\xA7" "a[ ACTIVADO ]" : "\xC2\xA7" "c[ DESACTIVADO ]";
+    optifineDynamicLightsBtn->msg = opt->modOptifineDynamicLights ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
+    optifineFastMathBtn->msg = opt->modOptifineFastMath ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
+    optifineClearWaterBtn->msg = opt->modOptifineClearWater ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
+    optifineBetterGrassBtn->msg = opt->modOptifineBetterGrass ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
 
     // Fullbright label
-    fullbrightToggleBtn->msg = opt->modFullbright ? "\xC2\xA7" "aBRILLO SIEMPRE: ENCENDIDO" : "\xC2\xA7" "cBRILLO SIEMPRE: APAGADO";
+    fullbrightToggleBtn->msg = opt->modFullbright ? "BRILLO SIEMPRE: ENCENDIDO" : "BRILLO SIEMPRE: APAGADO";
 
     // Shaders label
     static const char* s_shaderNames[] = {
