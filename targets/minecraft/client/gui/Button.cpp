@@ -1,7 +1,7 @@
 #include "Button.h"
 
+#include "minecraft/client/Lighting.h"
 #include "minecraft/client/Minecraft.h"
-#include "minecraft/client/renderer/Lighting.h"
 #include "minecraft/client/renderer/Textures.h"
 #include "minecraft/client/renderer/entity/ItemRenderer.h"
 #include "minecraft/client/resources/ResourceLocation.h"

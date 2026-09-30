@@ -64,7 +64,7 @@ void CreateWorldScreen::init() {
     Button* btnCreate = new Button(0, width / 2 - 155, height - 28, 150, 20,
                                    language->getElement("selectWorld.create"));
     btnCreate->setTextureIcon(16, 0, 16);
-    btnCreate->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workbench)));
+    btnCreate->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workBench)));
     buttons.push_back(btnCreate);
 
     Button* btnCancel = new Button(1, width / 2 + 5, height - 28, 150, 20,

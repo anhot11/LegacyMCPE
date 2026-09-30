@@ -60,7 +60,7 @@ void OptionsScreen::init() {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::jukebox)));
         } else if (item == Options::Option::SOUND) {
             btn->setTextureIcon(60, 48, 20);
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::musicBlock)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::noteblock)));
         } else if (item == Options::Option::INVERT_MOUSE) {
             btn->setTextureIcon(100, 48, 20);
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::bow)));

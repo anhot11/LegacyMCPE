@@ -152,7 +152,7 @@ void SelectWorldScreen::postInit() {
                                  150, 20,
                                  language->getElement("selectWorld.create")));
     createButton->setTextureIcon(16, 0, 16);
-    createButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workbench)));
+    createButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workBench)));
 
     buttons.push_back(cancelButton = new Button(BUTTON_CANCEL_ID, width / 2 + 4, height - 28,
                                  150, 20, language->getElement("gui.cancel")));
