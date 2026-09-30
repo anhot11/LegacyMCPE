@@ -13,8 +13,10 @@
 /subprojects/*
 !/subprojects/*.wrap
 !/subprojects/packagefiles
-/scripts/__pycache__/
 /android-launcher/.waf*
+/android-launcher/.lock-waf*
+/android-launcher/build/
+/android-launcher/android/lib/
 **/__pycache__/
 !/.clang-format
 !/.git-blame-ignore-revs

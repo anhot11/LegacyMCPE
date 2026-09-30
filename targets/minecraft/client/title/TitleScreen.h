@@ -5,6 +5,7 @@
 
 class Random;
 class Button;
+class HumanoidModel;
 
 class TitleScreen : public Screen {
 private:
@@ -14,6 +15,7 @@ private:
 
     std::string splash;
     Button* multiplayerButton;
+    HumanoidModel* playerModel;
 
     // 4jcraft: panorama
     void renderPanorama(float a);

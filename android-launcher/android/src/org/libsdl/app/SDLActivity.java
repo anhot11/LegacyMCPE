@@ -1017,12 +1017,11 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                 if (is_portrait_allowed && is_landscape_allowed) {
                     req = (w > h ? orientation_landscape : orientation_portrait);
                 } else {
-                    /* Use the only one allowed "orientation" */
                     req = (is_landscape_allowed ? orientation_landscape : orientation_portrait);
                 }
             }
         }
-
+        req = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
         Log.v(TAG, "setOrientation() requestedOrientation=" + req + " width=" + w +" height="+ h +" resizable=" + resizable + " hint=" + hint);
         mSingleton.setRequestedOrientation(req);
     }
@@ -1103,11 +1102,19 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return SDLActivity.getMotionListener().supportsRelativeMouse();
     }
 
+    public interface RelativeMouseCallback {
+        void onRelativeMouseChanged(boolean enabled);
+    }
+    public static RelativeMouseCallback mRelativeMouseCallback = null;
+
     /**
      * This method is called by SDL using JNI.
      */
     public static boolean setRelativeMouseEnabled(boolean enabled)
     {
+        if (mRelativeMouseCallback != null) {
+            mRelativeMouseCallback.onRelativeMouseChanged(enabled);
+        }
         if (enabled && !supportsRelativeMouse()) {
             return false;
         }

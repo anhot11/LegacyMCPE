@@ -14,6 +14,9 @@ protected:
 
 private:
     Options* options;
+    Button* profileButton;
+
+    void updateProfileButton();
 
 public:
     VideoSettingsScreen(Screen* lastScreen, Options* options);

@@ -69,7 +69,8 @@
     -->
     <application android:label="Minecraft Console Edition (4jcraft)"
         android:allowBackup="true"
-        android:hardwareAccelerated="true" >
+        android:hardwareAccelerated="true"
+        android:allowNativeHeapPointerTagging="false" >
 <!--    android:icon="@drawable/ic_launcher" -->
 
         <!-- Example of setting SDL hints from AndroidManifest.xml:
@@ -78,8 +79,8 @@
         <activity android:name=".MainActivity"
             android:exported="true"
             android:label="Minecraft Console Edition (4jcraft)" 
-            android:screenOrientation="portrait">
-            <meta-data android:name="android.max_aspect" android:value="2.1" />
+            android:screenOrientation="sensorLandscape">
+            <meta-data android:name="android.max_aspect" android:value="2.5" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -96,8 +97,8 @@
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
-            android:screenOrientation="landscape">
-            <meta-data android:name="android.max_aspect" android:value="2.1" />
+            android:screenOrientation="sensorLandscape">
+            <meta-data android:name="android.max_aspect" android:value="2.5" />
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>

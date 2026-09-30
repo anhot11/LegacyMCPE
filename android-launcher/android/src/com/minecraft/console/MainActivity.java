@@ -20,6 +20,7 @@ public class MainActivity extends Activity
     @Override
     protected void onCreate( Bundle savedInstanceState ) 
     {
+        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
 

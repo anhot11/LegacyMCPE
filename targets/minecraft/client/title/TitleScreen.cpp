@@ -16,12 +16,14 @@
 #include "minecraft/IGameServices.h"
 #include "minecraft/client/BufferedImage.h"
 #include "minecraft/client/ClientConstants.h"
+#include "minecraft/client/Lighting.h"
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/JoinMultiplayerScreen.h"
 #include "minecraft/client/gui/OptionsScreen.h"
 #include "minecraft/client/gui/SelectWorldScreen.h"
+#include "minecraft/client/model/HumanoidModel.h"
 #include "minecraft/client/renderer/Tesselator.h"
 #include "minecraft/client/renderer/Textures.h"
 #include "minecraft/client/resources/ResourceLocation.h"
@@ -37,6 +39,7 @@ TitleScreen::TitleScreen() {
     // 4J - added initialisers
     vo = 0;
     multiplayerButton = nullptr;
+    playerModel = new HumanoidModel(0.0f);
 
     splash = "missingno";
     //    try {	// 4J - removed try/catch
@@ -119,28 +122,32 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
 
     Language* language = Language::getInstance();
 
-    const int spacing = 24;
-    const int topPos = height / 4 + spacing * 2;
+    // Bedrock / PE style: Enlarge buttons and place them on the LEFT side
+    int btnWidth = 150;
+    if (width >= 600) {
+        btnWidth = 170;
+    } else if (width < 400) {
+        btnWidth = 120;
+    }
+    int btnHeight = 24;
+    int spacing = 28;
+    int btnX = 30;
+    if (width >= 600) {
+        btnX = 40;
+    }
 
-    buttons.push_back(new Button(1, width / 2 - 100, topPos,
+    int topPos = height / 2 - (spacing * 4) / 2 + 15;
+    if (topPos < 50) topPos = 50;
+
+    buttons.push_back(new Button(1, btnX, topPos, btnWidth, btnHeight,
                                  language->getElement("menu.singleplayer")));
     buttons.push_back(multiplayerButton =
-                          new Button(2, width / 2 - 100, topPos + spacing * 1,
+                          new Button(2, btnX, topPos + spacing * 1, btnWidth, btnHeight,
                                      language->getElement("menu.multiplayer")));
-    buttons.push_back(new Button(3, width / 2 - 100, topPos + spacing * 2,
-                                 language->getElement("menu.mods")));
-
-    if (minecraft->appletMode) {
-        buttons.push_back(new Button(0, width / 2 - 100, topPos + spacing * 3,
-                                     language->getElement("menu.options")));
-    } else {
-        buttons.push_back(new Button(0, width / 2 - 100,
-                                     topPos + spacing * 3 + 12, 98, 20,
-                                     language->getElement("menu.options")));
-        buttons.push_back(new Button(4, width / 2 + 2,
-                                     topPos + spacing * 3 + 12, 98, 20,
-                                     language->getElement("menu.quit")));
-    }
+    buttons.push_back(new Button(0, btnX, topPos + spacing * 2, btnWidth, btnHeight,
+                                 language->getElement("menu.options")));
+    buttons.push_back(new Button(4, btnX, topPos + spacing * 3, btnWidth, btnHeight,
+                                 language->getElement("menu.quit")));
 
     if (minecraft->user == nullptr) {
         multiplayerButton->active = false;
@@ -393,7 +400,7 @@ void TitleScreen::render(int xm, int ym, float a) {
 
     int logoWidth = 155 + 119;
     int logoX = width / 2 - logoWidth / 2;
-    int logoY = 30;
+    int logoY = 16;
 
     // 4jcraft: gradient for classic panorama
 #ifdef CLASSIC_PANORAMA
@@ -408,7 +415,7 @@ void TitleScreen::render(int xm, int ym, float a) {
     blit(logoX + 155, logoY + 0, 0, 45, 155, 44);
     t->color(0xffffff);
     glPushMatrix();
-    glTranslatef((float)width / 2 + 90, 70, 0);
+    glTranslatef((float)width / 2 + 90, (float)logoY + 40, 0);
 
     glRotatef(-20, 0, 0, 1);
     float sss = 1.8f - std::abs(sinf(System::currentTimeMillis() % 1000 /
@@ -419,6 +426,49 @@ void TitleScreen::render(int xm, int ym, float a) {
     glScalef(sss, sss, sss);
     drawCenteredString(font, splash, 0, -8, 0xffff00);
     glPopMatrix();
+
+    // 3D Player Character on the right side (Bedrock / PE style)
+    if (playerModel != nullptr) {
+        int playerX = width * 3 / 4;
+        if (width < 450) {
+            playerX = width - 75;
+        }
+        int playerY = height * 3 / 4 + 15;
+        if (playerY > height - 25) {
+            playerY = height - 25;
+        }
+
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_COLOR_MATERIAL);
+
+        glPushMatrix();
+        glTranslatef((float)playerX, (float)playerY, 50.0f);
+        float ss = (height >= 300) ? 55.0f : 44.0f;
+        glScalef(-ss, ss, ss);
+        glRotatef(180.0f, 0, 0, 1);
+
+        Lighting::turnOn();
+
+        // Interactive tracking & idle sway
+        float xd = (float)playerX - (float)xm;
+        float yd = (float)(playerY - 45) - (float)ym;
+        float rotY = -(float)atan2(xd, 40.0f) * 20.0f;
+        float rotX = -(float)atan2(yd, 40.0f) * 12.0f;
+        rotY += sinf(vo * 0.035f) * 6.0f; // breathing sway
+
+        glRotatef(rotY, 0, 1, 0);
+        glRotatef(rotX, 1, 0, 0);
+
+        glBindTexture(GL_TEXTURE_2D,
+                      minecraft->textures->loadTexture(TN_MOB_CHAR));
+        glEnable(GL_ALPHA_TEST);
+
+        playerModel->render(nullptr, 0, 0, 0, 0, 0, 1.0f / 16.0f, false);
+
+        glPopMatrix();
+        Lighting::turnOff();
+        glDisable(GL_RESCALE_NORMAL);
+    }
 
     drawString(
         font, ClientConstants::VERSION_STRING, 2, height - 10,
