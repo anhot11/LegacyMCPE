@@ -16,3 +16,5 @@ IPlatformRenderer& PlatformRenderer_get();
 }
 
 #define PlatformRenderer (::platform_internal::PlatformRenderer_get())
+
+void PlatformRenderer_SetShaderPreset(int preset);

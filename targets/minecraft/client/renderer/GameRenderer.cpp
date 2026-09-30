@@ -888,6 +888,18 @@ void GameRenderer::updateLightTexture(float a) {
         bool hasNV = player->hasEffect(MobEffect::nightVision);
         float nvScale = hasNV ? getNightVisionScale(player, a) : 0.0f;
 
+        bool hasDynamicLight = false;
+        if (mc->options->modOptifineDynamicLights && mc->player && mc->player->inventory) {
+            ItemInstance* sel = mc->player->inventory->getSelected();
+            if (sel != nullptr) {
+                int id = sel->id;
+                // Torch=50, Redstone Torch=76, Glowstone=89, JackOLantern=91, LavaBucket=327
+                if (id == 50 || id == 76 || id == 89 || id == 91 || id == 327) {
+                    hasDynamicLight = true;
+                }
+            }
+        }
+
         uint64_t key = 0;
         key |= (uint64_t)light_q8(skyDarken1);
         key |= (uint64_t)light_q8(blr) << 8;
@@ -896,6 +908,8 @@ void GameRenderer::updateLightTexture(float a) {
         key |= (uint64_t)light_q8(nvScale) << 32;
         key |= (uint64_t)(level->skyFlashTime > 0 ? 1 : 0) << 40;
         key |= (uint64_t)((unsigned int)level->dimension->id & 0xFF) << 48;
+        key |= (uint64_t)(mc->options->modFullbright ? 1 : 0) << 56;
+        key |= (uint64_t)(hasDynamicLight ? 1 : 0) << 57;
 
         if (s_lightTexKeyValid[j] && s_lightTexKey[j] == key) continue;
         s_lightTexKey[j] = key;
@@ -903,8 +917,12 @@ void GameRenderer::updateLightTexture(float a) {
         for (int i = 0; i < 256; i++) {
             float darken = skyDarken1 * 0.95f + 0.05f;
             float sky = level->dimension->brightnessRamp[i / 16] * darken;
+            int blockIdx = i % 16;
+            if (hasDynamicLight && blockIdx < 10) {
+                blockIdx = 10;
+            }
             float block =
-                level->dimension->brightnessRamp[i % 16] * (blr * 0.1f + 1.5f);
+                level->dimension->brightnessRamp[blockIdx] * (blr * 0.1f + 1.5f);
 
             if (level->skyFlashTime > 0) {
                 sky = level->dimension->brightnessRamp[i / 16];
@@ -960,7 +978,7 @@ void GameRenderer::updateLightTexture(float a) {
             if (_g > 1) _g = 1;
             if (_b > 1) _b = 1;
 
-            float brightness = 0.0f;  // 4J - TODO - was mc->options->gamma;
+            float brightness = (mc->options->modFullbright) ? 1.0f : mc->options->gamma;
 
             float ir = 1 - _r;
             float ig = 1 - _g;
@@ -972,9 +990,15 @@ void GameRenderer::updateLightTexture(float a) {
             _g = _g * (1 - brightness) + ig * brightness;
             _b = _b * (1 - brightness) + ib * brightness;
 
-            _r = _r * 0.96f + 0.03f;
-            _g = _g * 0.96f + 0.03f;
-            _b = _b * 0.96f + 0.03f;
+            if (mc->options->modFullbright) {
+                _r = 1.0f;
+                _g = 1.0f;
+                _b = 1.0f;
+            } else {
+                _r = _r * 0.96f + 0.03f;
+                _g = _g * 0.96f + 0.03f;
+                _b = _b * 0.96f + 0.03f;
+            }
 
             if (_r > 1) _r = 1;
             if (_r < 0) _r = 0;
@@ -1040,6 +1064,7 @@ void GameRenderer::render(float a, bool bFirst) {
 
     if (mc->noRender) return;
     GameRenderer::anaglyph3d = mc->options->anaglyph3d;
+    PlatformRenderer_SetShaderPreset(mc->options->modShaderPreset);
 
     glViewport(0, 0, mc->width, mc->height);  // 4J - added
     ScreenSizeCalculator ssc(mc->options, mc->width, mc->height);
@@ -2077,7 +2102,9 @@ void GameRenderer::setupFog(int i, float alpha) {
         glFogf(GL_FOG_DENSITY, 0.1f);  // was 0.06
     } else if (t > 0 && Tile::tiles[t]->material == Material::water) {
         glFogi(GL_FOG_MODE, GL_EXP);
-        if (player->hasEffect(MobEffect::waterBreathing)) {
+        if (mc->options->modOptifineClearWater) {
+            glFogf(GL_FOG_DENSITY, 0.015f);
+        } else if (player->hasEffect(MobEffect::waterBreathing)) {
             glFogf(GL_FOG_DENSITY, 0.05f);  // was 0.06
         } else {
             glFogf(GL_FOG_DENSITY,

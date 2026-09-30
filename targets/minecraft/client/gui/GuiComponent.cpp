@@ -149,3 +149,35 @@ void GuiComponent::blit(int x, int y, int sx, int sy, int w, int h) {
                 (float)((sx + 0) * us), (float)((sy + 0) * vs));
     t->end();
 }
+
+void GuiComponent::blit(int x, int y, int sx, int sy, int w, int h, int tw, int th) {
+    float us = 1 / 256.0f;
+    float vs = 1 / 256.0f;
+    Tesselator* t = Tesselator::getInstance();
+    t->begin();
+
+    const float extraShift = 0.75f;
+    float dx = (extraShift * (float)Minecraft::GetInstance()->width) /
+               (float)Minecraft::GetInstance()->width_phys;
+    dx /= Gui::currentGuiScaleFactor;
+    float dy = extraShift / Gui::currentGuiScaleFactor;
+
+    float fx = (floorf((float)x * Gui::currentGuiScaleFactor)) /
+               Gui::currentGuiScaleFactor;
+    float fy = (floorf((float)y * Gui::currentGuiScaleFactor)) /
+               Gui::currentGuiScaleFactor;
+    float fw = (floorf((float)w * Gui::currentGuiScaleFactor)) /
+               Gui::currentGuiScaleFactor;
+    float fh = (floorf((float)h * Gui::currentGuiScaleFactor)) /
+               Gui::currentGuiScaleFactor;
+
+    t->vertexUV(fx + 0 - dx, fy + fh - dy, (float)(blitOffset),
+                (float)((sx + 0) * us), (float)((sy + th) * vs));
+    t->vertexUV(fx + fw - dx, fy + fh - dy, (float)(blitOffset),
+                (float)((sx + tw) * us), (float)((sy + th) * vs));
+    t->vertexUV(fx + fw - dx, fy + 0 - dy, (float)(blitOffset),
+                (float)((sx + tw) * us), (float)((sy + 0) * vs));
+    t->vertexUV(fx + 0 - dx, fy + 0 - dy, (float)(blitOffset),
+                (float)((sx + 0) * us), (float)((sy + 0) * vs));
+    t->end();
+}

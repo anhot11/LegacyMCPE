@@ -31,14 +31,14 @@ void OptionsScreen::init() {
         Options::Option::MUSIC, Options::Option::SOUND,
         Options::Option::INVERT_MOUSE, Options::Option::SENSITIVITY,
         Options::Option::DIFFICULTY};
-    int btnW = 150;
-    int btnH = 20;
-    int rowSpacing = 24;
-    int startY = height / 6 - 8;
+    int btnW = (width >= 450) ? 190 : 155;
+    int btnH = 26;
+    int rowSpacing = 30;
+    int startY = height / 6 - 6;
 
     for (int i = 0; i < 5; i++) {
         const Options::Option* item = items[i];
-        int xPos = width / 2 - 155 + (position % 2 * 160);
+        int xPos = width / 2 - (btnW + 5) + (position % 2 * (btnW + 10));
         int yPos = startY + rowSpacing * (position >> 1);
         if (!item->isProgress()) {
             buttons.push_back(new SmallButton(
@@ -52,14 +52,15 @@ void OptionsScreen::init() {
         position++;
     }
 
-    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - 100,
-                                 startY + rowSpacing * 3 + 4, 200, btnH,
+    int botW = (width >= 450) ? 230 : 190;
+    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - botW / 2,
+                                 startY + rowSpacing * 3 + 2, botW, btnH,
                                  language->getElement("options.video")));
-    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - 100,
-                                 startY + rowSpacing * 4 + 4, 200, btnH,
+    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - botW / 2,
+                                 startY + rowSpacing * 4 + 2, botW, btnH,
                                  language->getElement("options.controls")));
-    buttons.push_back(new Button(200, width / 2 - 100, startY + rowSpacing * 5 + 10,
-                                 200, btnH, language->getElement("gui.done")));
+    buttons.push_back(new Button(200, width / 2 - botW / 2, startY + rowSpacing * 5 + 6,
+                                 botW, btnH, language->getElement("gui.done")));
 }
 
 void OptionsScreen::buttonClicked(Button* button) {

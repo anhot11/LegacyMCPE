@@ -20,4 +20,5 @@ public:
     void drawString(Font* font, const std::string& str, int x, int y,
                     int color);
     void blit(int x, int y, int sx, int sy, int w, int h);
+    void blit(int x, int y, int sx, int sy, int w, int h, int tw, int th);
 };

@@ -35,8 +35,19 @@ void SlideButton::renderBg(Minecraft* minecraft, int xm, int ym) {
         msg = minecraft->options->getMessage(option);
     }
     glColor4f(1, 1, 1, 1);
-    blit(x + (int)(value * (w - 8)), y, 0, 46 + 1 * 20, 4, h);
-    blit(x + (int)(value * (w - 8)) + 4, y, 196, 46 + 1 * 20, 4, h);
+    int v0 = 46 + 1 * 20;
+    int thumbX = x + (int)(value * (w - 8));
+    if (h == 20) {
+        blit(thumbX, y, 0, v0, 4, h);
+        blit(thumbX + 4, y, 196, v0, 4, h);
+    } else {
+        int hTop = h / 2;
+        int hBot = h - hTop;
+        blit(thumbX, y, 0, v0, 4, hTop, 4, 10);
+        blit(thumbX + 4, y, 196, v0, 4, hTop, 4, 10);
+        blit(thumbX, y + hTop, 0, v0 + 10, 4, hBot, 4, 10);
+        blit(thumbX + 4, y + hTop, 196, v0 + 10, 4, hBot, 4, 10);
+    }
 }
 
 bool SlideButton::clicked(Minecraft* minecraft, int mx, int my) {

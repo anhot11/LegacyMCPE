@@ -176,6 +176,18 @@ void Options::init() {
     particles = 0;
     fov = 0;
     gamma = 0;
+
+    // Lunar Client & Performance Mods defaults
+    modFullbright = false;
+    modSodiumChunkEngine = true;
+    modSodiumEntityCulling = true;
+    modSodiumFogOcclusion = true;
+    modOptifineFastMath = true;
+    modOptifineDynamicLights = true;
+    modOptifineClearWater = false;
+    modOptifineBetterGrass = false;
+    modShaderPreset = 0;
+    modTexturePack = 0;
 }
 
 Options::Options(Minecraft* minecraft, File workingDirectory) {
@@ -387,7 +399,10 @@ void Options::load() {
             cmds[1] = "";
         } else {
             cmds[0] = line.substr(0, splitpos);
-            cmds[1] = line.substr(splitpos, line.length() - splitpos);
+            cmds[1] = line.substr(splitpos + 1);
+        }
+        if (cmds[1].length() > 0 && cmds[1][0] == ':') {
+            cmds[1] = cmds[1].substr(1);
         }
 
         if (cmds[0] == "music") music = readFloat(cmds[1]);
@@ -409,6 +424,18 @@ void Options::load() {
         if (cmds[0] == "clouds") renderClouds = cmds[1] == "true";
         if (cmds[0] == "skin") skin = cmds[1];
         if (cmds[0] == "lastServer") lastMpIp = cmds[1];
+
+        // Lunar Client & Mod options
+        if (cmds[0] == "modFullbright") modFullbright = cmds[1] == "true";
+        if (cmds[0] == "modSodiumChunkEngine") modSodiumChunkEngine = cmds[1] == "true";
+        if (cmds[0] == "modSodiumEntityCulling") modSodiumEntityCulling = cmds[1] == "true";
+        if (cmds[0] == "modSodiumFogOcclusion") modSodiumFogOcclusion = cmds[1] == "true";
+        if (cmds[0] == "modOptifineFastMath") modOptifineFastMath = cmds[1] == "true";
+        if (cmds[0] == "modOptifineDynamicLights") modOptifineDynamicLights = cmds[1] == "true";
+        if (cmds[0] == "modOptifineClearWater") modOptifineClearWater = cmds[1] == "true";
+        if (cmds[0] == "modOptifineBetterGrass") modOptifineBetterGrass = cmds[1] == "true";
+        if (cmds[0] == "modShaderPreset") modShaderPreset = fromWString<int>(cmds[1]);
+        if (cmds[0] == "modTexturePack") modTexturePack = fromWString<int>(cmds[1]);
 
         for (int i = 0; i < keyMappings_length; i++) {
             if (cmds[0] == ("key_" + keyMappings[i]->name)) {
@@ -447,28 +474,40 @@ void Options::save() {
     dos.writeChars("sound:" + toWString<float>(sound) + "\n");
     dos.writeChars(
         "invertYMouse:" + std::string(invertYMouse ? "true" : "false") + "\n");
-    dos.writeChars("mouseSensitivity:" + toWString<float>(sensitivity));
-    dos.writeChars("fov:" + toWString<float>(fov));
-    dos.writeChars("gamma:" + toWString<float>(gamma));
-    dos.writeChars("viewDistance:" + toWString<int>(viewDistance));
-    dos.writeChars("guiScale:" + toWString<int>(guiScale));
-    dos.writeChars("particles:" + toWString<int>(particles));
-    dos.writeChars("bobView:" + std::string(bobView ? "true" : "false"));
-    dos.writeChars("anaglyph3d:" + std::string(anaglyph3d ? "true" : "false"));
+    dos.writeChars("mouseSensitivity:" + toWString<float>(sensitivity) + "\n");
+    dos.writeChars("fov:" + toWString<float>(fov) + "\n");
+    dos.writeChars("gamma:" + toWString<float>(gamma) + "\n");
+    dos.writeChars("viewDistance:" + toWString<int>(viewDistance) + "\n");
+    dos.writeChars("guiScale:" + toWString<int>(guiScale) + "\n");
+    dos.writeChars("particles:" + toWString<int>(particles) + "\n");
+    dos.writeChars("bobView:" + std::string(bobView ? "true" : "false") + "\n");
+    dos.writeChars("anaglyph3d:" + std::string(anaglyph3d ? "true" : "false") + "\n");
     dos.writeChars("advancedOpengl:" +
-                   std::string(advancedOpengl ? "true" : "false"));
-    dos.writeChars("fpsLimit:" + toWString<int>(framerateLimit));
-    dos.writeChars("difficulty:" + toWString<int>(difficulty));
+                   std::string(advancedOpengl ? "true" : "false") + "\n");
+    dos.writeChars("fpsLimit:" + toWString<int>(framerateLimit) + "\n");
+    dos.writeChars("difficulty:" + toWString<int>(difficulty) + "\n");
     dos.writeChars("fancyGraphics:" +
-                   std::string(fancyGraphics ? "true" : "false"));
-    dos.writeChars("ao:" + std::string(ambientOcclusion ? "true" : "false"));
-    dos.writeChars("clouds:" + toWString<bool>(renderClouds));
-    dos.writeChars("skin:" + skin);
-    dos.writeChars("lastServer:" + lastMpIp);
+                   std::string(fancyGraphics ? "true" : "false") + "\n");
+    dos.writeChars("ao:" + std::string(ambientOcclusion ? "true" : "false") + "\n");
+    dos.writeChars("clouds:" + toWString<bool>(renderClouds) + "\n");
+    dos.writeChars("skin:" + skin + "\n");
+    dos.writeChars("lastServer:" + lastMpIp + "\n");
+
+    // Lunar Client & Mod options
+    dos.writeChars("modFullbright:" + std::string(modFullbright ? "true" : "false") + "\n");
+    dos.writeChars("modSodiumChunkEngine:" + std::string(modSodiumChunkEngine ? "true" : "false") + "\n");
+    dos.writeChars("modSodiumEntityCulling:" + std::string(modSodiumEntityCulling ? "true" : "false") + "\n");
+    dos.writeChars("modSodiumFogOcclusion:" + std::string(modSodiumFogOcclusion ? "true" : "false") + "\n");
+    dos.writeChars("modOptifineFastMath:" + std::string(modOptifineFastMath ? "true" : "false") + "\n");
+    dos.writeChars("modOptifineDynamicLights:" + std::string(modOptifineDynamicLights ? "true" : "false") + "\n");
+    dos.writeChars("modOptifineClearWater:" + std::string(modOptifineClearWater ? "true" : "false") + "\n");
+    dos.writeChars("modOptifineBetterGrass:" + std::string(modOptifineBetterGrass ? "true" : "false") + "\n");
+    dos.writeChars("modShaderPreset:" + toWString<int>(modShaderPreset) + "\n");
+    dos.writeChars("modTexturePack:" + toWString<int>(modTexturePack) + "\n");
 
     for (int i = 0; i < keyMappings_length; i++) {
         dos.writeChars("key_" + keyMappings[i]->name + ":" +
-                       toWString<int>(keyMappings[i]->key));
+                       toWString<int>(keyMappings[i]->key) + "\n");
     }
 
     dos.close();

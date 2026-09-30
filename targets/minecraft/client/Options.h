@@ -113,6 +113,18 @@ public:
     float fov;
     float gamma;
 
+    // Lunar Client & Performance Mods
+    bool modFullbright;
+    bool modSodiumChunkEngine;
+    bool modSodiumEntityCulling;
+    bool modSodiumFogOcclusion;
+    bool modOptifineFastMath;
+    bool modOptifineDynamicLights;
+    bool modOptifineClearWater;
+    bool modOptifineBetterGrass;
+    int modShaderPreset;
+    int modTexturePack;
+
     void init();  // 4J added
     Options(Minecraft* minecraft, File workingDirectory);
     Options();

@@ -621,6 +621,23 @@ void LevelRenderer::renderEntities(Vec3* cam, Culler* culler, float a) {
             (entity->shouldRender(cam) &&
              (entity->noCulling || culler->isVisible(&entity->bb)));
 
+        // Sodium Native Entity Culling
+        if (shouldRender && mc->options->modSodiumEntityCulling && entity != mc->cameraTargetPlayer) {
+            double dx = entity->x - cam->x;
+            double dy = entity->y - cam->y;
+            double dz = entity->z - cam->z;
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq > 32.0 * 32.0 && (entity->instanceof(eTYPE_ITEM) || entity->instanceof(eTYPE_EXPERIENCEORB))) {
+                culledEntities++;
+                continue;
+            }
+            double maxDist = (mc->options->viewDistance >= 2) ? 48.0 : 72.0;
+            if (distSq > maxDist * maxDist) {
+                culledEntities++;
+                continue;
+            }
+        }
+
         // Render the mob if the mob's leash holder is within the culler
         if (!shouldRender && entity->instanceof(eTYPE_MOB)) {
             std::shared_ptr<Mob> mob = std::dynamic_pointer_cast<Mob>(entity);

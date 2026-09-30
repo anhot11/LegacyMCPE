@@ -21,6 +21,7 @@
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/JoinMultiplayerScreen.h"
+#include "minecraft/client/gui/LunarModsScreen.h"
 #include "minecraft/client/gui/OptionsScreen.h"
 #include "minecraft/client/gui/SelectWorldScreen.h"
 #include "minecraft/client/model/HumanoidModel.h"
@@ -123,30 +124,32 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
     Language* language = Language::getInstance();
 
     // Bedrock / PE style: Enlarge buttons and place them on the LEFT side
-    int btnWidth = 195;
+    int btnWidth = 225;
     if (width >= 600) {
-        btnWidth = 210;
+        btnWidth = 235;
     } else if (width < 400) {
-        btnWidth = 175;
+        btnWidth = 190;
     }
-    int btnHeight = 28;
-    int spacing = 33;
+    int btnHeight = 32;
+    int spacing = 37;
     int btnX = 35;
     if (width >= 600) {
         btnX = 45;
     }
 
-    int topPos = height / 2 - (spacing * 4) / 2 + 10;
-    if (topPos < 45) topPos = 45;
+    int topPos = height / 2 - (spacing * 5) / 2 + 10;
+    if (topPos < 38) topPos = 38;
 
     buttons.push_back(new Button(1, btnX, topPos, btnWidth, btnHeight,
                                  language->getElement("menu.singleplayer")));
     buttons.push_back(multiplayerButton =
                           new Button(2, btnX, topPos + spacing * 1, btnWidth, btnHeight,
                                      language->getElement("menu.multiplayer")));
-    buttons.push_back(new Button(0, btnX, topPos + spacing * 2, btnWidth, btnHeight,
+    buttons.push_back(new Button(5, btnX, topPos + spacing * 2, btnWidth, btnHeight,
+                                 "\xa7b\xa7lMods (Lunar Client)"));
+    buttons.push_back(new Button(0, btnX, topPos + spacing * 3, btnWidth, btnHeight,
                                  language->getElement("menu.options")));
-    buttons.push_back(new Button(4, btnX, topPos + spacing * 3, btnWidth, btnHeight,
+    buttons.push_back(new Button(4, btnX, topPos + spacing * 4, btnWidth, btnHeight,
                                  language->getElement("menu.quit")));
 
     if (minecraft->user == nullptr) {
@@ -183,6 +186,11 @@ void TitleScreen::buttonClicked(Button* button) {
         Log::info(
             "TitleScreen::buttonClicked() Exit Game if (button->id == 4)\n");
         PlatformRenderer.Close();  // minecraft->stop();
+    }
+    if (button->id == 5) {
+        Log::info(
+            "TitleScreen::buttonClicked() 'Mods (Lunar Client)' if (button->id == 5)\n");
+        minecraft->setScreen(new LunarModsScreen(this));
     }
 }
 
@@ -429,20 +437,19 @@ void TitleScreen::render(int xm, int ym, float a) {
 
     // 3D Player Character on the right side (Bedrock / PE style)
     if (playerModel != nullptr) {
-        float ss = (height >= 300) ? 68.0f : 52.0f;
+        float ss = (height >= 300) ? 96.0f : 80.0f;
         int playerX = width * 3 / 4;
         if (width < 450) {
-            playerX = width - 80;
+            playerX = width - 90;
         }
         // HumanoidModel origin is at neck/shoulders.
         // Feet are at +1.5 * ss below origin.
-        // We position feet comfortably above the bottom bar.
-        int playerY = (int)((float)height - 24.0f - 1.5f * ss);
+        // We position feet grounded above the bottom copyright bar.
+        int playerY = (int)((float)height - 18.0f - 1.5f * ss);
 
-        // Reset OpenGL color so yellow splash text doesn't tint the skin
+        // Reset OpenGL color so yellow splash text or previous GUI draw doesn't tint the skin
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        glEnable(GL_COLOR_MATERIAL);
-        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+        glDisable(GL_COLOR_MATERIAL);
         glEnable(GL_RESCALE_NORMAL);
 
         glPushMatrix();

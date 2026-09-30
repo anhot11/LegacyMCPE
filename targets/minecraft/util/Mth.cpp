@@ -23,13 +23,11 @@ static std::array<float, SIN_TAB_CNT> makeSinTable() {
 static const std::array<float, SIN_TAB_CNT> sinTable = makeSinTable();
 
 float Mth::sin(float i) {
-    return sinTable[(int32_t)::fmodf(i * SIN_SCALE, (float)SIN_TAB_CNT) &
-                    (SIN_TAB_CNT - 1)];
+    return sinTable[(int32_t)(i * SIN_SCALE) & (SIN_TAB_CNT - 1)];
 }
 
 float Mth::cos(float i) {
-    return sinTable[(int32_t)::fmodf(i * SIN_SCALE + (float)SIN_TAB_CNT / 4,
-                                     (float)SIN_TAB_CNT) &
+    return sinTable[(int32_t)(i * SIN_SCALE + (float)SIN_TAB_CNT * 0.25f) &
                     (SIN_TAB_CNT - 1)];
 }
 

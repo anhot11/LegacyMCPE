@@ -209,6 +209,7 @@ struct ShaderUniforms {
     GLint uTex0 = -1, uTex1 = -1, uGlobalLM = -1;
     GLint uUseTexture = -1;
     GLint uInvGamma = -1;
+    GLint uShaderPreset = -1;
     GLint uChunkOffset = -1;
 
     void build(const char* vs, const char* fs) {
@@ -245,6 +246,7 @@ struct ShaderUniforms {
         L(uGlobalLM);
         L(uUseTexture);
         L(uInvGamma);
+        L(uShaderPreset);
         L(uChunkOffset);
 #undef L
 
@@ -529,8 +531,22 @@ static void pushRenderState() {
             glUniform2fv(s_shader.uGlobalLM, 1, glm::value_ptr(s_rs.globalLM));
         s_rs_dirty_mask = 0;
     }
+    if (s_shader.uShaderPreset >= 0) {
+        static int s_appliedPreset = -1;
+        extern int s_currentShaderPreset;
+        if (s_appliedPreset != s_currentShaderPreset) {
+            s_appliedPreset = s_currentShaderPreset;
+            glUniform1i(s_shader.uShaderPreset, s_appliedPreset);
+        }
+    }
     flushMatrices();
 }
+
+int s_currentShaderPreset = 0;
+void PlatformRenderer_SetShaderPreset(int preset) {
+    s_currentShaderPreset = preset;
+}
+
 
 static GLuint s_sVAO_std = 0, s_sVBO_std = 0;
 static GLsizeiptr s_streamVBOSize = 0;

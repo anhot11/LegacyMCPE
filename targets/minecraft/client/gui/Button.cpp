@@ -55,9 +55,24 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
 
     bool hovered = xm >= x && ym >= y && xm < x + w && ym < y + h;
     int yImage = getYImage(hovered);
+    int v0 = 46 + yImage * 20;
 
-    blit(x, y, 0, 46 + yImage * 20, w / 2, h);
-    blit(x + w / 2, y, 200 - w / 2, 46 + yImage * 20, w / 2, h);
+    if (h == 20 && w <= 200) {
+        blit(x, y, 0, v0, w / 2, h);
+        blit(x + w / 2, y, 200 - w / 2, v0, w - w / 2, h);
+    } else {
+        int hTop = h / 2;
+        int hBot = h - hTop;
+        int twHalf = std::min(w / 2, 100);
+
+        // Top half (samples texture v0 .. v0 + 10)
+        blit(x, y, 0, v0, w / 2, hTop, twHalf, 10);
+        blit(x + w / 2, y, 200 - twHalf, v0, w - w / 2, hTop, twHalf, 10);
+
+        // Bottom half (samples texture v0 + 10 .. v0 + 20)
+        blit(x, y + hTop, 0, v0 + 10, w / 2, hBot, twHalf, 10);
+        blit(x + w / 2, y + hTop, 200 - twHalf, v0 + 10, w - w / 2, hBot, twHalf, 10);
+    }
 
     renderBg(minecraft, xm, ym);
 
