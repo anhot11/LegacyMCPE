@@ -8,6 +8,7 @@
 #include "minecraft/client/Options.h"
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Screen.h"
+#include "minecraft/client/renderer/LevelRenderer.h"
 #include "minecraft/locale/Language.h"
 
 // 4jcraft
