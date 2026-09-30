@@ -1,4 +1,4 @@
-﻿#include "SoundEngine.h"
+#include "SoundEngine.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -119,13 +119,15 @@ struct MiniAudioSound {
 };
 
 SoundEngine::SoundEngine()
-    : m_audio(std::make_unique<SoundEngineMiniAudio>()) {}
+    : m_audio(std::make_unique<SoundEngineMiniAudio>()),
+      m_bAudioInitialized(false) {}
 SoundEngine::~SoundEngine() = default;
 std::vector<MiniAudioSound*> m_activeSounds;
 void SoundEngine::init(Options* pOptions) {
     app.DebugPrintf("---SoundEngine::init\n");
     random = new Random();
     *m_audio = SoundEngineMiniAudio{};
+    m_bAudioInitialized = false;
     m_musicStreamActive = false;
     m_StreamState = eMusicStreamState_Idle;
     m_iMusicDelay = 0;
@@ -157,9 +159,11 @@ void SoundEngine::init(Options* pOptions) {
     if (ma_engine_init(&m_audio->engineConfig, &m_audio->engine) !=
         MA_SUCCESS) {
         app.DebugPrintf("Failed to initialize miniaudio engine\n");
+        m_bAudioInitialized = false;
         return;
     }
 
+    m_bAudioInitialized = true;
     ma_engine_set_volume(&m_audio->engine, 1.0f);
 
     m_MasterMusicVolume = 1.0f;
@@ -169,11 +173,16 @@ void SoundEngine::init(Options* pOptions) {
 
     m_bSystemMusicPlaying = false;
 }
-void SoundEngine::destroy() { ma_engine_uninit(&m_audio->engine); }
+void SoundEngine::destroy() {
+    if (m_bAudioInitialized) {
+        ma_engine_uninit(&m_audio->engine);
+        m_bAudioInitialized = false;
+    }
+}
 
 void SoundEngine::play(int iSound, float x, float y, float z, float volume,
                        float pitch) {
-    if (iSound == -1) return;
+    if (!m_bAudioInitialized || iSound == -1) return;
     char szId[256];
     strncpy(szId, wchSoundNames[iSound], 255);
     for (int i = 0; szId[i]; i++)
@@ -239,6 +248,7 @@ void SoundEngine::play(int iSound, float x, float y, float z, float volume,
 }
 
 void SoundEngine::playUI(int iSound, float volume, float pitch) {
+    if (!m_bAudioInitialized) return;
     char szIdentifier[256];
     if (iSound >= eSFX_MAX)
         strncpy(szIdentifier, wchSoundNames[iSound], 255);
@@ -354,6 +364,7 @@ int SoundEngine::getMusicID(const std::string& name) {
 void SoundEngine::playStreaming(const std::string& name, float x, float y,
                                 float z, float volume, float pitch,
                                 bool bMusicDelay) {
+    if (!m_bAudioInitialized) return;
     m_StreamingAudioInfo.x = x;
     m_StreamingAudioInfo.y = y;
     m_StreamingAudioInfo.z = z;
@@ -410,6 +421,7 @@ void SoundEngine::playStreaming(const std::string& name, float x, float y,
 }
 int SoundEngine::OpenStreamThreadProc(void* lpParameter) {
     SoundEngine* soundEngine = (SoundEngine*)lpParameter;
+    if (!soundEngine || !soundEngine->m_bAudioInitialized) return 0;
 
     const char* ext = strrchr(soundEngine->m_szStreamName, '.');
 
@@ -441,6 +453,7 @@ int SoundEngine::OpenStreamThreadProc(void* lpParameter) {
     return 0;
 }
 void SoundEngine::playMusicTick() {
+    if (!m_bAudioInitialized) return;
     static float fMusicVol = 0.0f;
     fMusicVol = getMasterMusicVolume();
 
@@ -665,6 +678,7 @@ void SoundEngine::playMusicTick() {
 }
 
 void SoundEngine::updateMiniAudio() {
+    if (!m_bAudioInitialized) return;
     if (m_validListenerCount == 1) {
         for (size_t i = 0; i < MAX_LOCAL_PLAYERS; i++) {
             if (m_ListenerA[i].bValid) {
@@ -746,6 +760,7 @@ void SoundEngine::updateMiniAudio() {
 }
 
 void SoundEngine::tick(std::shared_ptr<Mob>* players, float a) {
+    if (!m_bAudioInitialized) return;
     // update the listener positions
     int listenerCount = 0;
     if (players) {

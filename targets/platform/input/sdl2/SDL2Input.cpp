@@ -24,6 +24,26 @@
 #include "SDL2CursorPatch.h"
 #endif
 
+#ifdef __ANDROID__
+#include <jni.h>
+#include "SDL_system.h"
+
+extern "C" float Android_GetDeviceTemperature() {
+    JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+    if (!env) return 36.0f;
+    jclass cls = env->FindClass("org/libsdl/app/SDLActivity");
+    if (!cls) return 36.0f;
+    jmethodID mid = env->GetStaticMethodID(cls, "getDeviceTemperature", "()F");
+    if (!mid) {
+        env->DeleteLocalRef(cls);
+        return 36.0f;
+    }
+    jfloat temp = env->CallStaticFloatMethod(cls, mid);
+    env->DeleteLocalRef(cls);
+    return (float)temp;
+}
+#endif
+
 namespace platform_internal {
 IPlatformInput& PlatformInput_get() {
     static SDL2Input instance;
@@ -272,10 +292,11 @@ void SDL2Input::Initialise(int, unsigned char, unsigned char, unsigned char) {
     // i really gotta name these vars better..
     s_scrollTicksForButtonPressed = s_scrollTicksForGetValue =
         s_scrollTicksSnap = 0;
-    s_snapTaken = s_scrollSnapTaken = s_prevMenuDisplayed = false;
+    s_snapTaken = s_scrollSnapTaken = false;
+    s_prevMenuDisplayed = true;
 
     if (s_sdlInitialized) {
-        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_SetRelativeMouseMode(SDL_FALSE);
 
         // looks for controller
         for (int i = 0; i < SDL_NumJoysticks(); i++) {

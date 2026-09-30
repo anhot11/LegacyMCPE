@@ -152,6 +152,7 @@ private:
     // type.
     std::unique_ptr<SoundEngineMiniAudio> m_audio;
     bool m_musicStreamActive;
+    bool m_bAudioInitialized;
 
     static char m_szSoundPath[];
     static char m_szMusicPath[];

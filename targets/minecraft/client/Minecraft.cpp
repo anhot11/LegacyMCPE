@@ -473,21 +473,20 @@ File Minecraft::getWorkingDirectory(const std::string& applicationName) {
     const char* homedir = getenv("USERPROFILE");
 #endif
 
-    if (homedir != nullptr) {
-        File workingDirectory(std::string(homedir), '.' + applicationName + '/');
-
-        if (!workingDirectory.exists()) {
-            if (!workingDirectory.mkdirs()) {
-                Log::info("The working directory could not be created.\n");
-                assert(0);
-            }
-        }
-
-        return workingDirectory;
-    } else {
-        Log::info("Could not locate user's home directory. This platform is likely missing an implementation of Minecraft::getWorkingDirectory.\n");
-        assert(0);
+#ifdef __ANDROID__
+    if (homedir == nullptr || strlen(homedir) == 0) {
+        homedir = "/sdcard/LegacyMCPE";
     }
+#endif
+    if (homedir == nullptr || strlen(homedir) == 0) {
+        homedir = ".";
+    }
+
+    File workingDirectory(std::string(homedir), '.' + applicationName + '/');
+    if (!workingDirectory.exists()) {
+        workingDirectory.mkdirs();
+    }
+    return workingDirectory;
 }
 
 LevelStorageSource* Minecraft::getLevelSource() { return levelSource; }
@@ -1730,14 +1729,8 @@ void Minecraft::run_middle() {
                     static float s_cachedDeviceTemp = 0.0f;
                     if (++s_thermalCheckCounter >= 60) {
                         s_thermalCheckCounter = 0;
-                        FILE* f = fopen("/sys/class/power_supply/battery/temp", "r");
-                        if (f) {
-                            int t = 0;
-                            if (fscanf(f, "%d", &t) == 1) {
-                                s_cachedDeviceTemp = (float)t / 10.0f;
-                            }
-                            fclose(f);
-                        }
+                        extern "C" float Android_GetDeviceTemperature();
+                        s_cachedDeviceTemp = Android_GetDeviceTemperature();
                     }
 
                     // Mode 1: Moderado (45*C) -> sleep 4ms if temp >= 45*C

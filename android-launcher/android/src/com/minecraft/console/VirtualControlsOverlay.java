@@ -128,6 +128,7 @@ public class VirtualControlsOverlay extends View {
         super(context);
         this.mSurface = surface;
         this.mDensity = context.getResources().getDisplayMetrics().density;
+        this.mBitmapPaint.setFilterBitmap(false);
 
         mFpsPaint.setTextAlign(Paint.Align.LEFT);
         mFpsPaint.setFakeBoldText(true);

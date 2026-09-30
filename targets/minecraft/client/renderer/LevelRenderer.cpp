@@ -486,6 +486,16 @@ void LevelRenderer::allChanged(int playerIndex) {
     // to render for
     int dist = (int)sqrtf((float)PLAYER_RENDER_AREA / (float)activePlayers());
 
+#ifdef __ANDROID__
+    if (mc->options) {
+        int vd = mc->options->viewDistance;
+        if (vd >= 3) dist = 8;        // Tiny: 8x8 = 64 chunk columns (1024 subchunks)
+        else if (vd == 2) dist = 10;  // Short: 10x10 = 100 chunk columns (1600 subchunks)
+        else if (vd == 1) dist = 14;  // Normal: 14x14 = 196 chunk columns
+        else dist = 18;               // Far: 18x18 = 324 chunk columns
+    }
+#endif
+
     // AP - poor little Vita just can't cope with such a big area
 
     lastPlayerCount[playerIndex] = activePlayers();
@@ -1179,6 +1189,7 @@ void LevelRenderer::renderHaloRing(float alpha) {
 }
 
 void LevelRenderer::renderClouds(float alpha) {
+    if (mc->options && !mc->options->renderClouds) return;
     int iTicks = ticks;
     int playerIndex = mc->player->GetXboxPad();
 

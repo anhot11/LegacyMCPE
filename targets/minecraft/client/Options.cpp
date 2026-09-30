@@ -192,12 +192,20 @@ void Options::init() {
     touchControlStyle = 0;
     touchControlScale = 1;
     touchControlOpacity = 1;
+
+#ifdef __ANDROID__
+    fancyGraphics = false;
+    renderClouds = false;
+    viewDistance = 2; // Short (8 chunks for 60fps mobile)
+    particles = 1;
+#endif
 }
 
 Options::Options(Minecraft* minecraft, File workingDirectory) {
     init();
     this->minecraft = minecraft;
     optionsFile = File(workingDirectory, "options.txt");
+    load();
 }
 
 Options::Options() { init(); }
@@ -394,6 +402,12 @@ void Options::load() {
            "")  // 4J - was check against nullptr - do we need to distinguish
                 // between empty lines and a fail here?
     {
+        std::string cleanLine = "";
+        for (char c : line) {
+            if (c != 0 && c != '\r') cleanLine += c;
+        }
+        if (cleanLine.empty()) continue;
+        line = cleanLine;
         // 4J - removed try/catch
         //            try {
         std::string cmds[2];

@@ -949,6 +949,19 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         mSingleton.sendCommand(COMMAND_CHANGE_WINDOW_STYLE, fullscreen ? 1 : 0);
     }
 
+    public static float getDeviceTemperature() {
+        try {
+            if (mSingleton != null) {
+                android.content.Intent intent = mSingleton.registerReceiver(null, new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
+                if (intent != null) {
+                    int temp = intent.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0);
+                    if (temp > 0) return (float)temp / 10.0f;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return 36.0f;
+    }
+
     /**
      * This method is called by SDL using JNI.
      * This is a static method for JNI convenience, it calls a non-static method
