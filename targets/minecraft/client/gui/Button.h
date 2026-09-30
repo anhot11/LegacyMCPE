@@ -8,12 +8,8 @@ class Minecraft;
 class ItemInstance;
 
 class Button : public GuiComponent {
-protected:
-    int w;
-    int h;
-
 public:
-    int x, y;
+    int x, y, w, h;
     std::string msg;
     int id;
     bool active;

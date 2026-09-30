@@ -237,7 +237,7 @@ void SelectWorldScreen::buttonClicked(Button* button) {
                         port = 25565;
                     }
                 }
-                minecraft->setScreen(new ConnectScreen(this, host, port));
+                minecraft->setScreen(new ConnectScreen(minecraft, host, port));
             }
         }
         return;
