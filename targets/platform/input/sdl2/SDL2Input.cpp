@@ -73,6 +73,7 @@ static bool s_snapTaken = false;
 static float s_accumRelX = 0, s_accumRelY = 0;
 static float s_snapRelX = 0, s_snapRelY = 0;
 static int s_mouseX = 0, s_mouseY = 0;
+static bool s_hasTouchPos = false;
 
 static int s_scrollTicksForButtonPressed = 0;
 static int s_scrollTicksForGetValue = 0;
@@ -208,8 +209,18 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
             s_scrollTicksForGetValue--;
             s_scrollTicksForButtonPressed--;
         }
-    } else if (e->type == SDL_FINGERDOWN) {
-        s_mouseLeftQueued = true;
+    } else if (e->type == SDL_FINGERDOWN || e->type == SDL_FINGERMOTION) {
+        SDL_Window* win = SDL_GL_GetCurrentWindow();
+        int w = 0, h = 0;
+        if (win) SDL_GetWindowSize(win, &w, &h);
+        if (w > 0 && h > 0) {
+            s_mouseX = (int)(e->tfinger.x * (float)w);
+            s_mouseY = (int)(e->tfinger.y * (float)h);
+            s_hasTouchPos = true;
+        }
+        if (e->type == SDL_FINGERDOWN) {
+            s_mouseLeftQueued = true;
+        }
     } else if (e->type == SDL_MOUSEMOTION) {
         s_accumRelX += (float)e->motion.xrel;
         s_accumRelY += (float)e->motion.yrel;
@@ -342,7 +353,12 @@ void SDL2Input::Tick() {
         if (sc > 0 && sc < KEY_COUNT) s_keysCurrent[sc] = state[sc] != 0;
     }
 
-    Uint32 btns = SDL_GetMouseState(&s_mouseX, &s_mouseY);
+    int mx = 0, my = 0;
+    Uint32 btns = SDL_GetMouseState(&mx, &my);
+    if (btns != 0 || !s_hasTouchPos) {
+        s_mouseX = mx;
+        s_mouseY = my;
+    }
     s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) || s_mouseLeftQueued;
     s_mouseLeftQueued = false;
     s_mouseRightCurrent = (btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
