@@ -132,6 +132,10 @@
 
 class ChunkSource;
 
+#ifdef __ANDROID__
+extern "C" float Android_GetDeviceTemperature();
+#endif
+
 // #define DISABLE_SPU_CODE
 // 4J Turning this on will change the graph at the bottom of the debug overlay
 // to show the number of packets of each type added per fram
@@ -1729,7 +1733,6 @@ void Minecraft::run_middle() {
                     static float s_cachedDeviceTemp = 0.0f;
                     if (++s_thermalCheckCounter >= 60) {
                         s_thermalCheckCounter = 0;
-                        extern "C" float Android_GetDeviceTemperature();
                         s_cachedDeviceTemp = Android_GetDeviceTemperature();
                     }
 
