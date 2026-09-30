@@ -489,9 +489,9 @@ void TitleScreen::render(int xm, int ym, float a) {
         if (targetAngleY < -45.0f) targetAngleY = -45.0f;
         float lookY = targetAngleY + sinf(vo * 0.035f) * 3.0f;
 
-        // Pitch: negative dy (touch above) tilts head up (+lookX).
-        // Positive dy (touch below) tilts head down (-lookX).
-        float targetAngleX = -(float)atan2(dy, 140.0f) * 57.29578f;
+        // Pitch: negative dy (touch above) tilts head up (-lookX).
+        // Positive dy (touch below) tilts head down (+lookX).
+        float targetAngleX = (float)atan2(dy, 140.0f) * 57.29578f;
         if (targetAngleX > 28.0f) targetAngleX = 28.0f;
         if (targetAngleX < -28.0f) targetAngleX = -28.0f;
         float lookX = targetAngleX + cosf(vo * 0.035f) * 1.5f;

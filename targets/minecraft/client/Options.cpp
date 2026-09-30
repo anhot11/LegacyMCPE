@@ -189,6 +189,9 @@ void Options::init() {
     modShaderPreset = 0;
     modTexturePack = 0;
     modThermalProtection = 0;
+    touchControlStyle = 0;
+    touchControlScale = 1;
+    touchControlOpacity = 1;
 }
 
 Options::Options(Minecraft* minecraft, File workingDirectory) {
@@ -438,6 +441,9 @@ void Options::load() {
         if (cmds[0] == "modShaderPreset") modShaderPreset = fromWString<int>(cmds[1]);
         if (cmds[0] == "modTexturePack") modTexturePack = fromWString<int>(cmds[1]);
         if (cmds[0] == "modThermalProtection") modThermalProtection = fromWString<int>(cmds[1]);
+        if (cmds[0] == "touchControlStyle") touchControlStyle = fromWString<int>(cmds[1]);
+        if (cmds[0] == "touchControlScale") touchControlScale = fromWString<int>(cmds[1]);
+        if (cmds[0] == "touchControlOpacity") touchControlOpacity = fromWString<int>(cmds[1]);
 
         for (int i = 0; i < keyMappings_length; i++) {
             if (cmds[0] == ("key_" + keyMappings[i]->name)) {
@@ -507,6 +513,9 @@ void Options::save() {
     dos.writeChars("modShaderPreset:" + toWString<int>(modShaderPreset) + "\n");
     dos.writeChars("modTexturePack:" + toWString<int>(modTexturePack) + "\n");
     dos.writeChars("modThermalProtection:" + toWString<int>(modThermalProtection) + "\n");
+    dos.writeChars("touchControlStyle:" + toWString<int>(touchControlStyle) + "\n");
+    dos.writeChars("touchControlScale:" + toWString<int>(touchControlScale) + "\n");
+    dos.writeChars("touchControlOpacity:" + toWString<int>(touchControlOpacity) + "\n");
 
     for (int i = 0; i < keyMappings_length; i++) {
         dos.writeChars("key_" + keyMappings[i]->name + ":" +

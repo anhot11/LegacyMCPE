@@ -125,6 +125,9 @@ public:
     int modShaderPreset;
     int modTexturePack;
     int modThermalProtection;
+    int touchControlStyle;
+    int touchControlScale;
+    int touchControlOpacity;
 
     void init();  // 4J added
     Options(Minecraft* minecraft, File workingDirectory);

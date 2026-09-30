@@ -77,25 +77,28 @@ void LunarModsScreen::init() {
     if (!iconTexturePack) iconTexturePack = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workBench));
     if (!iconLunarStar) iconLunarStar = std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar));
     if (!iconThermal) iconThermal = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::ice));
+    if (!iconControls) iconControls = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::lever));
 
-    int tabW = 76;
-    if (width < 450) tabW = 62;
+    int tabW = 66;
+    if (width < 450) tabW = 54;
     int tabH = 20;
     int tabY = 32;
-    int startTabX = width / 2 - (tabW * 5 + 16) / 2;
+    int startTabX = width / 2 - (tabW * 6 + 20) / 2;
 
-    // Tabs: IDs 10 to 14
+    // Tabs: IDs 10 to 15
     tabSodiumBtn = new Button(10, startTabX, tabY, tabW, tabH, "SODIUM");
     tabOptifineBtn = new Button(11, startTabX + (tabW + 4) * 1, tabY, tabW, tabH, "OPTIFINE");
     tabFullbrightBtn = new Button(12, startTabX + (tabW + 4) * 2, tabY, tabW, tabH, "FULLBRIGHT");
     tabShadersBtn = new Button(13, startTabX + (tabW + 4) * 3, tabY, tabW, tabH, "SHADERS");
     tabThermalBtn = new Button(14, startTabX + (tabW + 4) * 4, tabY, tabW, tabH, "TERMAL");
+    tabControlsBtn = new Button(15, startTabX + (tabW + 4) * 5, tabY, tabW, tabH, "CONTROLES");
 
     buttons.push_back(tabSodiumBtn);
     buttons.push_back(tabOptifineBtn);
     buttons.push_back(tabFullbrightBtn);
     buttons.push_back(tabShadersBtn);
     buttons.push_back(tabThermalBtn);
+    buttons.push_back(tabControlsBtn);
 
     int cardW = (width >= 560) ? 480 : (width - 30);
     int cardX = width / 2 - cardW / 2;
@@ -142,6 +145,14 @@ void LunarModsScreen::init() {
     thermalProtectionBtn = new Button(60, thBtnX, startY + 95, thBtnW, 30, "");
     buttons.push_back(thermalProtectionBtn);
 
+    // Tab 5: Controls settings (IDs 70, 71, 72)
+    controlStyleBtn = new Button(70, btnX, startY + 6, btnW, btnH, "");
+    controlScaleBtn = new Button(71, btnX, startY + spacing + 6, btnW, btnH, "");
+    controlOpacityBtn = new Button(72, btnX, startY + spacing * 2 + 6, btnW, btnH, "");
+    buttons.push_back(controlStyleBtn);
+    buttons.push_back(controlScaleBtn);
+    buttons.push_back(controlOpacityBtn);
+
     // Done button (ID 200)
     int doneW = (width >= 400) ? 240 : 180;
     doneBtn = new Button(200, width / 2 - doneW / 2, height - 34, doneW, 26, "GUARDAR Y VOLVER");
@@ -167,6 +178,10 @@ void LunarModsScreen::updateButtonVisibility() {
     texturePackBtn->visible = (currentTab == 3);
 
     thermalProtectionBtn->visible = (currentTab == 4);
+
+    controlStyleBtn->visible = (currentTab == 5);
+    controlScaleBtn->visible = (currentTab == 5);
+    controlOpacityBtn->visible = (currentTab == 5);
 }
 
 void LunarModsScreen::updateButtonLabels() {
@@ -218,6 +233,36 @@ void LunarModsScreen::updateButtonLabels() {
     int tmode = opt->modThermalProtection;
     if (tmode < 0 || tmode > 3) tmode = 0;
     thermalProtectionBtn->msg = s_thermalModes[tmode];
+
+    // Controls labels
+    static const char* s_ctrlStyles[] = {
+        "[ MODERNO BEDROCK ]",
+        "[ CRUCETA CLASICA PE ]",
+        "[ JOYSTICK + ACCION ]"
+    };
+    int cStyle = opt->touchControlStyle;
+    if (cStyle < 0 || cStyle > 2) cStyle = 0;
+    controlStyleBtn->msg = s_ctrlStyles[cStyle];
+
+    static const char* s_ctrlScales[] = {
+        "[ PEQUENO (80%) ]",
+        "[ NORMAL (100%) ]",
+        "[ GRANDE (125%) ]",
+        "[ EXTRA (150%) ]"
+    };
+    int cScale = opt->touchControlScale;
+    if (cScale < 0 || cScale > 3) cScale = 1;
+    controlScaleBtn->msg = s_ctrlScales[cScale];
+
+    static const char* s_ctrlOpacities[] = {
+        "[ BAJA (35%) ]",
+        "[ MEDIA (65%) ]",
+        "[ ALTA (90%) ]",
+        "[ SOLIDA (100%) ]"
+    };
+    int cOpacity = opt->touchControlOpacity;
+    if (cOpacity < 0 || cOpacity > 3) cOpacity = 1;
+    controlOpacityBtn->msg = s_ctrlOpacities[cOpacity];
 }
 
 void LunarModsScreen::buttonClicked(Button* button) {
@@ -225,7 +270,7 @@ void LunarModsScreen::buttonClicked(Button* button) {
     Options* opt = minecraft->options;
 
     // Tab buttons
-    if (button->id >= 10 && button->id <= 14) {
+    if (button->id >= 10 && button->id <= 15) {
         currentTab = button->id - 10;
         updateButtonVisibility();
         return;
@@ -270,6 +315,15 @@ void LunarModsScreen::buttonClicked(Button* button) {
     // Thermal Protection toggle
     else if (button->id == 60) {
         opt->modThermalProtection = (opt->modThermalProtection + 1) % 4;
+    }
+
+    // Controls settings
+    else if (button->id == 70) {
+        opt->touchControlStyle = (opt->touchControlStyle + 1) % 3;
+    } else if (button->id == 71) {
+        opt->touchControlScale = (opt->touchControlScale + 1) % 4;
+    } else if (button->id == 72) {
+        opt->touchControlOpacity = (opt->touchControlOpacity + 1) % 4;
     }
 
     // Save and Exit
@@ -352,9 +406,9 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     drawCenteredString(font, "Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
 
     // Active tab indicator
-    int tabW = 76;
-    if (width < 450) tabW = 62;
-    int startTabX = width / 2 - (tabW * 5 + 16) / 2;
+    int tabW = 66;
+    if (width < 450) tabW = 54;
+    int startTabX = width / 2 - (tabW * 6 + 20) / 2;
     int curTabX = startTabX + currentTab * (tabW + 4);
     fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8); // Lunar Sky-Blue accent line
 
@@ -451,6 +505,14 @@ void LunarModsScreen::render(int xm, int ym, float a) {
 
         drawCenteredString(font, tempStr, width / 2, startY + 66, tempColor);
         drawCenteredString(font, "Regula los FPS y carga si el telefono se sobrecalienta.", width / 2, startY + 78, 0x8899aa);
+    } else if (currentTab == 5) {
+        // Tab 5: Controls settings cards
+        renderCard(cardX, startY, cardW, cardH, iconControls, 1.6f,
+                   "Estilo de Controles", "Moderno (Bedrock), Cruceta Clasica o Joystick");
+        renderCard(cardX, startY + spacing, cardW, cardH, iconControls, 1.6f,
+                   "Tamano de Botones", "Escala de los controles virtuales en pantalla");
+        renderCard(cardX, startY + spacing * 2, cardW, cardH, iconControls, 1.6f,
+                   "Transparencia / Opacidad", "Nivel de visibilidad de los controles tactiles");
     }
 
     // Bottom bar divider

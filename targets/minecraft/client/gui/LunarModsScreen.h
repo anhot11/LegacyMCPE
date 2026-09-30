@@ -33,6 +33,7 @@ private:
     std::shared_ptr<ItemInstance> iconTexturePack;
     std::shared_ptr<ItemInstance> iconLunarStar;
     std::shared_ptr<ItemInstance> iconThermal;
+    std::shared_ptr<ItemInstance> iconControls;
 
     // Tab navigation buttons
     Button* tabSodiumBtn;
@@ -40,6 +41,7 @@ private:
     Button* tabFullbrightBtn;
     Button* tabShadersBtn;
     Button* tabThermalBtn;
+    Button* tabControlsBtn;
 
     // Sodium buttons
     Button* sodiumChunkEngineBtn;
@@ -61,6 +63,11 @@ private:
 
     // Thermal Protection button
     Button* thermalProtectionBtn;
+
+    // Controls settings buttons
+    Button* controlStyleBtn;
+    Button* controlScaleBtn;
+    Button* controlOpacityBtn;
 
     // Bottom action
     Button* doneBtn;
