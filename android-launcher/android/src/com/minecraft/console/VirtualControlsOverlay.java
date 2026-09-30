@@ -67,8 +67,8 @@ public class VirtualControlsOverlay extends View {
 
     // Action buttons
     private final VButton btnJump = new VButton("▲", KeyEvent.KEYCODE_SPACE, 1);
-    private final VButton btnMine = new VButton("⚔", KeyEvent.KEYCODE_ENTER, 6); // Attack / Break
-    private final VButton btnUse = new VButton("👆", KeyEvent.KEYCODE_F, 7);       // Place / Interact
+    private final VButton btnMine = new VButton("⚔", 0, 6); // Attack / Break
+    private final VButton btnUse = new VButton("👆", 0, 7);       // Place / Interact
     private final VButton btnInv = new VButton("INV", KeyEvent.KEYCODE_E, 0);     // Inventory
     private final VButton btnDrop = new VButton("DROP", KeyEvent.KEYCODE_Q, 0);   // Drop item
 
@@ -98,6 +98,8 @@ public class VirtualControlsOverlay extends View {
     private boolean mJoyRightPressed = false;
 
     private boolean mControlsVisible = false;
+    private boolean mInGameRelativeMouse = false;
+    private boolean mManualForceVisible = false;
     private float mDensity = 1.0f;
 
     // FPS Counter variables
@@ -134,7 +136,8 @@ public class VirtualControlsOverlay extends View {
                 post(new Runnable() {
                     @Override
                     public void run() {
-                        mControlsVisible = enabled;
+                        mInGameRelativeMouse = enabled;
+                        mControlsVisible = mManualForceVisible || mInGameRelativeMouse;
                         invalidate();
                     }
                 });
@@ -715,27 +718,53 @@ public class VirtualControlsOverlay extends View {
     private final Runnable mReleaseMenuTouch = new Runnable() {
         @Override
         public void run() {
-            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
+            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, mLastMenuTouchX, mLastMenuTouchY, false);
         }
     };
+
+    private void pressButton(VButton btn, int pointerId) {
+        btn.pressed = true;
+        btn.pointerId = pointerId;
+        if (btn == btnMine) {
+            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, false);
+        } else if (btn == btnUse) {
+            SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, false);
+        } else if (btn.keyCode != 0) {
+            SDLActivity.onNativeKeyDown(btn.keyCode);
+        }
+    }
+
+    private void releaseButton(VButton btn) {
+        btn.pressed = false;
+        btn.pointerId = -1;
+        if (btn == btnMine) {
+            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, false);
+        } else if (btn == btnUse) {
+            SDLActivity.onNativeMouse(2, MotionEvent.ACTION_UP, 0, 0, false);
+        } else if (btn.keyCode != 0) {
+            SDLActivity.onNativeKeyUp(btn.keyCode);
+        }
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
         int actionIndex = event.getActionIndex();
         int pointerId = event.getPointerId(actionIndex);
+        float x = event.getX(actionIndex);
+        float y = event.getY(actionIndex);
+
+        // Always check the 🎮 toggle button first
+        if (btnToggleUI.bounds.contains(x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                mManualForceVisible = !mManualForceVisible;
+                mControlsVisible = mManualForceVisible || mInGameRelativeMouse;
+                invalidate();
+            }
+            return true;
+        }
 
         if (!mControlsVisible) {
-            float x = event.getX(actionIndex);
-            float y = event.getY(actionIndex);
-
-            // Allow clicking the 🎮 toggle button to show controls
-            if (action == MotionEvent.ACTION_DOWN && btnToggleUI.bounds.contains(x, y)) {
-                mControlsVisible = true;
-                invalidate();
-                return true;
-            }
-
             // Direct touch in menu: translate to native mouse clicks
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
@@ -772,16 +801,6 @@ public class VirtualControlsOverlay extends View {
         switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN: {
-                float x = event.getX(actionIndex);
-                float y = event.getY(actionIndex);
-
-                // Check toggle button
-                if (btnToggleUI.bounds.contains(x, y)) {
-                    mControlsVisible = !mControlsVisible;
-                    invalidate();
-                    return true;
-                }
-
                 // Mode 2 Joystick touch capture
                 if (mControlStyle == 2 && mJoyPointerId == -1) {
                     float dist = (float) Math.hypot(x - mJoyCenterX, y - mJoyCenterY);
@@ -796,12 +815,8 @@ public class VirtualControlsOverlay extends View {
 
                 // Check Button hits
                 VButton hit = findButton(x, y);
-                if (hit != null) {
-                    hit.pressed = true;
-                    hit.pointerId = pointerId;
-                    if (hit.keyCode != 0) {
-                        SDLActivity.onNativeKeyDown(hit.keyCode);
-                    }
+                if (hit != null && hit != btnToggleUI) {
+                    pressButton(hit, pointerId);
                     invalidate();
                     return true;
                 }
@@ -813,14 +828,11 @@ public class VirtualControlsOverlay extends View {
             }
 
             case MotionEvent.ACTION_MOVE: {
-                boolean anyHandled = false;
-
                 // Update Joystick if active
                 if (mControlStyle == 2 && mJoyActive) {
                     for (int i = 0; i < event.getPointerCount(); i++) {
                         if (event.getPointerId(i) == mJoyPointerId) {
                             updateJoystickInput(event.getX(i), event.getY(i));
-                            anyHandled = true;
                             break;
                         }
                     }
@@ -829,21 +841,16 @@ public class VirtualControlsOverlay extends View {
                 // Update Buttons
                 for (int i = 0; i < event.getPointerCount(); i++) {
                     int pId = event.getPointerId(i);
-                    float x = event.getX(i);
-                    float y = event.getY(i);
+                    float curX = event.getX(i);
+                    float curY = event.getY(i);
 
                     for (VButton btn : allButtons) {
                         if (btn.pointerId == pId) {
-                            boolean stillInside = btn.bounds.contains(x, y);
+                            boolean stillInside = btn.bounds.contains(curX, curY);
                             if (!stillInside && btn.pressed) {
-                                btn.pressed = false;
-                                btn.pointerId = -1;
-                                if (btn.keyCode != 0) {
-                                    SDLActivity.onNativeKeyUp(btn.keyCode);
-                                }
+                                releaseButton(btn);
                                 invalidate();
                             }
-                            anyHandled = true;
                         }
                     }
                 }
@@ -871,28 +878,13 @@ public class VirtualControlsOverlay extends View {
                 boolean buttonHit = false;
                 for (VButton btn : allButtons) {
                     if (btn.pointerId == pointerId) {
-                        btn.pressed = false;
-                        btn.pointerId = -1;
-                        if (btn.keyCode != 0) {
-                            SDLActivity.onNativeKeyUp(btn.keyCode);
-                        }
+                        releaseButton(btn);
                         invalidate();
                         buttonHit = true;
                     }
                 }
                 if (buttonHit) {
                     return true;
-                }
-
-                if (!mIsDragging && action == MotionEvent.ACTION_UP) {
-                    // Tap on screen: trigger action click for GUI buttons and world interact
-                    SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
-                    postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
-                        }
-                    }, 50);
                 }
                 break;
             }
