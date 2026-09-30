@@ -36,14 +36,14 @@ void VideoSettingsScreen::init() {
         Options::Option::GAMMA,
         Options::Option::FOV};
 
-    int btnW = 160;
-    int btnH = 24;
-    int rowSpacing = 27;
-    int startY = height / 6 - 6;
+    int btnW = 150;
+    int btnH = 20;
+    int rowSpacing = 24;
+    int startY = height / 6 - 8;
 
     for (int i = 0; i < ITEM_COUNT; i++) {
         const Options::Option* item = items[i];
-        int xPos = width / 2 - 165 + (i % 2 * 170);
+        int xPos = width / 2 - 155 + (i % 2 * 160);
         int yPos = startY + rowSpacing * (i / 2);
 
         if (!item->isProgress()) {
@@ -57,11 +57,11 @@ void VideoSettingsScreen::init() {
     }
 
     // Profile button (Row 5): Quick preset selector for performance vs high-end
-    profileButton = new Button(300, width / 2 - 165, startY + rowSpacing * 5, 330, btnH, "");
+    profileButton = new Button(300, width / 2 - 155, startY + rowSpacing * 5, 310, btnH, "");
     buttons.push_back(profileButton);
     updateProfileButton();
 
-    buttons.push_back(new Button(200, width / 2 - 110, startY + rowSpacing * 6, 220, btnH,
+    buttons.push_back(new Button(200, width / 2 - 100, startY + rowSpacing * 6, 200, btnH,
                                  language->getElement("gui.done")));
 }
 

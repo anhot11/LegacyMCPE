@@ -449,8 +449,8 @@ void TitleScreen::render(int xm, int ym, float a) {
         glTranslatef((float)playerX, (float)playerY, 50.0f);
         glScalef(ss, ss, ss);
 
-        // Gentle Bedrock/PE style angle towards screen center
-        glRotatef(22.0f, 0, 1, 0);
+        // Gentle Bedrock/PE style angle facing forward towards screen center
+        glRotatef(202.0f, 0, 1, 0);
 
         // Natural GUI lighting
         Lighting::turnOnGui();
@@ -458,7 +458,7 @@ void TitleScreen::render(int xm, int ym, float a) {
         // Interactive tracking & idle sway
         float xd = (float)playerX - (float)xm;
         float yd = (float)playerY - (float)ym;
-        float lookY = -(float)atan2(xd, 50.0f) * 20.0f;
+        float lookY = (float)atan2(xd, 50.0f) * 20.0f;
         float lookX = -(float)atan2(yd, 50.0f) * 15.0f;
         lookY += sinf(vo * 0.035f) * 5.0f; // breathing sway
 

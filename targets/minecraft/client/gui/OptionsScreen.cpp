@@ -31,14 +31,14 @@ void OptionsScreen::init() {
         Options::Option::MUSIC, Options::Option::SOUND,
         Options::Option::INVERT_MOUSE, Options::Option::SENSITIVITY,
         Options::Option::DIFFICULTY};
-    int btnW = 160;
-    int btnH = 24;
-    int rowSpacing = 27;
-    int startY = height / 6 - 6;
+    int btnW = 150;
+    int btnH = 20;
+    int rowSpacing = 24;
+    int startY = height / 6 - 8;
 
     for (int i = 0; i < 5; i++) {
         const Options::Option* item = items[i];
-        int xPos = width / 2 - 165 + (position % 2 * 170);
+        int xPos = width / 2 - 155 + (position % 2 * 160);
         int yPos = startY + rowSpacing * (position >> 1);
         if (!item->isProgress()) {
             buttons.push_back(new SmallButton(
@@ -52,14 +52,14 @@ void OptionsScreen::init() {
         position++;
     }
 
-    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - 110,
-                                 startY + rowSpacing * 3 + 4, 220, btnH,
+    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - 100,
+                                 startY + rowSpacing * 3 + 4, 200, btnH,
                                  language->getElement("options.video")));
-    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - 110,
-                                 startY + rowSpacing * 4 + 4, 220, btnH,
+    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - 100,
+                                 startY + rowSpacing * 4 + 4, 200, btnH,
                                  language->getElement("options.controls")));
-    buttons.push_back(new Button(200, width / 2 - 110, startY + rowSpacing * 5 + 10,
-                                 220, btnH, language->getElement("gui.done")));
+    buttons.push_back(new Button(200, width / 2 - 100, startY + rowSpacing * 5 + 10,
+                                 200, btnH, language->getElement("gui.done")));
 }
 
 void OptionsScreen::buttonClicked(Button* button) {
