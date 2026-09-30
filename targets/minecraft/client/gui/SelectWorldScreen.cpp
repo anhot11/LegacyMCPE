@@ -173,34 +173,91 @@ void SelectWorldScreen::postInit() {
 
 void SelectWorldScreen::updateTabVisibility() {
     bool isWorlds = (currentTab == TAB_WORLDS);
-    if (tabWorldsButton) tabWorldsButton->active = !isWorlds;
-    if (tabServersButton) tabServersButton->active = isWorlds;
+    int tabW = 120;
+    int tabH = 22;
+    int tabY = 6;
 
-    if (selectButton) selectButton->visible = isWorlds;
-    if (deleteButton) deleteButton->visible = isWorlds;
-    if (renameButton) renameButton->visible = isWorlds;
-    if (createButton) createButton->visible = isWorlds;
+    if (tabWorldsButton) {
+        tabWorldsButton->x = width / 2 - tabW - 4;
+        tabWorldsButton->y = tabY;
+        tabWorldsButton->w = tabW;
+        tabWorldsButton->h = tabH;
+        tabWorldsButton->active = !isWorlds;
+    }
+    if (tabServersButton) {
+        tabServersButton->x = width / 2 + 4;
+        tabServersButton->y = tabY;
+        tabServersButton->w = tabW;
+        tabServersButton->h = tabH;
+        tabServersButton->active = isWorlds;
+    }
 
-    if (isWorlds) {
+    if (selectButton) {
+        selectButton->x = width / 2 - 154;
+        selectButton->y = height - 52;
+        selectButton->w = 150;
+        selectButton->h = 20;
+        selectButton->visible = isWorlds;
         bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
-        if (selectButton) selectButton->active = hasSelection;
-        if (deleteButton) deleteButton->active = hasSelection;
-        if (renameButton) renameButton->active = hasSelection;
-        if (cancelButton) {
+        selectButton->active = hasSelection;
+    }
+    if (createButton) {
+        createButton->x = width / 2 + 4;
+        createButton->y = height - 52;
+        createButton->w = 150;
+        createButton->h = 20;
+        createButton->visible = isWorlds;
+        createButton->active = true;
+    }
+    if (deleteButton) {
+        deleteButton->x = width / 2 - 154;
+        deleteButton->y = height - 28;
+        deleteButton->w = 70;
+        deleteButton->h = 20;
+        deleteButton->visible = isWorlds;
+        bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
+        deleteButton->active = hasSelection;
+    }
+    if (renameButton) {
+        renameButton->x = width / 2 - 74;
+        renameButton->y = height - 28;
+        renameButton->w = 70;
+        renameButton->h = 20;
+        renameButton->visible = isWorlds;
+        bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
+        renameButton->active = hasSelection;
+    }
+
+    if (cancelButton) {
+        cancelButton->visible = true;
+        cancelButton->active = true;
+        if (isWorlds) {
             cancelButton->x = width / 2 + 4;
             cancelButton->y = height - 28;
             cancelButton->w = 150;
-        }
-    } else {
-        if (cancelButton) {
+            cancelButton->h = 20;
+        } else {
             cancelButton->x = width / 2 - 60;
             cancelButton->y = height / 2 + 42;
             cancelButton->w = 120;
+            cancelButton->h = 20;
         }
     }
 
-    if (connectServerButton) connectServerButton->visible = !isWorlds;
+    if (connectServerButton) {
+        connectServerButton->x = width / 2 - 120;
+        connectServerButton->y = height / 2 + 10;
+        connectServerButton->w = 240;
+        connectServerButton->h = 24;
+        connectServerButton->visible = !isWorlds;
+        connectServerButton->active = true;
+    }
+
     if (serverIpEdit != nullptr) {
+        serverIpEdit->x = width / 2 - 120;
+        serverIpEdit->y = height / 2 - 20;
+        serverIpEdit->width = 240;
+        serverIpEdit->height = 22;
         serverIpEdit->inFocus = !isWorlds;
     }
 }

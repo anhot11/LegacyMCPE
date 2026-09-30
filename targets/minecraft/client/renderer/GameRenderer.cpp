@@ -1066,12 +1066,16 @@ void GameRenderer::render(float a, bool bFirst) {
     GameRenderer::anaglyph3d = mc->options->anaglyph3d;
     PlatformRenderer_SetShaderPreset(mc->options->modShaderPreset);
 
-    glViewport(0, 0, mc->width, mc->height);  // 4J - added
+    int fbw, fbh;
+    PlatformRenderer.GetFramebufferSize(fbw, fbh);
+    if (fbw <= 0) fbw = mc->width;
+    if (fbh <= 0) fbh = mc->height;
+    glViewport(0, 0, fbw, fbh);
     ScreenSizeCalculator ssc(mc->options, mc->width, mc->height);
     int screenWidth = ssc.getWidth();
     int screenHeight = ssc.getHeight();
-    int xMouse = PlatformInput.GetMouseX() * screenWidth / mc->width;
-    int yMouse = PlatformInput.GetMouseY() * screenHeight / mc->height - 1;
+    int xMouse = PlatformInput.GetMouseX() * screenWidth / fbw;
+    int yMouse = PlatformInput.GetMouseY() * screenHeight / fbh - 1;
 
     int maxFps = getFpsCap(mc->options->framerateLimit);
 
