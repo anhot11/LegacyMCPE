@@ -1,4 +1,6 @@
 #pragma once
+
+#include <memory>
 #include <string>
 
 #include "minecraft/client/gui/Screen.h"
@@ -6,6 +8,8 @@
 class Random;
 class Button;
 class HumanoidModel;
+class ItemInstance;
+class ItemRenderer;
 
 class TitleScreen : public Screen {
 private:
@@ -16,6 +20,13 @@ private:
     std::string splash;
     Button* multiplayerButton;
     HumanoidModel* playerModel;
+    ItemRenderer* itemRenderer;
+
+    std::shared_ptr<ItemInstance> iconSingleplayer;
+    std::shared_ptr<ItemInstance> iconMultiplayer;
+    std::shared_ptr<ItemInstance> iconMods;
+    std::shared_ptr<ItemInstance> iconOptions;
+    std::shared_ptr<ItemInstance> iconQuit;
 
     // 4jcraft: panorama
     void renderPanorama(float a);

@@ -30,6 +30,11 @@
 #include "minecraft/client/resources/ResourceLocation.h"
 #include "minecraft/locale/Language.h"
 #include "minecraft/util/Log.h"
+#include "minecraft/client/renderer/entity/ItemRenderer.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/level/tile/Tile.h"
+#include "minecraft/world/level/tile/GrassTile.h"
 #include "platform/renderer/renderer.h"
 #include "platform/stubs.h"
 #include "util/StringHelpers.h"
@@ -41,6 +46,7 @@ TitleScreen::TitleScreen() {
     vo = 0;
     multiplayerButton = nullptr;
     playerModel = new HumanoidModel(0.0f);
+    itemRenderer = new ItemRenderer();
 
     splash = "missingno";
     //    try {	// 4J - removed try/catch
@@ -151,6 +157,13 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
                                  language->getElement("menu.options")));
     buttons.push_back(new Button(4, btnX, topPos + spacing * 4, btnWidth, btnHeight,
                                  language->getElement("menu.quit")));
+
+    if (!itemRenderer) itemRenderer = new ItemRenderer();
+    if (!iconSingleplayer) iconSingleplayer = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::grass));
+    if (!iconMultiplayer) iconMultiplayer = std::shared_ptr<ItemInstance>(new ItemInstance(Item::compass));
+    if (!iconMods) iconMods = std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar));
+    if (!iconOptions) iconOptions = std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater));
+    if (!iconQuit) iconQuit = std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron));
 
     if (minecraft->user == nullptr) {
         multiplayerButton->active = false;
@@ -468,10 +481,10 @@ void TitleScreen::render(int xm, int ym, float a) {
         float dx = (float)xm - steveEyeX; // negative = left (towards buttons), positive = right
         float dy = (float)ym - steveEyeY; // negative = up, positive = down
 
-        // Yaw: body is rotated 202 degrees (22 degrees facing screen-left).
-        // Negative dx (touch on left) turns head left (+lookY).
+        // Yaw: positive dx (touch on right) turns head right (+lookY).
+        // Negative dx (touch on left) turns head left (-lookY).
         // When touching Steve directly (dx == 0), Steve looks straight out towards the player.
-        float targetAngleY = -(float)atan2(dx, 140.0f) * 57.29578f - 22.0f;
+        float targetAngleY = (float)atan2(dx, 140.0f) * 57.29578f - 22.0f;
         if (targetAngleY > 45.0f) targetAngleY = 45.0f;
         if (targetAngleY < -45.0f) targetAngleY = -45.0f;
         float lookY = targetAngleY + sinf(vo * 0.035f) * 3.0f;
@@ -510,5 +523,48 @@ void TitleScreen::render(int xm, int ym, float a) {
     drawString(font, msg, width - font->width(msg) - 2, height - 10, 0xffffff);
 
     Screen::render(xm, ym, a);
+
+    // Render icons on main menu buttons
+    if (itemRenderer) {
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_COLOR_MATERIAL);
+        Lighting::turnOnGui();
+
+        int spacing = 37;
+        int topPos = height / 2 - (spacing * 5) / 2 + 10;
+        if (topPos < 38) topPos = 38;
+        int btnX = 35;
+        if (width >= 600) btnX = 45;
+
+        float iconX = (float)(btnX + 8);
+        int iconYOff = 6;
+        float iconScale = 1.3f;
+
+        if (iconSingleplayer) {
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconSingleplayer,
+                                        iconX, (float)(topPos + iconYOff), iconScale, 1.0f);
+        }
+        if (iconMultiplayer) {
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconMultiplayer,
+                                        iconX, (float)(topPos + spacing * 1 + iconYOff), iconScale, 1.0f);
+        }
+        if (iconMods) {
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconMods,
+                                        iconX, (float)(topPos + spacing * 2 + iconYOff), iconScale, 1.0f);
+        }
+        if (iconOptions) {
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconOptions,
+                                        iconX, (float)(topPos + spacing * 3 + iconYOff), iconScale, 1.0f);
+        }
+        if (iconQuit) {
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconQuit,
+                                        iconX, (float)(topPos + spacing * 4 + iconYOff), iconScale, 1.0f);
+        }
+
+        Lighting::turnOff();
+        glDisable(GL_RESCALE_NORMAL);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    }
 #endif
 }

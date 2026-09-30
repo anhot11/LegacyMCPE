@@ -33,10 +33,26 @@ LunarModsScreen::LunarModsScreen(Screen* lastScreen)
       fullbrightToggleBtn(nullptr),
       shaderPresetBtn(nullptr),
       texturePackBtn(nullptr),
+      tabThermalBtn(nullptr),
+      thermalProtectionBtn(nullptr),
       doneBtn(nullptr) {
     if (!itemRenderer) {
         itemRenderer = new ItemRenderer();
     }
+}
+
+float LunarModsScreen::getDeviceTemperature() {
+    FILE* f = fopen("/sys/class/power_supply/battery/temp", "r");
+    if (!f) return 36.5f;
+    int raw = 0;
+    if (fscanf(f, "%d", &raw) == 1) {
+        fclose(f);
+        if (raw > 1000) return (float)raw / 1000.0f;
+        if (raw > 100) return (float)raw / 10.0f;
+        return (float)raw;
+    }
+    fclose(f);
+    return 36.5f;
 }
 
 void LunarModsScreen::init() {
@@ -60,23 +76,26 @@ void LunarModsScreen::init() {
     if (!iconShaders) iconShaders = std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting));
     if (!iconTexturePack) iconTexturePack = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workBench));
     if (!iconLunarStar) iconLunarStar = std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar));
+    if (!iconThermal) iconThermal = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::ice));
 
-    int tabW = 95;
-    if (width < 450) tabW = 80;
+    int tabW = 76;
+    if (width < 450) tabW = 62;
     int tabH = 20;
     int tabY = 32;
-    int startTabX = width / 2 - (tabW * 4 + 12) / 2;
+    int startTabX = width / 2 - (tabW * 5 + 16) / 2;
 
-    // Tabs: IDs 10 to 13
+    // Tabs: IDs 10 to 14
     tabSodiumBtn = new Button(10, startTabX, tabY, tabW, tabH, "SODIUM");
-    tabOptifineBtn = new Button(11, startTabX + tabW + 4, tabY, tabW, tabH, "OPTIFINE");
+    tabOptifineBtn = new Button(11, startTabX + (tabW + 4) * 1, tabY, tabW, tabH, "OPTIFINE");
     tabFullbrightBtn = new Button(12, startTabX + (tabW + 4) * 2, tabY, tabW, tabH, "FULLBRIGHT");
     tabShadersBtn = new Button(13, startTabX + (tabW + 4) * 3, tabY, tabW, tabH, "SHADERS");
+    tabThermalBtn = new Button(14, startTabX + (tabW + 4) * 4, tabY, tabW, tabH, "TERMAL");
 
     buttons.push_back(tabSodiumBtn);
     buttons.push_back(tabOptifineBtn);
     buttons.push_back(tabFullbrightBtn);
     buttons.push_back(tabShadersBtn);
+    buttons.push_back(tabThermalBtn);
 
     int cardW = (width >= 560) ? 480 : (width - 30);
     int cardX = width / 2 - cardW / 2;
@@ -117,6 +136,12 @@ void LunarModsScreen::init() {
     buttons.push_back(shaderPresetBtn);
     buttons.push_back(texturePackBtn);
 
+    // Tab 4: Thermal Protection (ID 60)
+    int thBtnW = (cardW > 300) ? 270 : (cardW - 20);
+    int thBtnX = width / 2 - thBtnW / 2;
+    thermalProtectionBtn = new Button(60, thBtnX, startY + 95, thBtnW, 30, "");
+    buttons.push_back(thermalProtectionBtn);
+
     // Done button (ID 200)
     int doneW = (width >= 400) ? 240 : 180;
     doneBtn = new Button(200, width / 2 - doneW / 2, height - 34, doneW, 26, "GUARDAR Y VOLVER");
@@ -140,6 +165,8 @@ void LunarModsScreen::updateButtonVisibility() {
 
     shaderPresetBtn->visible = (currentTab == 3);
     texturePackBtn->visible = (currentTab == 3);
+
+    thermalProtectionBtn->visible = (currentTab == 4);
 }
 
 void LunarModsScreen::updateButtonLabels() {
@@ -180,6 +207,17 @@ void LunarModsScreen::updateButtonLabels() {
     int pack = opt->modTexturePack;
     if (pack < 0 || pack > 2) pack = 0;
     texturePackBtn->msg = s_textureNames[pack];
+
+    // Thermal Protection label
+    static const char* s_thermalModes[] = {
+        "[ DESACTIVADO ]",
+        "[ MODERADO: LIMITE 45*C ]",
+        "[ EQUILIBRADO: LIMITE 42*C ]",
+        "[ MAXIMO AHORRO: LIMITE 38*C ]"
+    };
+    int tmode = opt->modThermalProtection;
+    if (tmode < 0 || tmode > 3) tmode = 0;
+    thermalProtectionBtn->msg = s_thermalModes[tmode];
 }
 
 void LunarModsScreen::buttonClicked(Button* button) {
@@ -187,7 +225,7 @@ void LunarModsScreen::buttonClicked(Button* button) {
     Options* opt = minecraft->options;
 
     // Tab buttons
-    if (button->id >= 10 && button->id <= 13) {
+    if (button->id >= 10 && button->id <= 14) {
         currentTab = button->id - 10;
         updateButtonVisibility();
         return;
@@ -227,6 +265,11 @@ void LunarModsScreen::buttonClicked(Button* button) {
         PlatformRenderer_SetShaderPreset(opt->modShaderPreset);
     } else if (button->id == 51) {
         opt->modTexturePack = (opt->modTexturePack + 1) % 3;
+    }
+
+    // Thermal Protection toggle
+    else if (button->id == 60) {
+        opt->modThermalProtection = (opt->modThermalProtection + 1) % 4;
     }
 
     // Save and Exit
@@ -309,9 +352,9 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     drawCenteredString(font, "Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
 
     // Active tab indicator
-    int tabW = 95;
-    if (width < 450) tabW = 80;
-    int startTabX = width / 2 - (tabW * 4 + 12) / 2;
+    int tabW = 76;
+    if (width < 450) tabW = 62;
+    int startTabX = width / 2 - (tabW * 5 + 16) / 2;
     int curTabX = startTabX + currentTab * (tabW + 4);
     fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8); // Lunar Sky-Blue accent line
 
@@ -370,6 +413,44 @@ void LunarModsScreen::render(int xm, int ym, float a) {
                    "Shader Preset (GLSL)", "Post-procesado de color e iluminacion en GPU");
         renderCard(cardX, startY + spacing, cardW, cardH, iconTexturePack, 1.6f,
                    "Texture Pack Integrado", "Paquete visual seleccionado en tiempo real");
+    } else if (currentTab == 4) {
+        // Tab 4: Thermal Protection Card with large ice block icon
+        int thCardH = 145;
+        fill(cardX, startY, cardX + cardW, startY + thCardH, 0xd0101522);
+        hLine(cardX, cardX + cardW, startY, 0xff253347);
+        vLine(cardX, startY, startY + thCardH, 0xff202c3e);
+        vLine(cardX + cardW, startY, startY + thCardH, 0xff141c27);
+        hLine(cardX, cardX + cardW, startY + thCardH, 0xff141c27);
+
+        // Center Large Ice Block Icon (2.2x scale)
+        if (iconThermal && itemRenderer) {
+            glEnable(GL_RESCALE_NORMAL);
+            glEnable(GL_COLOR_MATERIAL);
+            Lighting::turnOnGui();
+            float thIconX = (float)width / 2.0f - (16.0f * 2.2f) / 2.0f;
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconThermal, thIconX, (float)(startY + 10), 2.2f, 1.0f);
+            Lighting::turnOff();
+            glDisable(GL_RESCALE_NORMAL);
+            glDisable(GL_COLOR_MATERIAL);
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+
+        drawCenteredString(font, "PROTECTOR TERMICO DE BATERIA Y CPU", width / 2, startY + 52, 0x38bdf8);
+
+        float curTemp = getDeviceTemperature();
+        char tempStr[64];
+        if (curTemp > 0.0f) {
+            snprintf(tempStr, sizeof(tempStr), "Temperatura Actual del Dispositivo: %.1f *C", curTemp);
+        } else {
+            snprintf(tempStr, sizeof(tempStr), "Sensor Termico: Estado Normal");
+        }
+
+        int tempColor = 0x22c55e; // Green
+        if (curTemp >= 45.0f) tempColor = 0xef4444; // Red
+        else if (curTemp >= 40.0f) tempColor = 0xf59e0b; // Orange/Yellow
+
+        drawCenteredString(font, tempStr, width / 2, startY + 66, tempColor);
+        drawCenteredString(font, "Regula los FPS y carga si el telefono se sobrecalienta.", width / 2, startY + 78, 0x8899aa);
     }
 
     // Bottom bar divider

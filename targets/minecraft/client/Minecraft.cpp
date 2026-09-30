@@ -1723,6 +1723,43 @@ void Minecraft::run_middle() {
 
                 achievementPopup->render();
 
+#ifdef __ANDROID__
+                // Lunar Client Thermal Protection Throttling
+                if (options && options->modThermalProtection > 0) {
+                    static int s_thermalCheckCounter = 0;
+                    static float s_cachedDeviceTemp = 0.0f;
+                    if (++s_thermalCheckCounter >= 60) {
+                        s_thermalCheckCounter = 0;
+                        FILE* f = fopen("/sys/class/power_supply/battery/temp", "r");
+                        if (f) {
+                            int t = 0;
+                            if (fscanf(f, "%d", &t) == 1) {
+                                s_cachedDeviceTemp = (float)t / 10.0f;
+                            }
+                            fclose(f);
+                        }
+                    }
+
+                    // Mode 1: Moderado (45*C) -> sleep 4ms if temp >= 45*C
+                    // Mode 2: Equilibrado (42*C) -> sleep 5ms if temp >= 42*C, 10ms if >= 45*C
+                    // Mode 3: Maximo Ahorro (38*C) -> sleep 4ms if temp >= 38*C, 8ms if >= 42*C, 14ms if >= 45*C
+                    int sleepMs = 0;
+                    if (options->modThermalProtection == 1) {
+                        if (s_cachedDeviceTemp >= 45.0f) sleepMs = 4;
+                    } else if (options->modThermalProtection == 2) {
+                        if (s_cachedDeviceTemp >= 45.0f) sleepMs = 10;
+                        else if (s_cachedDeviceTemp >= 42.0f) sleepMs = 5;
+                    } else if (options->modThermalProtection == 3) {
+                        if (s_cachedDeviceTemp >= 45.0f) sleepMs = 14;
+                        else if (s_cachedDeviceTemp >= 42.0f) sleepMs = 8;
+                        else if (s_cachedDeviceTemp >= 38.0f) sleepMs = 4;
+                    }
+                    if (sleepMs > 0) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+                    }
+                }
+#endif
+
                 std::this_thread::yield();  // 4jcraft added now that we have
                                             // portable thread yield.
                                             // std::this_thread::sleep_for(

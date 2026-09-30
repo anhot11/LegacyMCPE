@@ -124,6 +124,7 @@ public:
     bool modOptifineBetterGrass;
     int modShaderPreset;
     int modTexturePack;
+    int modThermalProtection;
 
     void init();  // 4J added
     Options(Minecraft* minecraft, File workingDirectory);
