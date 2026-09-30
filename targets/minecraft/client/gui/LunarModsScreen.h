@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -7,11 +8,30 @@
 #include "minecraft/client/gui/Screen.h"
 
 class Options;
+class ItemInstance;
+class ItemRenderer;
 
 class LunarModsScreen : public Screen {
 private:
     Screen* lastScreen;
     int currentTab; // 0=Sodium, 1=OptiFine, 2=Fullbright, 3=Shaders & Textures
+
+    static ItemRenderer* itemRenderer;
+
+    // Mod Category & Feature Icons
+    std::shared_ptr<ItemInstance> iconSodiumEngine;
+    std::shared_ptr<ItemInstance> iconEntityCulling;
+    std::shared_ptr<ItemInstance> iconFogOcclusion;
+
+    std::shared_ptr<ItemInstance> iconDynamicLights;
+    std::shared_ptr<ItemInstance> iconFastMath;
+    std::shared_ptr<ItemInstance> iconClearWater;
+    std::shared_ptr<ItemInstance> iconBetterGrass;
+
+    std::shared_ptr<ItemInstance> iconFullbright;
+    std::shared_ptr<ItemInstance> iconShaders;
+    std::shared_ptr<ItemInstance> iconTexturePack;
+    std::shared_ptr<ItemInstance> iconLunarStar;
 
     // Tab navigation buttons
     Button* tabSodiumBtn;
@@ -42,6 +62,8 @@ private:
 
     void updateButtonVisibility();
     void updateButtonLabels();
+    void renderCard(int x, int y, int w, int h, std::shared_ptr<ItemInstance> icon,
+                    float iconScale, const std::string& title, const std::string& desc);
 
 public:
     LunarModsScreen(Screen* lastScreen);

@@ -1,12 +1,19 @@
 #include "LunarModsScreen.h"
 
+#include "minecraft/client/Lighting.h"
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/Options.h"
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/renderer/LevelRenderer.h"
 #include "minecraft/client/renderer/Textures.h"
+#include "minecraft/client/renderer/entity/ItemRenderer.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/level/tile/Tile.h"
 #include "platform/renderer/renderer.h"
+
+ItemRenderer* LunarModsScreen::itemRenderer = nullptr;
 
 LunarModsScreen::LunarModsScreen(Screen* lastScreen)
     : lastScreen(lastScreen),
@@ -25,10 +32,33 @@ LunarModsScreen::LunarModsScreen(Screen* lastScreen)
       fullbrightToggleBtn(nullptr),
       shaderPresetBtn(nullptr),
       texturePackBtn(nullptr),
-      doneBtn(nullptr) {}
+      doneBtn(nullptr) {
+    if (!itemRenderer) {
+        itemRenderer = new ItemRenderer();
+    }
+}
 
 void LunarModsScreen::init() {
     buttons.clear();
+
+    if (!itemRenderer) {
+        itemRenderer = new ItemRenderer();
+    }
+
+    // Initialize large Minecraft item icons for each mod card
+    if (!iconSodiumEngine) iconSodiumEngine = std::make_shared<ItemInstance>(Item::repeater);
+    if (!iconEntityCulling) iconEntityCulling = std::make_shared<ItemInstance>(Item::eyeOfEnder);
+    if (!iconFogOcclusion) iconFogOcclusion = std::make_shared<ItemInstance>(Item::netherStar);
+
+    if (!iconDynamicLights) iconDynamicLights = std::make_shared<ItemInstance>(Tile::torch);
+    if (!iconFastMath) iconFastMath = std::make_shared<ItemInstance>(Item::compass);
+    if (!iconClearWater) iconClearWater = std::make_shared<ItemInstance>(Tile::glass);
+    if (!iconBetterGrass) iconBetterGrass = std::make_shared<ItemInstance>(Tile::grass);
+
+    if (!iconFullbright) iconFullbright = std::make_shared<ItemInstance>(Tile::glowstone);
+    if (!iconShaders) iconShaders = std::make_shared<ItemInstance>(Item::painting);
+    if (!iconTexturePack) iconTexturePack = std::make_shared<ItemInstance>(Tile::workBench);
+    if (!iconLunarStar) iconLunarStar = std::make_shared<ItemInstance>(Item::netherStar);
 
     int tabW = 95;
     if (width < 450) tabW = 80;
@@ -47,43 +77,42 @@ void LunarModsScreen::init() {
     buttons.push_back(tabFullbrightBtn);
     buttons.push_back(tabShadersBtn);
 
-    int cardW = (width >= 560) ? 460 : (width - 40);
-    int cardH = 34;
+    int cardW = (width >= 560) ? 480 : (width - 30);
     int cardX = width / 2 - cardW / 2;
-    int startY = 62;
-    int spacing = 38;
+    int startY = 60;
+    int spacing = 43;
 
-    int btnW = 140;
-    int btnH = 24;
-    int btnX = cardX + cardW - btnW - 8;
+    int btnW = 125;
+    int btnH = 26;
+    int btnX = cardX + cardW - btnW - 6;
 
     // Tab 0: Sodium (IDs 20, 21, 22)
-    sodiumChunkEngineBtn = new Button(20, btnX, startY + 5, btnW, btnH, "");
-    sodiumEntityCullingBtn = new Button(21, btnX, startY + spacing + 5, btnW, btnH, "");
-    sodiumFogOcclusionBtn = new Button(22, btnX, startY + spacing * 2 + 5, btnW, btnH, "");
+    sodiumChunkEngineBtn = new Button(20, btnX, startY + 6, btnW, btnH, "");
+    sodiumEntityCullingBtn = new Button(21, btnX, startY + spacing + 6, btnW, btnH, "");
+    sodiumFogOcclusionBtn = new Button(22, btnX, startY + spacing * 2 + 6, btnW, btnH, "");
     buttons.push_back(sodiumChunkEngineBtn);
     buttons.push_back(sodiumEntityCullingBtn);
     buttons.push_back(sodiumFogOcclusionBtn);
 
     // Tab 1: OptiFine (IDs 30, 31, 32, 33)
-    optifineDynamicLightsBtn = new Button(30, btnX, startY + 5, btnW, btnH, "");
-    optifineFastMathBtn = new Button(31, btnX, startY + spacing + 5, btnW, btnH, "");
-    optifineClearWaterBtn = new Button(32, btnX, startY + spacing * 2 + 5, btnW, btnH, "");
-    optifineBetterGrassBtn = new Button(33, btnX, startY + spacing * 3 + 5, btnW, btnH, "");
+    optifineDynamicLightsBtn = new Button(30, btnX, startY + 6, btnW, btnH, "");
+    optifineFastMathBtn = new Button(31, btnX, startY + spacing + 6, btnW, btnH, "");
+    optifineClearWaterBtn = new Button(32, btnX, startY + spacing * 2 + 6, btnW, btnH, "");
+    optifineBetterGrassBtn = new Button(33, btnX, startY + spacing * 3 + 6, btnW, btnH, "");
     buttons.push_back(optifineDynamicLightsBtn);
     buttons.push_back(optifineFastMathBtn);
     buttons.push_back(optifineClearWaterBtn);
     buttons.push_back(optifineBetterGrassBtn);
 
     // Tab 2: Fullbright (ID 40)
-    int fbBtnW = (cardW > 300) ? 240 : (cardW - 20);
+    int fbBtnW = (cardW > 300) ? 260 : (cardW - 20);
     int fbBtnX = width / 2 - fbBtnW / 2;
-    fullbrightToggleBtn = new Button(40, fbBtnX, startY + 50, fbBtnW, 30, "");
+    fullbrightToggleBtn = new Button(40, fbBtnX, startY + 95, fbBtnW, 30, "");
     buttons.push_back(fullbrightToggleBtn);
 
     // Tab 3: Shaders & Textures (IDs 50, 51)
-    shaderPresetBtn = new Button(50, btnX, startY + 5, btnW, btnH, "");
-    texturePackBtn = new Button(51, btnX, startY + spacing + 5, btnW, btnH, "");
+    shaderPresetBtn = new Button(50, btnX, startY + 6, btnW, btnH, "");
+    texturePackBtn = new Button(51, btnX, startY + spacing + 6, btnW, btnH, "");
     buttons.push_back(shaderPresetBtn);
     buttons.push_back(texturePackBtn);
 
@@ -213,6 +242,47 @@ void LunarModsScreen::buttonClicked(Button* button) {
     updateButtonLabels();
 }
 
+void LunarModsScreen::renderCard(int x, int y, int w, int h, std::shared_ptr<ItemInstance> icon,
+                                 float iconScale, const std::string& title, const std::string& desc) {
+    // Card background: Dark Lunar slate with highlight borders
+    fill(x, y, x + w, y + h, 0xd0101522);
+    hLine(x, x + w, y, 0xff253347);
+    vLine(x, y, y + h, 0xff202c3e);
+    vLine(x + w, y, y + h, 0xff141c27);
+    hLine(x, x + w, y + h, 0xff141c27);
+
+    // Left Icon Badge Frame
+    int boxSize = 30;
+    int boxX = x + 4;
+    int boxY = y + (h - boxSize) / 2;
+    fill(boxX, boxY, boxX + boxSize, boxY + boxSize, 0xf00a0d14);
+    hLine(boxX, boxX + boxSize, boxY, 0xff2c3d55);
+    vLine(boxX, boxY, boxY + boxSize, 0xff2c3d55);
+    vLine(boxX + boxSize, boxY, boxY + boxSize, 0xff16202c);
+    hLine(boxX, boxX + boxSize, boxY + boxSize, 0xff16202c);
+
+    // Render large 3D/2D Minecraft item icon
+    if (icon && itemRenderer) {
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_COLOR_MATERIAL);
+        Lighting::turnOnGui();
+
+        float iconPixelSize = 16.0f * iconScale;
+        float iconOffX = (float)boxX + ((float)boxSize - iconPixelSize) / 2.0f;
+        float iconOffY = (float)boxY + ((float)boxSize - iconPixelSize) / 2.0f;
+        itemRenderer->renderGuiItem(font, minecraft->textures, icon, iconOffX, iconOffY, iconScale, 1.0f);
+
+        Lighting::turnOff();
+        glDisable(GL_RESCALE_NORMAL);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+
+    // Clean, crisp typography without any formatting codes
+    drawString(font, title, boxX + boxSize + 8, y + 7, 0xffffff);
+    drawString(font, desc, boxX + boxSize + 8, y + 21, 0x889fa5);
+}
+
 void LunarModsScreen::render(int xm, int ym, float a) {
     fillGradient(0, 0, width, height, 0xf00b0e14, 0xf8111622);
 
@@ -220,79 +290,85 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     fill(0, 0, width, 56, 0xdd080b10);
     hLine(0, width, 56, 0xff253042);
 
-    drawCenteredString(font, "\xC2\xA7" "b\xC2\xA7" "lLUNAR CLIENT \xC2\xA7" "7| \xC2\xA7" "fMODS & OPTIMIZACIONES", width / 2, 8, 0xffffff);
-    drawCenteredString(font, "\xC2\xA7" "8Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
+    // Header Star Icon
+    if (iconLunarStar && itemRenderer) {
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_COLOR_MATERIAL);
+        Lighting::turnOnGui();
+        int starX = width / 2 - 145;
+        if (width < 450) starX = width / 2 - 120;
+        itemRenderer->renderGuiItem(font, minecraft->textures, iconLunarStar, (float)starX, 5.0f, 1.3f, 1.0f);
+        Lighting::turnOff();
+        glDisable(GL_RESCALE_NORMAL);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    }
 
-    // Draw active tab indicator
+    drawCenteredString(font, "LUNAR CLIENT | MODS & OPTIMIZACIONES", width / 2 + 6, 8, 0xffffff);
+    drawCenteredString(font, "Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
+
+    // Active tab indicator
     int tabW = 95;
     if (width < 450) tabW = 80;
     int startTabX = width / 2 - (tabW * 4 + 12) / 2;
     int curTabX = startTabX + currentTab * (tabW + 4);
-    fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8); // Sky blue accent line
+    fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8); // Lunar Sky-Blue accent line
 
-    int cardW = (width >= 560) ? 460 : (width - 40);
-    int cardH = 34;
+    int cardW = (width >= 560) ? 480 : (width - 30);
+    int cardH = 38;
     int cardX = width / 2 - cardW / 2;
-    int startY = 62;
-    int spacing = 38;
+    int startY = 60;
+    int spacing = 43;
 
-    // Render Tab Content Cards
     if (currentTab == 0) {
-        // Tab 0: Sodium Cards
-        fill(cardX, startY, cardX + cardW, startY + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lSodium Chunk Engine", cardX + 10, startY + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Malla multihilo y cache de chunks sin tirones", cardX + 10, startY + 18, 0x8899aa);
-
-        fill(cardX, startY + spacing, cardX + cardW, startY + spacing + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY + spacing, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lEntity Culling (+FPS)", cardX + 10, startY + spacing + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Oculta entidades detras de bloques y fuera de campo", cardX + 10, startY + spacing + 18, 0x8899aa);
-
-        fill(cardX, startY + spacing * 2, cardX + cardW, startY + spacing * 2 + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY + spacing * 2, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lFog Occlusion", cardX + 10, startY + spacing * 2 + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Descarta calculos de geometria oculta por la niebla", cardX + 10, startY + spacing * 2 + 18, 0x8899aa);
+        // Tab 0: Sodium Cards with large icons
+        renderCard(cardX, startY, cardW, cardH, iconSodiumEngine, 1.6f,
+                   "Sodium Chunk Engine", "Malla multihilo y cache de chunks sin tirones");
+        renderCard(cardX, startY + spacing, cardW, cardH, iconEntityCulling, 1.6f,
+                   "Entity Culling (+FPS)", "Oculta entidades fuera de campo y tras bloques");
+        renderCard(cardX, startY + spacing * 2, cardW, cardH, iconFogOcclusion, 1.6f,
+                   "Fog Occlusion", "Descarta calculos de geometria oculta por niebla");
     } else if (currentTab == 1) {
-        // Tab 1: OptiFine Cards
-        fill(cardX, startY, cardX + cardW, startY + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lDynamic Lights", cardX + 10, startY + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Antorcha e items emiten luz dinamica en mano", cardX + 10, startY + 18, 0x8899aa);
-
-        fill(cardX, startY + spacing, cardX + cardW, startY + spacing + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY + spacing, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lFast Math", cardX + 10, startY + spacing + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Trigonometria acelerada por CPU sin fmodf (+15% FPS)", cardX + 10, startY + spacing + 18, 0x8899aa);
-
-        fill(cardX, startY + spacing * 2, cardX + cardW, startY + spacing * 2 + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY + spacing * 2, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lClear Water", cardX + 10, startY + spacing * 2 + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Agua cristalina y sin niebla espesa bajo el agua", cardX + 10, startY + spacing * 2 + 18, 0x8899aa);
-
-        fill(cardX, startY + spacing * 3, cardX + cardW, startY + spacing * 3 + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY + spacing * 3, 0xff263345);
-        drawString(font, "\xC2\xA7" "f\xC2\xA7" "lBetter Grass", cardX + 10, startY + spacing * 3 + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Pasto completo conectado en los bordes", cardX + 10, startY + spacing * 3 + 18, 0x8899aa);
+        // Tab 1: OptiFine Cards with large icons
+        renderCard(cardX, startY, cardW, cardH, iconDynamicLights, 1.6f,
+                   "Dynamic Lights", "Antorcha e items emiten luz dinamica en mano");
+        renderCard(cardX, startY + spacing, cardW, cardH, iconFastMath, 1.6f,
+                   "Fast Math", "Trigonometria CPU optimizada (+15% FPS)");
+        renderCard(cardX, startY + spacing * 2, cardW, cardH, iconClearWater, 1.6f,
+                   "Clear Water", "Agua cristalina y sin niebla espesa marina");
+        renderCard(cardX, startY + spacing * 3, cardW, cardH, iconBetterGrass, 1.6f,
+                   "Better Grass", "Pasto completo conectado en los bordes");
     } else if (currentTab == 2) {
-        // Tab 2: Fullbright Card
-        int fbCardH = 100;
-        fill(cardX, startY, cardX + cardW, startY + fbCardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawCenteredString(font, "\xC2\xA7" "e\xC2\xA7" "lMOD BRILLO SIEMPRE (FULLBRIGHT)", width / 2, startY + 12, 0xffffff);
-        drawCenteredString(font, "\xC2\xA7" "7Mantiene la iluminacion ambiental al 100% de dia y noche.", width / 2, startY + 26, 0xaabbcc);
-        drawCenteredString(font, "\xC2\xA7" "8Permite ver dentro de cuevas oscuras y minerias sin colocar antorchas.", width / 2, startY + 38, 0x8899aa);
-    } else if (currentTab == 3) {
-        // Tab 3: Shaders & Textures Cards
-        fill(cardX, startY, cardX + cardW, startY + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY, 0xff263345);
-        drawString(font, "\xC2\xA7" "b\xC2\xA7" "lShader Preset (GLSL)", cardX + 10, startY + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Post-procesado de color e iluminacion en GPU", cardX + 10, startY + 18, 0x8899aa);
+        // Tab 2: Fullbright Card with large glowstone icon
+        int fbCardH = 145;
+        fill(cardX, startY, cardX + cardW, startY + fbCardH, 0xd0101522);
+        hLine(cardX, cardX + cardW, startY, 0xff253347);
+        vLine(cardX, startY, startY + fbCardH, 0xff202c3e);
+        vLine(cardX + cardW, startY, startY + fbCardH, 0xff141c27);
+        hLine(cardX, cardX + cardW, startY + fbCardH, 0xff141c27);
 
-        fill(cardX, startY + spacing, cardX + cardW, startY + spacing + cardH, 0xc0141923);
-        hLine(cardX, cardX + cardW, startY + spacing, 0xff263345);
-        drawString(font, "\xC2\xA7" "6\xC2\xA7" "lTexture Pack Integrado", cardX + 10, startY + spacing + 6, 0xffffff);
-        drawString(font, "\xC2\xA7" "7Paquete visual seleccionado", cardX + 10, startY + spacing + 18, 0x8899aa);
+        // Center Large Glowstone Icon (2.2x scale)
+        if (iconFullbright && itemRenderer) {
+            glEnable(GL_RESCALE_NORMAL);
+            glEnable(GL_COLOR_MATERIAL);
+            Lighting::turnOnGui();
+            float fbIconX = (float)width / 2.0f - (16.0f * 2.2f) / 2.0f;
+            itemRenderer->renderGuiItem(font, minecraft->textures, iconFullbright, fbIconX, (float)(startY + 10), 2.2f, 1.0f);
+            Lighting::turnOff();
+            glDisable(GL_RESCALE_NORMAL);
+            glDisable(GL_COLOR_MATERIAL);
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+
+        drawCenteredString(font, "MOD BRILLO SIEMPRE (FULLBRIGHT)", width / 2, startY + 52, 0xffea00);
+        drawCenteredString(font, "Mantiene la iluminacion ambiental al 100% de forma permanente.", width / 2, startY + 66, 0xaabbcc);
+        drawCenteredString(font, "Permite explorar cuevas oscuras y minerias sin colocar antorchas.", width / 2, startY + 78, 0x8899aa);
+    } else if (currentTab == 3) {
+        // Tab 3: Shaders & Textures Cards with large icons
+        renderCard(cardX, startY, cardW, cardH, iconShaders, 1.6f,
+                   "Shader Preset (GLSL)", "Post-procesado de color e iluminacion en GPU");
+        renderCard(cardX, startY + spacing, cardW, cardH, iconTexturePack, 1.6f,
+                   "Texture Pack Integrado", "Paquete visual seleccionado en tiempo real");
     }
 
     // Bottom bar divider
