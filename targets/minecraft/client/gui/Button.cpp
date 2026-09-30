@@ -1,8 +1,11 @@
 #include "Button.h"
 
 #include "minecraft/client/Minecraft.h"
+#include "minecraft/client/renderer/Lighting.h"
 #include "minecraft/client/renderer/Textures.h"
+#include "minecraft/client/renderer/entity/ItemRenderer.h"
 #include "minecraft/client/resources/ResourceLocation.h"
+#include "minecraft/world/item/ItemInstance.h"
 #include "platform/renderer/renderer.h"
 #include "platform/stubs.h"
 class Minecraft;
@@ -74,15 +77,53 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
         blit(x + w / 2, y + hTop, 200 - twHalf, v0 + 10, w - w / 2, hBot, twHalf, 10);
     }
 
+    if (textureIcon.enabled) {
+        minecraft->textures->bindTexture("gui/icons_menu.png");
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(1.0f, 1.0f, 1.0f, active ? 1.0f : 0.5f);
+
+        int iconSize = textureIcon.size;
+        int iconX = x + 6;
+        int iconY = y + (h - iconSize) / 2;
+        blit(iconX, iconY, textureIcon.u, textureIcon.v, iconSize, iconSize);
+
+        glDisable(GL_BLEND);
+        minecraft->textures->bindTexture(&GUI_GUI_LOCATION);
+    } else if (iconItem != nullptr) {
+        static ItemRenderer* s_btnItemRenderer = nullptr;
+        if (!s_btnItemRenderer) s_btnItemRenderer = new ItemRenderer();
+
+        Lighting::turnOnGui();
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_COLOR_MATERIAL);
+
+        float iconScale = (h >= 28) ? 1.2f : 0.9f;
+        float iconX = (float)(x + 6);
+        float iconY = (float)(y + (h - (int)(16.0f * iconScale)) / 2);
+
+        s_btnItemRenderer->renderGuiItem(font, minecraft->textures, iconItem,
+                                         iconX, iconY, iconScale, 1.0f);
+
+        Lighting::turnOff();
+        glDisable(GL_RESCALE_NORMAL);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        minecraft->textures->bindTexture(&GUI_GUI_LOCATION);
+    }
+
     renderBg(minecraft, xm, ym);
 
+    int textX = hasIcon() ? (x + w / 2 + 7) : (x + w / 2);
+    int textY = y + (h - 8) / 2;
+
     if (!active) {
-        drawCenteredString(font, msg, x + w / 2, y + (h - 8) / 2, 0xffa0a0a0);
+        drawCenteredString(font, msg, textX, textY, 0xffa0a0a0);
     } else {
         if (hovered) {
-            drawCenteredString(font, msg, x + w / 2, y + (h - 8) / 2, 0xffffa0);
+            drawCenteredString(font, msg, textX, textY, 0xffffa0);
         } else {
-            drawCenteredString(font, msg, x + w / 2, y + (h - 8) / 2, 0xe0e0e0);
+            drawCenteredString(font, msg, textX, textY, 0xe0e0e0);
         }
     }
 #endif

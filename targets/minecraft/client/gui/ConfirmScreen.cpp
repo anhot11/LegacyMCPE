@@ -6,6 +6,9 @@
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/locale/Language.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/level/tile/Tile.h"
 
 ConfirmScreen::ConfirmScreen(Screen* parent, const std::string& title1,
                              const std::string& title2, int id) {
@@ -32,10 +35,15 @@ ConfirmScreen::ConfirmScreen(Screen* parent, const std::string& title1,
 }
 
 void ConfirmScreen::init() {
-    buttons.push_back(new SmallButton(0, width / 2 - 155 + 0 % 2 * 160,
-                                      height / 6 + 24 * 4, yesButton));
-    buttons.push_back(new SmallButton(1, width / 2 - 155 + 1 % 2 * 160,
-                                      height / 6 + 24 * 4, noButton));
+    SmallButton* btnYes = new SmallButton(0, width / 2 - 155 + 0 % 2 * 160,
+                                         height / 6 + 24 * 4, yesButton);
+    btnYes->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::tnt)));
+    buttons.push_back(btnYes);
+
+    SmallButton* btnNo = new SmallButton(1, width / 2 - 155 + 1 % 2 * 160,
+                                        height / 6 + 24 * 4, noButton);
+    btnNo->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
+    buttons.push_back(btnNo);
 }
 
 void ConfirmScreen::buttonClicked(Button* button) {

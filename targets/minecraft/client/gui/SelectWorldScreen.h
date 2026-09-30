@@ -8,11 +8,17 @@
 
 class LevelSummary;
 class Button;
+class EditBox;
 class Tesselator;
 
 class SelectWorldScreen : public Screen {
 public:
     class WorldSelectionList;
+
+    enum Tab {
+        TAB_WORLDS = 0,
+        TAB_SERVERS = 1
+    };
 
 protected:
     static const int BUTTON_CANCEL_ID = 0;
@@ -22,14 +28,14 @@ protected:
     static const int BUTTON_UP_ID = 4;
     static const int BUTTON_DOWN_ID = 5;
     static const int BUTTON_RENAME_ID = 6;
-
-private:
-    //	final DateFormat DATE_FORMAT = new SimpleDateFormat();		// 4J -
-    // removed
+    static const int BUTTON_TAB_WORLDS_ID = 10;
+    static const int BUTTON_TAB_SERVERS_ID = 11;
+    static const int BUTTON_CONNECT_SERVER_ID = 12;
 
 protected:
     Screen* lastScreen;
     std::string title;
+    Tab currentTab;
 
 private:
     bool done;
@@ -43,13 +49,23 @@ private:
     Button* deleteButton;
     Button* selectButton;
     Button* renameButton;
+    Button* createButton;
+    Button* cancelButton;
+    Button* tabWorldsButton;
+    Button* tabServersButton;
+
+    EditBox* serverIpEdit;
+    Button* connectServerButton;
 
 public:
     SelectWorldScreen(Screen* lastScreen);
     virtual void init() override;
+    virtual void tick() override;
+    virtual void removed() override;
 
 private:
     void loadLevelList();
+    void updateTabVisibility();
 
 protected:
     std::string getWorldId(int id);
@@ -60,6 +76,8 @@ public:
 
 protected:
     virtual void buttonClicked(Button* button) override;
+    virtual void keyPressed(char ch, int eventKey) override;
+    virtual void mouseClicked(int x, int y, int buttonNum) override;
 
 public:
     void worldSelected(int id);

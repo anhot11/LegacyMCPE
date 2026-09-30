@@ -10,6 +10,8 @@
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/client/renderer/LevelRenderer.h"
 #include "minecraft/locale/Language.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
 
 // 4jcraft
 #define ITEM_COUNT 10
@@ -59,12 +61,16 @@ void VideoSettingsScreen::init() {
     // Profile button (Row 5): Quick preset selector for performance vs high-end
     int profW = (btnW * 2) + 10;
     profileButton = new Button(300, width / 2 - profW / 2, startY + rowSpacing * 5, profW, btnH, "");
+    profileButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::apple_gold)));
     buttons.push_back(profileButton);
     updateProfileButton();
 
     int doneW = (width >= 450) ? 230 : 190;
-    buttons.push_back(new Button(200, width / 2 - doneW / 2, startY + rowSpacing * 6 + 3, doneW, btnH,
-                                 language->getElement("gui.done")));
+    Button* btnDone = new Button(200, width / 2 - doneW / 2, startY + rowSpacing * 6 + 3, doneW, btnH,
+                                 language->getElement("gui.done"));
+    btnDone->setTextureIcon(64, 32, 16);
+    btnDone->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
+    buttons.push_back(btnDone);
 }
 
 void VideoSettingsScreen::updateProfileButton() {

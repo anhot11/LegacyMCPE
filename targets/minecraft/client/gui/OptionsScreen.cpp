@@ -11,6 +11,9 @@
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/locale/Language.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/level/tile/Tile.h"
 
 OptionsScreen::OptionsScreen(Screen* lastScreen, Options* options) {
     title = "Options";  // 4J added
@@ -40,27 +43,58 @@ void OptionsScreen::init() {
         const Options::Option* item = items[i];
         int xPos = width / 2 - (btnW + 5) + (position % 2 * (btnW + 10));
         int yPos = startY + rowSpacing * (position >> 1);
+        Button* btn = nullptr;
         if (!item->isProgress()) {
-            buttons.push_back(new SmallButton(
+            btn = new SmallButton(
                 item->getId(), xPos, yPos, btnW, btnH, item,
-                options->getMessage(item)));
+                options->getMessage(item));
         } else {
-            buttons.push_back(new SlideButton(
+            btn = new SlideButton(
                 item->getId(), xPos, yPos, btnW, btnH, item,
-                options->getMessage(item), options->getProgressValue(item)));
+                options->getMessage(item), options->getProgressValue(item));
         }
+
+        // Set matching icons for options
+        if (item == Options::Option::MUSIC) {
+            btn->setTextureIcon(60, 48, 20);
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::jukebox)));
+        } else if (item == Options::Option::SOUND) {
+            btn->setTextureIcon(60, 48, 20);
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::musicBlock)));
+        } else if (item == Options::Option::INVERT_MOUSE) {
+            btn->setTextureIcon(100, 48, 20);
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::bow)));
+        } else if (item == Options::Option::SENSITIVITY) {
+            btn->setTextureIcon(20, 48, 20);
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::compass)));
+        } else if (item == Options::Option::DIFFICULTY) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_iron)));
+        }
+
+        buttons.push_back(btn);
         position++;
     }
 
     int botW = (width >= 450) ? 230 : 190;
-    buttons.push_back(new Button(VIDEO_BUTTON_ID, width / 2 - botW / 2,
+    Button* btnVideo = new Button(VIDEO_BUTTON_ID, width / 2 - botW / 2,
                                  startY + rowSpacing * 3 + 2, botW, btnH,
-                                 language->getElement("options.video")));
-    buttons.push_back(new Button(CONTROLS_BUTTON_ID, width / 2 - botW / 2,
+                                 language->getElement("options.video"));
+    btnVideo->setTextureIcon(0, 48, 20);
+    btnVideo->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder)));
+    buttons.push_back(btnVideo);
+
+    Button* btnControls = new Button(CONTROLS_BUTTON_ID, width / 2 - botW / 2,
                                  startY + rowSpacing * 4 + 2, botW, btnH,
-                                 language->getElement("options.controls")));
-    buttons.push_back(new Button(200, width / 2 - botW / 2, startY + rowSpacing * 5 + 6,
-                                 botW, btnH, language->getElement("gui.done")));
+                                 language->getElement("options.controls"));
+    btnControls->setTextureIcon(100, 48, 20);
+    btnControls->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::paper)));
+    buttons.push_back(btnControls);
+
+    Button* btnDone = new Button(200, width / 2 - botW / 2, startY + rowSpacing * 5 + 6,
+                                 botW, btnH, language->getElement("gui.done"));
+    btnDone->setTextureIcon(64, 32, 16);
+    btnDone->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
+    buttons.push_back(btnDone);
 }
 
 void OptionsScreen::buttonClicked(Button* button) {

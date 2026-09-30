@@ -26,8 +26,11 @@
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/locale/Language.h"
 #include "minecraft/server/MinecraftServer.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
 #include "minecraft/world/level/LevelSettings.h"
 #include "minecraft/world/level/chunk/ChunkSource.h"
+#include "minecraft/world/level/tile/Tile.h"
 #include "platform/network/NetTypes.h"
 #include "platform/stubs.h"
 #include "util/StringHelpers.h"
@@ -57,10 +60,18 @@ void CreateWorldScreen::init() {
 
     Keyboard::enableRepeatEvents(true);
     buttons.clear();
-    buttons.push_back(new Button(0, width / 2 - 155, height - 28, 150, 20,
-                                 language->getElement("selectWorld.create")));
-    buttons.push_back(new Button(1, width / 2 + 5, height - 28, 150, 20,
-                                 language->getElement("gui.cancel")));
+
+    Button* btnCreate = new Button(0, width / 2 - 155, height - 28, 150, 20,
+                                   language->getElement("selectWorld.create"));
+    btnCreate->setTextureIcon(16, 0, 16);
+    btnCreate->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workbench)));
+    buttons.push_back(btnCreate);
+
+    Button* btnCancel = new Button(1, width / 2 + 5, height - 28, 150, 20,
+                                   language->getElement("gui.cancel"));
+    btnCancel->setTextureIcon(64, 32, 16);
+    btnCancel->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
+    buttons.push_back(btnCancel);
 
     nameEdit = new EditBox(this, font, width / 2 - 100, 60, 200, 20,
                            language->getElement("selectWorld.newWorld"));
@@ -69,13 +80,15 @@ void CreateWorldScreen::init() {
 
     seedEdit = new EditBox(this, font, width / 2 - 100, 60, 200, 20, "");
 
-    buttons.push_back(gameModeButton = new Button(
-                          2, width / 2 - 75, 100, 150, 20,
-                          language->getElement("selectWorld.gameMode")));
-    buttons.push_back(
-        moreWorldOptionsButton =
-            new Button(3, width / 2 - 75, 172, 150, 20,
-                       language->getElement("selectWorld.moreWorldOptions")));
+    gameModeButton = new Button(2, width / 2 - 75, 100, 150, 20,
+                                language->getElement("selectWorld.gameMode"));
+    gameModeButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_iron)));
+    buttons.push_back(gameModeButton);
+
+    moreWorldOptionsButton = new Button(3, width / 2 - 75, 172, 150, 20,
+                                        language->getElement("selectWorld.moreWorldOptions"));
+    moreWorldOptionsButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
+    buttons.push_back(moreWorldOptionsButton);
     buttons.push_back(generateStructuresButton = new Button(
                           4, width / 2 - 155, 100, 150, 20,
                           language->getElement("selectWorld.mapFeatures")));

@@ -8,6 +8,8 @@
 #include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/locale/Language.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
 
 ControlsScreen::ControlsScreen(Screen* lastScreen, Options* options) {
     // 4J - added initialisers
@@ -30,8 +32,12 @@ void ControlsScreen::init() {
             BUTTON_WIDTH, 20, options->getKeyMessage(i)));
     }
 
-    buttons.push_back(new Button(200, width / 2 - 100, height / 6 + 24 * 7,
-                                 language->getElement("gui.done")));
+    Button* btnDone = new Button(200, width / 2 - 100, height / 6 + 24 * 7,
+                                 language->getElement("gui.done"));
+    btnDone->setTextureIcon(64, 32, 16);
+    btnDone->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
+    buttons.push_back(btnDone);
+
     title = language->getElement("controls.title");
 }
 

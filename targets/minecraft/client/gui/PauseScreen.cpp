@@ -19,6 +19,8 @@
 #include "minecraft/network/INetworkService.h"
 #include "minecraft/server/MinecraftServer.h"
 #include "minecraft/server/ServerAction.h"
+#include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ItemInstance.h"
 #include "platform/input/input.h"
 
 PauseScreen::PauseScreen() {
@@ -30,35 +32,40 @@ void PauseScreen::init() {
     saveStep = 0;
     buttons.clear();
     int yo = -16;
-    // 4jcraft: solves the issue of client-side only pausing in the java gui
+
     if (NetworkService.IsLocalGame() && NetworkService.GetPlayerCount() == 1)
         MinecraftServer::getInstance()->queueServerAction(
             minecraft::server::PauseServer{true});
-    buttons.push_back(new Button(1, width / 2 - 100, height / 4 + 24 * 5 + yo,
-                                 I18n::get("menu.returnToMenu")));
-    if (!NetworkService.IsHost()) {
-        buttons[0]->msg = I18n::get("menu.disconnect");
-    }
 
-    buttons.push_back(new Button(4, width / 2 - 100, height / 4 + 24 * 1 + yo,
-                                 "LBack to game"));
-    buttons.push_back(new Button(0, width / 2 - 100, height / 4 + 24 * 4 + yo,
-                                 "LOptions..."));
+    Button* btnReturnGame = new Button(4, width / 2 - 100, height / 4 + 24 * 1 + yo,
+                                       I18n::get("menu.returnToGame"));
+    btnReturnGame->setTextureIcon(0, 32, 16);
+    btnReturnGame->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_diamond)));
+    buttons.push_back(btnReturnGame);
 
-    buttons.push_back(new Button(4, width / 2 - 100, height / 4 + 24 * 1 + yo,
-                                 I18n::get("menu.returnToGame")));
-    buttons.push_back(new Button(0, width / 2 - 100, height / 4 + 24 * 4 + yo,
-                                 I18n::get("menu.options")));
+    Button* btnAchievements = new Button(5, width / 2 - 100, height / 4 + 24 * 2 + yo, 98, 20,
+                                         I18n::get("gui.achievements"));
+    btnAchievements->setTextureIcon(16, 32, 16);
+    btnAchievements->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::apple_gold)));
+    buttons.push_back(btnAchievements);
 
-    buttons.push_back(new Button(5, width / 2 - 100, height / 4 + 24 * 2 + yo,
-                                 98, 20, I18n::get("gui.achievements")));
-    buttons.push_back(new Button(6, width / 2 + 2, height / 4 + 24 * 2 + yo, 98,
-                                 20, I18n::get("gui.stats")));
-    /*
-     * if (minecraft->serverConnection!=null) { buttons.get(1).active =
-     * false; buttons.get(2).active = false; buttons.get(3).active = false;
-     * }
-     */
+    Button* btnStats = new Button(6, width / 2 + 2, height / 4 + 24 * 2 + yo, 98, 20,
+                                  I18n::get("gui.stats"));
+    btnStats->setTextureIcon(32, 32, 16);
+    btnStats->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::book)));
+    buttons.push_back(btnStats);
+
+    Button* btnOptions = new Button(0, width / 2 - 100, height / 4 + 24 * 3 + yo,
+                                    I18n::get("menu.options"));
+    btnOptions->setTextureIcon(48, 16, 16);
+    btnOptions->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
+    buttons.push_back(btnOptions);
+
+    std::string quitMsg = NetworkService.IsHost() ? I18n::get("menu.returnToMenu") : I18n::get("menu.disconnect");
+    Button* btnQuit = new Button(1, width / 2 - 100, height / 4 + 24 * 4 + yo + 4, quitMsg);
+    btnQuit->setTextureIcon(96, 32, 16);
+    btnQuit->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
+    buttons.push_back(btnQuit);
 }
 
 void PauseScreen::exitWorld(Minecraft* minecraft, bool save) {

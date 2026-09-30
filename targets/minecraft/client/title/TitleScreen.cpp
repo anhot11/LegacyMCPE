@@ -137,37 +137,39 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
         btnWidth = 190;
     }
     int btnHeight = 32;
-    int spacing = 37;
+    int spacing = 38;
     int btnX = 35;
     if (width >= 600) {
         btnX = 45;
     }
 
-    int topPos = height / 2 - (spacing * 5) / 2 + 10;
+    int topPos = height / 2 - (spacing * 4) / 2 + 10;
     if (topPos < 38) topPos = 38;
 
-    buttons.push_back(new Button(1, btnX, topPos, btnWidth, btnHeight,
-                                 language->getElement("menu.singleplayer")));
-    buttons.push_back(multiplayerButton =
-                          new Button(2, btnX, topPos + spacing * 1, btnWidth, btnHeight,
-                                     language->getElement("menu.multiplayer")));
-    buttons.push_back(new Button(5, btnX, topPos + spacing * 2, btnWidth, btnHeight,
-                                 "Mods (Lunar Client)"));
-    buttons.push_back(new Button(0, btnX, topPos + spacing * 3, btnWidth, btnHeight,
-                                 language->getElement("menu.options")));
-    buttons.push_back(new Button(4, btnX, topPos + spacing * 4, btnWidth, btnHeight,
-                                 language->getElement("menu.quit")));
-
-    if (!itemRenderer) itemRenderer = new ItemRenderer();
-    if (!iconSingleplayer) iconSingleplayer = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::grass));
-    if (!iconMultiplayer) iconMultiplayer = std::shared_ptr<ItemInstance>(new ItemInstance(Item::compass));
-    if (!iconMods) iconMods = std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar));
-    if (!iconOptions) iconOptions = std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater));
-    if (!iconQuit) iconQuit = std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron));
-
-    if (minecraft->user == nullptr) {
-        multiplayerButton->active = false;
+    std::string playText = language->getElement("menu.play");
+    if (playText.empty() || playText == "menu.play") {
+        playText = "Jugar";
     }
+
+    Button* btnPlay = new Button(1, btnX, topPos, btnWidth, btnHeight, playText);
+    btnPlay->setTextureIcon(0, 0, 16);
+    btnPlay->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::grass)));
+    buttons.push_back(btnPlay);
+
+    Button* btnMods = new Button(5, btnX, topPos + spacing * 1, btnWidth, btnHeight, "Mods (Lunar Client)");
+    btnMods->setTextureIcon(32, 16, 16);
+    btnMods->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar)));
+    buttons.push_back(btnMods);
+
+    Button* btnOptions = new Button(0, btnX, topPos + spacing * 2, btnWidth, btnHeight, language->getElement("menu.options"));
+    btnOptions->setTextureIcon(48, 16, 16);
+    btnOptions->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
+    buttons.push_back(btnOptions);
+
+    Button* btnQuit = new Button(4, btnX, topPos + spacing * 3, btnWidth, btnHeight, language->getElement("menu.quit"));
+    btnQuit->setTextureIcon(64, 16, 16);
+    btnQuit->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
+    buttons.push_back(btnQuit);
 }
 
 void TitleScreen::buttonClicked(Button* button) {
@@ -178,22 +180,8 @@ void TitleScreen::buttonClicked(Button* button) {
     }
     if (button->id == 1) {
         Log::info(
-            "TitleScreen::buttonClicked() 'Singleplayer' if (button->id == "
-            "1)\n");
+            "TitleScreen::buttonClicked() 'Play' if (button->id == 1)\n");
         minecraft->setScreen(new SelectWorldScreen(this));
-    }
-    if (button->id == 2) {
-        Log::info(
-            "TitleScreen::buttonClicked() 'Multiplayer' if (button->id == "
-            "2)\n");
-        minecraft->setScreen(new JoinMultiplayerScreen(this));
-    }
-    if (button->id == 3) {
-        Log::info(
-            "TitleScreen::buttonClicked() 'Texture Pack' if (button->id == "
-            "3)\n");
-        //       minecraft->setScreen(new TexturePackSelectScreen(this));
-        //       // 4J - TODO put back in
     }
     if (button->id == 4) {
         Log::info(
@@ -523,48 +511,5 @@ void TitleScreen::render(int xm, int ym, float a) {
     drawString(font, msg, width - font->width(msg) - 2, height - 10, 0xffffff);
 
     Screen::render(xm, ym, a);
-
-    // Render icons on main menu buttons
-    if (itemRenderer) {
-        glEnable(GL_RESCALE_NORMAL);
-        glEnable(GL_COLOR_MATERIAL);
-        Lighting::turnOnGui();
-
-        int spacing = 37;
-        int topPos = height / 2 - (spacing * 5) / 2 + 10;
-        if (topPos < 38) topPos = 38;
-        int btnX = 35;
-        if (width >= 600) btnX = 45;
-
-        float iconX = (float)(btnX + 8);
-        int iconYOff = 6;
-        float iconScale = 1.3f;
-
-        if (iconSingleplayer) {
-            itemRenderer->renderGuiItem(font, minecraft->textures, iconSingleplayer,
-                                        iconX, (float)(topPos + iconYOff), iconScale, 1.0f);
-        }
-        if (iconMultiplayer) {
-            itemRenderer->renderGuiItem(font, minecraft->textures, iconMultiplayer,
-                                        iconX, (float)(topPos + spacing * 1 + iconYOff), iconScale, 1.0f);
-        }
-        if (iconMods) {
-            itemRenderer->renderGuiItem(font, minecraft->textures, iconMods,
-                                        iconX, (float)(topPos + spacing * 2 + iconYOff), iconScale, 1.0f);
-        }
-        if (iconOptions) {
-            itemRenderer->renderGuiItem(font, minecraft->textures, iconOptions,
-                                        iconX, (float)(topPos + spacing * 3 + iconYOff), iconScale, 1.0f);
-        }
-        if (iconQuit) {
-            itemRenderer->renderGuiItem(font, minecraft->textures, iconQuit,
-                                        iconX, (float)(topPos + spacing * 4 + iconYOff), iconScale, 1.0f);
-        }
-
-        Lighting::turnOff();
-        glDisable(GL_RESCALE_NORMAL);
-        glDisable(GL_COLOR_MATERIAL);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    }
 #endif
 }
