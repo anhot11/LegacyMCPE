@@ -61,8 +61,8 @@ import org.libsdl.app.SDLControllerManager;
 public class SDLActivity extends Activity implements View.OnSystemUiVisibilityChangeListener {
     private static final String TAG = "SDL";
     private static final int SDL_MAJOR_VERSION = 2;
-    private static final int SDL_MINOR_VERSION = 33;
-    private static final int SDL_MICRO_VERSION = 0;
+    private static final int SDL_MINOR_VERSION = 32;
+    private static final int SDL_MICRO_VERSION = 8;
 /*
     // Display InputType.SOURCE/CLASS of events and devices
     //
@@ -351,10 +351,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                                       String.valueOf(SDL_MINOR_VERSION) + "." +
                                       String.valueOf(SDL_MICRO_VERSION);
             String version = nativeGetVersion();
-            if (!version.equals(expected_version)) {
-                mBrokenLibraries = true;
-                errorMsgBrokenLib = "SDL C/Java version mismatch (expected " + expected_version + ", got " + version + ")";
-            }
+            Log.v(TAG, "SDL version: " + version + " (expected " + expected_version + ")");
         }
 
         if (mBrokenLibraries) {
