@@ -11,6 +11,7 @@
 #include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ItemInstance.h"
 #include "minecraft/world/level/tile/Tile.h"
+#include "minecraft/world/level/tile/GrassTile.h"
 #include "platform/renderer/renderer.h"
 
 ItemRenderer* LunarModsScreen::itemRenderer = nullptr;
@@ -46,19 +47,19 @@ void LunarModsScreen::init() {
     }
 
     // Initialize large Minecraft item icons for each mod card
-    if (!iconSodiumEngine) iconSodiumEngine = std::make_shared<ItemInstance>(Item::repeater);
-    if (!iconEntityCulling) iconEntityCulling = std::make_shared<ItemInstance>(Item::eyeOfEnder);
-    if (!iconFogOcclusion) iconFogOcclusion = std::make_shared<ItemInstance>(Item::netherStar);
+    if (!iconSodiumEngine) iconSodiumEngine = std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater));
+    if (!iconEntityCulling) iconEntityCulling = std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder));
+    if (!iconFogOcclusion) iconFogOcclusion = std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar));
 
-    if (!iconDynamicLights) iconDynamicLights = std::make_shared<ItemInstance>(Tile::torch);
-    if (!iconFastMath) iconFastMath = std::make_shared<ItemInstance>(Item::compass);
-    if (!iconClearWater) iconClearWater = std::make_shared<ItemInstance>(Tile::glass);
-    if (!iconBetterGrass) iconBetterGrass = std::make_shared<ItemInstance>(Tile::grass);
+    if (!iconDynamicLights) iconDynamicLights = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::torch));
+    if (!iconFastMath) iconFastMath = std::shared_ptr<ItemInstance>(new ItemInstance(Item::compass));
+    if (!iconClearWater) iconClearWater = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::glass));
+    if (!iconBetterGrass) iconBetterGrass = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::grass));
 
-    if (!iconFullbright) iconFullbright = std::make_shared<ItemInstance>(Tile::glowstone);
-    if (!iconShaders) iconShaders = std::make_shared<ItemInstance>(Item::painting);
-    if (!iconTexturePack) iconTexturePack = std::make_shared<ItemInstance>(Tile::workBench);
-    if (!iconLunarStar) iconLunarStar = std::make_shared<ItemInstance>(Item::netherStar);
+    if (!iconFullbright) iconFullbright = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::glowstone));
+    if (!iconShaders) iconShaders = std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting));
+    if (!iconTexturePack) iconTexturePack = std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::workBench));
+    if (!iconLunarStar) iconLunarStar = std::shared_ptr<ItemInstance>(new ItemInstance(Item::netherStar));
 
     int tabW = 95;
     if (width < 450) tabW = 80;
