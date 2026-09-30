@@ -7,21 +7,20 @@ class Font;
 class Screen;
 
 class EditBox : public GuiComponent {
-private:
-    Font* font;
+public:
     int x;
     int y;
     int width;
     int height;
-    std::string value;
-    unsigned int maxLength;
-    int frame;
-
-public:
     bool inFocus;
     bool active;
     bool enableBackgroundDrawing;  // 4jcraft: for toggling the background
                                    // rendering (mainly for RepairScreen)
+private:
+    Font* font;
+    std::string value;
+    unsigned int maxLength;
+    int frame;
 
 private:
     Screen* screen;
