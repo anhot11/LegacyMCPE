@@ -890,7 +890,7 @@ void GameRenderer::updateLightTexture(float a) {
 
         bool hasDynamicLight = false;
         if (mc->options->modOptifineDynamicLights && mc->player && mc->player->inventory) {
-            ItemInstance* sel = mc->player->inventory->getSelected();
+            std::shared_ptr<ItemInstance> sel = mc->player->inventory->getSelected();
             if (sel != nullptr) {
                 int id = sel->id;
                 // Torch=50, Redstone Torch=76, Glowstone=89, JackOLantern=91, LavaBucket=327

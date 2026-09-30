@@ -627,7 +627,7 @@ void LevelRenderer::renderEntities(Vec3* cam, Culler* culler, float a) {
             double dy = entity->y - cam->y;
             double dz = entity->z - cam->z;
             double distSq = dx * dx + dy * dy + dz * dz;
-            if (distSq > 32.0 * 32.0 && (entity->instanceof(eTYPE_ITEM) || entity->instanceof(eTYPE_EXPERIENCEORB))) {
+            if (distSq > 32.0 * 32.0 && (entity->instanceof(eTYPE_ITEMENTITY) || entity->instanceof(eTYPE_EXPERIENCEORB))) {
                 culledEntities++;
                 continue;
             }
