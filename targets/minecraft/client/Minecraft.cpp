@@ -415,7 +415,7 @@ void Minecraft::renderLoadingScreen() {
     glLoadIdentity();
     glTranslatef(0, 0, -2000);
     glViewport(0, 0, width, height);
-    glClearColor(0, 0, 0, 0);
+    glClearColor(0, 0, 0, 1);
 
     Tesselator* t = Tesselator::getInstance();
 
@@ -1672,7 +1672,7 @@ void Minecraft::run_middle() {
                                 eViewportType)(IPlatformRenderer::
                                                    VIEWPORT_TYPE_QUADRANT_TOP_LEFT +
                                                unoccupiedQuadrant));
-                        glClearColor(0, 0, 0, 0);
+                        glClearColor(0, 0, 0, 1);
                         glClear(GL_COLOR_BUFFER_BIT);
 
                         ui.SetEmptyQuadrantLogo(

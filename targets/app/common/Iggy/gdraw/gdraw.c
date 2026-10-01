@@ -6,6 +6,9 @@
 #define NOMINMAX
 #include <windows.h>
 #endif
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
 // this is a really, really nasty hack to make this shit compile on macOS
 #if defined(__APPLE__) || defined (__linux__)
 #include "SDL_opengl.h"
@@ -449,6 +452,9 @@ static void gdraw_CompileShaderAndLog(GLuint shader) {
         log[len] = '\0';
         fprintf(stderr, "[GDraw GLSL] compile FAILED shader=%u:\n%s\n", shader,
                 log);
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "GDraw", "compile FAILED shader=%u:\n%s\n", shader, log);
+#endif
     }
 }
 
@@ -463,6 +469,9 @@ static void gdraw_LinkProgramAndLog(GLuint program) {
         log[len] = '\0';
         fprintf(stderr, "[GDraw GLSL] link FAILED program=%u:\n%s\n", program,
                 log);
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "GDraw", "link FAILED program=%u:\n%s\n", program, log);
+#endif
     }
 }
 
@@ -570,9 +579,15 @@ static void gdraw_ShaderSourceUpgraded(GLuint shader, GLsizei count,
         src = gdraw_strreplace(src, "gl_FragColor", "_gdraw_frag_out");
     }
 
+#if defined(GLES) || defined(__ANDROID__)
+    const char* header = is_vert
+                             ? "#version 300 es\nprecision highp float;\nprecision highp int;\n"
+                             : "#version 300 es\nprecision mediump float;\nprecision highp int;\nprecision mediump sampler2D;\nout vec4 _gdraw_frag_out;\n";
+#else
     const char* header = is_vert
                              ? "#version 330 core\n"
                              : "#version 330 core\nout vec4 _gdraw_frag_out;\n";
+#endif
     char* patched = (char*)malloc(strlen(header) + strlen(src) + 2);
     if (!patched) {
         free(src);
@@ -738,10 +753,17 @@ static void hooked_glDrawElements(GLenum mode, GLsizei count, GLenum type,
 static void gdraw_UseProgramSafe(GLuint program) {
     if (!program) {
         if (!gdraw_null_program && gdraw_real_useprogram) {
+#if defined(GLES) || defined(__ANDROID__)
+            const char* vs =
+                "#version 300 es\nprecision mediump float;\nvoid main(){gl_Position=vec4(0.0);}";
+            const char* fs =
+                "#version 300 es\nprecision mediump float;\nout vec4 c;\nvoid main(){c=vec4(0.0);}";
+#else
             const char* vs =
                 "#version 330 core\nvoid main(){gl_Position=vec4(0);}";
             const char* fs =
                 "#version 330 core\nout vec4 c;\nvoid main(){c=vec4(0);}";
+#endif
             GLuint v = gdraw_real_createshader(GL_VERTEX_SHADER);
             GLuint f = gdraw_real_createshader(GL_FRAGMENT_SHADER);
             gdraw_real_shadersource(v, 1, &vs, NULL);
