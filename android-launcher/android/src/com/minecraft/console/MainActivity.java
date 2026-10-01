@@ -104,11 +104,12 @@ public class MainActivity extends Activity {
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!hasStoragePermission()) {
+                String dir = getDefaultGameDir();
+                if (!hasStoragePermission(dir)) {
                     requestStoragePermission();
                     return;
                 }
-                startDownloadAndSetup(getDefaultGameDir());
+                startDownloadAndSetup(dir);
             }
         });
     }
@@ -158,14 +159,33 @@ public class MainActivity extends Activity {
     }
 
     private String getDefaultGameDir() {
+        // 1. Check if legacy /sdcard/LegacyMCPE is already installed and valid
         File sdcard = Environment.getExternalStorageDirectory();
         if (sdcard != null) {
-            return new File(sdcard, "LegacyMCPE").getAbsolutePath();
+            File legacy = new File(sdcard, "LegacyMCPE");
+            if (isGameInstalled(legacy.getAbsolutePath())) {
+                return legacy.getAbsolutePath();
+            }
         }
-        return "/sdcard/LegacyMCPE";
+        // 2. Standard Android app external files: /sdcard/Android/data/y.MinecraftLegacyP/files
+        // Zero permissions needed! Guaranteed full read/write access on Android 5 through 16!
+        File extFiles = getExternalFilesDir(null);
+        if (extFiles != null) {
+            return extFiles.getAbsolutePath();
+        }
+        // 3. Fallback to internal files
+        return getFilesDir().getAbsolutePath();
     }
 
-    private boolean hasStoragePermission() {
+    private boolean hasStoragePermission(String targetDir) {
+        if (targetDir == null || targetDir.isEmpty()) return true;
+        File extFiles = getExternalFilesDir(null);
+        if (extFiles != null && targetDir.startsWith(extFiles.getAbsolutePath())) {
+            return true;
+        }
+        if (targetDir.startsWith(getFilesDir().getAbsolutePath())) {
+            return true;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Environment.isExternalStorageManager();
         } else {
@@ -194,8 +214,9 @@ public class MainActivity extends Activity {
     }
 
     private boolean isGameInstalled(String dirPath) {
+        if (dirPath == null || dirPath.isEmpty()) return false;
         File arcFile = new File(dirPath, "Common/Media/MediaWindows64.arc");
-        return arcFile.exists() && arcFile.length() > 5 * 1024 * 1024;
+        return arcFile.exists() && arcFile.canRead() && arcFile.length() > 5 * 1024 * 1024;
     }
 
     private boolean hasBundledAssets() {
@@ -209,11 +230,6 @@ public class MainActivity extends Activity {
     }
 
     private void checkAndStart() {
-        if (!hasStoragePermission()) {
-            requestStoragePermission();
-            return;
-        }
-
         SharedPreferences prefs = getSharedPreferences("dirPrefs", Context.MODE_PRIVATE);
         String targetDir = prefs.getString("dir_path", getDefaultGameDir());
         if (targetDir == null || targetDir.isEmpty()) {
@@ -224,6 +240,16 @@ public class MainActivity extends Activity {
             // Game is already installed and ready! Launch directly
             launchGame(targetDir);
             return;
+        }
+
+        // Check if legacy /sdcard/LegacyMCPE exists and is ready
+        File sdcard = Environment.getExternalStorageDirectory();
+        if (sdcard != null) {
+            File legacy = new File(sdcard, "LegacyMCPE");
+            if (isGameInstalled(legacy.getAbsolutePath())) {
+                launchGame(legacy.getAbsolutePath());
+                return;
+            }
         }
 
         // If an offline APK includes bundled assets in assets/
@@ -465,6 +491,7 @@ public class MainActivity extends Activity {
 
         Intent intent = new Intent(MainActivity.this, MainActivity2.class);
         intent.putExtra("dir", directory);
+        intent.putExtra("game_dir", directory);
         startActivity(intent);
         finish();
     }

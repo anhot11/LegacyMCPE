@@ -26,7 +26,9 @@ void main() {
     if (uUseLightmap != 0) c.rgb *= texture(uTex1, vUV1).rgb;
     if (uFogEnable != 0) c.rgb = mix(uFogColor.rgb, c.rgb, vFogFactor);
 
-    c.rgb = pow(c.rgb, vec3(uInvGamma));
+    if (uInvGamma > 0.01 && abs(uInvGamma - 1.0) > 0.01) {
+        c.rgb = pow(clamp(c.rgb, 0.0001, 1.0), vec3(clamp(uInvGamma, 0.1, 5.0)));
+    }
 
     if (uShaderPreset == 1) {
         // Vivid Colors

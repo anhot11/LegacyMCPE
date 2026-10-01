@@ -32,6 +32,21 @@ public class MainActivity2 extends SDLActivity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
         String directory = getIntent().getStringExtra( "dir" );
+        if (directory == null || directory.isEmpty()) {
+            directory = getIntent().getStringExtra("game_dir");
+        }
+        if (directory == null || directory.isEmpty()) {
+            android.content.SharedPreferences prefs = getSharedPreferences("dirPrefs", android.content.Context.MODE_PRIVATE);
+            directory = prefs.getString("dir_path", null);
+        }
+        if (directory == null || directory.isEmpty()) {
+            java.io.File extFiles = getExternalFilesDir(null);
+            if (extFiles != null) {
+                directory = extFiles.getAbsolutePath();
+            } else {
+                directory = getFilesDir().getAbsolutePath();
+            }
+        }
         try 
         {
             if (directory != null)
