@@ -33,6 +33,8 @@ public class MainActivity2 extends SDLActivity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        getWindow().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
         getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
@@ -89,7 +91,16 @@ public class MainActivity2 extends SDLActivity
             e.printStackTrace();
         }
         super.onCreate( savedInstanceState );
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        getWindow().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
         hideSystemBars();
+
+        if (mLayout != null) {
+            mLayout.setBackground(null);
+        }
+        if (mSurface != null) {
+            mSurface.setZOrderMediaOverlay(true);
+        }
 
         if (mLayout != null && mSurface != null) {
             // 1. Add virtual touch controls overlay

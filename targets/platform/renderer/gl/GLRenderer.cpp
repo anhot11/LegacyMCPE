@@ -11,6 +11,10 @@
 #include "platform/PlatformTypes.h"
 #include "platform/renderer/renderer.h"
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 // undefine macros from header to avoid argument mismatch
 #undef glGenTextures
 #undef glDeleteTextures
@@ -176,9 +180,15 @@ static GLuint compileShader(GLenum type, const char* src) {
         char log[1024];
         glGetShaderInfoLog(s, sizeof(log), nullptr, log);
         fprintf(stderr, "[4J_Render] shader error:\n%s\n", log);
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "4J_Render", "shader compile error (type=0x%x):\n%s\n", (unsigned int)type, log);
+#endif
         glDeleteShader(s);
         return 0;
     }
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "4J_Render", "shader compile OK (type=0x%x, id=%u)\n", (unsigned int)type, s);
+#endif
     return s;
 }
 
@@ -193,9 +203,15 @@ static GLuint linkProgram(GLuint v, GLuint f) {
         char log[1024];
         glGetProgramInfoLog(p, sizeof(log), nullptr, log);
         fprintf(stderr, "[4J_Render] link error:\n%s\n", log);
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "4J_Render", "program link error (id=%u):\n%s\n", p, log);
+#endif
         glDeleteProgram(p);
         return 0;
     }
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "4J_Render", "program link OK (id=%u)\n", p);
+#endif
     return p;
 }
 
