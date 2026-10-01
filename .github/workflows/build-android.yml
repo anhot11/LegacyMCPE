@@ -10,6 +10,7 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: write
     steps:
@@ -31,9 +32,10 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential ninja-build zip aapt zipalign apksigner dalvik-exchange libgl-dev libglu1-mesa-dev libsdl2-dev
-          python3 -m pip install meson
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="30"
+          sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y --no-install-recommends \
+            build-essential ninja-build zip aapt zipalign apksigner dalvik-exchange libgl-dev libglu1-mesa-dev libsdl2-dev
+          python3 -m pip install --break-system-packages meson
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
