@@ -85,17 +85,17 @@ public class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v("SDL", "surfaceCreated()");
-        int requestedOrientation = SDLActivity.mSingleton != null ? SDLActivity.mSingleton.getRequestedOrientation() : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-        if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE ||
-            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE ||
-            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE ||
-            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
-            if (mWidth > 0 && mHeight > 0) {
-                int maxDim = (int) Math.max(mWidth, mHeight);
-                int minDim = (int) Math.min(mWidth, mHeight);
-                holder.setFixedSize(maxDim, minDim);
+        try {
+            if (mDisplay != null && Build.VERSION.SDK_INT >= 17) {
+                DisplayMetrics realMetrics = new DisplayMetrics();
+                mDisplay.getRealMetrics(realMetrics);
+                int realW = Math.max(realMetrics.widthPixels, realMetrics.heightPixels);
+                int realH = Math.min(realMetrics.widthPixels, realMetrics.heightPixels);
+                mWidth = realW;
+                mHeight = realH;
+                holder.setFixedSize(realW, realH);
             }
-        }
+        } catch (Exception ignored) {}
         SDLActivity.onNativeSurfaceCreated();
     }
 
@@ -138,20 +138,26 @@ public class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         }
 
         // Ensure orientation conforms to landscape BEFORE reporting to native!
-        int requestedOrientation = SDLActivity.mSingleton.getRequestedOrientation();
+        int requestedOrientation = SDLActivity.mSingleton != null ? SDLActivity.mSingleton.getRequestedOrientation() : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
         if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE ||
             requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE ||
             requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE ||
             requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+            
+            if (nDeviceWidth < nDeviceHeight) {
+                int temp = nDeviceWidth;
+                nDeviceWidth = nDeviceHeight;
+                nDeviceHeight = temp;
+            }
             if (width < height) {
                 int temp = width;
                 width = height;
                 height = temp;
             }
-            if (nDeviceWidth < nDeviceHeight) {
-                int temp = nDeviceWidth;
-                nDeviceWidth = nDeviceHeight;
-                nDeviceHeight = temp;
+            // Always lock the buffer to the full physical screen resolution when in landscape
+            if (nDeviceWidth > 0 && nDeviceHeight > 0) {
+                width = nDeviceWidth;
+                height = nDeviceHeight;
             }
         }
 

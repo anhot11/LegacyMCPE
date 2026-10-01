@@ -14,6 +14,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -30,6 +31,16 @@ public class MainActivity2 extends SDLActivity
     @Override protected void onCreate( Bundle savedInstanceState ) 
     {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
 
         String directory = getIntent().getStringExtra( "dir" );
         if (directory == null || directory.isEmpty()) {
@@ -101,22 +112,33 @@ public class MainActivity2 extends SDLActivity
                 @Override
                 public void run() {
                     if (loadingScreenView != null) {
+                        final View toRemove = loadingScreenView;
+                        loadingScreenView = null;
                         AlphaAnimation fadeOut = new AlphaAnimation(1.0f, 0.0f);
-                        fadeOut.setDuration(500);
+                        fadeOut.setDuration(400);
                         fadeOut.setAnimationListener(new Animation.AnimationListener() {
                             @Override
                             public void onAnimationStart(Animation animation) {}
                             @Override
                             public void onAnimationEnd(Animation animation) {
-                                if (mLayout != null && loadingScreenView != null) {
-                                    mLayout.removeView(loadingScreenView);
-                                    loadingScreenView = null;
+                                toRemove.setVisibility(View.GONE);
+                                if (mLayout != null) {
+                                    mLayout.removeView(toRemove);
                                 }
                             }
                             @Override
                             public void onAnimationRepeat(Animation animation) {}
                         });
-                        loadingScreenView.startAnimation(fadeOut);
+                        toRemove.startAnimation(fadeOut);
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                toRemove.setVisibility(View.GONE);
+                                if (mLayout != null) {
+                                    mLayout.removeView(toRemove);
+                                }
+                            }
+                        }, 500);
                     }
                 }
             }, 3500);
