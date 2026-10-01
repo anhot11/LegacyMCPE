@@ -548,18 +548,10 @@ void Minecraft::setScreen(Screen* screen) {
     }
 
     // 4J-PB - if a screen has been set, go into menu mode
-    // it's possible that player doesn't exist here yet
     // 4jcraft: reuse this for the java GUI
 #if defined(ENABLE_JAVA_GUIS)
-    if (screen != nullptr && player != nullptr) {
-        if (player && player->GetXboxPad() != -1) {
-            PlatformInput.SetMenuDisplayed(player->GetXboxPad(), true);
-        }
-    } else if (player != nullptr) {
-        if (player && player->GetXboxPad() != -1) {
-            PlatformInput.SetMenuDisplayed(player->GetXboxPad(), false);
-        }
-    }
+    int pad = (player && player->GetXboxPad() != -1) ? player->GetXboxPad() : 0;
+    PlatformInput.SetMenuDisplayed(pad, screen != nullptr);
 #endif
 }
 
@@ -3907,6 +3899,11 @@ void Minecraft::setLevel(MultiPlayerLevel* level, int message /*=-1*/,
         // 4J - allow update thread to start processing the level now both it &
         // the player should be ok
         gameRenderer->EnableUpdateThread();
+#if defined(ENABLE_JAVA_GUIS)
+        if (screen == nullptr) {
+            PlatformInput.SetMenuDisplayed(player ? player->GetXboxPad() : 0, false);
+        }
+#endif
     } else {
         levelSource->clearAll();
         player = nullptr;
