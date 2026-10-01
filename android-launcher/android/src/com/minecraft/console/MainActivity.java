@@ -159,7 +159,17 @@ public class MainActivity extends Activity {
     }
 
     private String getDefaultGameDir() {
-        // 1. Check if legacy /sdcard/LegacyMCPE is already installed and valid
+        // 1. Check if internal storage already has the game installed
+        File internalFiles = getFilesDir();
+        if (internalFiles != null && isGameInstalled(internalFiles.getAbsolutePath())) {
+            return internalFiles.getAbsolutePath();
+        }
+        // 2. Check if external app files already has the game installed
+        File extFiles = getExternalFilesDir(null);
+        if (extFiles != null && isGameInstalled(extFiles.getAbsolutePath())) {
+            return extFiles.getAbsolutePath();
+        }
+        // 3. Check if legacy /sdcard/LegacyMCPE is already installed and valid
         File sdcard = Environment.getExternalStorageDirectory();
         if (sdcard != null) {
             File legacy = new File(sdcard, "LegacyMCPE");
@@ -167,13 +177,10 @@ public class MainActivity extends Activity {
                 return legacy.getAbsolutePath();
             }
         }
-        // 2. Standard Android app external files: /sdcard/Android/data/y.MinecraftLegacyP/files
-        // Zero permissions needed! Guaranteed full read/write access on Android 5 through 16!
-        File extFiles = getExternalFilesDir(null);
+        // 4. Default for fresh download: external app storage (zero permissions needed!)
         if (extFiles != null) {
             return extFiles.getAbsolutePath();
         }
-        // 3. Fallback to internal files
         return getFilesDir().getAbsolutePath();
     }
 

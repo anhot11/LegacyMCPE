@@ -46,6 +46,8 @@
     <application android:label="MCPL-Public"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
+        android:extractNativeLibs="true"
+        android:requestLegacyExternalStorage="true"
         android:allowNativeHeapPointerTagging="false" >
 
         <activity android:name="com.minecraft.console.MainActivity"

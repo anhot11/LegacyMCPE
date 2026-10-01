@@ -743,7 +743,7 @@ void GLRenderer::Initialise() {
     SDL_GL_MakeCurrent(s_window, s_glContext);
     pushRenderState();
 
-#ifdef ENABLE_VSYNC
+#if defined(__ANDROID__) || defined(ANDROID) || defined(ENABLE_VSYNC)
     SDL_GL_SetSwapInterval(1);
 #else
     SDL_GL_SetSwapInterval(0);

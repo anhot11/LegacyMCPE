@@ -94,25 +94,30 @@ std::size_t StdFilesystem::fileSize(const std::filesystem::path& path) {
 std::filesystem::path StdFilesystem::getBasePath() {
 #if defined(__ANDROID__) || defined(ANDROID)
     const char* mcPath = std::getenv("MC_PATH");
-    if (mcPath && *mcPath && std::filesystem::exists(mcPath)) {
+    std::error_code ec;
+    if (mcPath && *mcPath && std::filesystem::exists(std::string(mcPath) + "/Common/Media/MediaWindows64.arc", ec)) {
+        return std::filesystem::path(mcPath);
+    }
+    if (mcPath && *mcPath && std::filesystem::exists(mcPath, ec)) {
         return std::filesystem::path(mcPath);
     }
     const char* candidates[] = {
+        "/data/user/0/y.MinecraftLegacyP/files",
+        "/data/data/y.MinecraftLegacyP/files",
         "/sdcard/Android/data/y.MinecraftLegacyP/files",
         "/storage/emulated/0/Android/data/y.MinecraftLegacyP/files",
-        "/data/data/y.MinecraftLegacyP/files",
         "/sdcard/LegacyMCPE",
         "/storage/emulated/0/LegacyMCPE"
     };
     for (const char* c : candidates) {
-        std::error_code ec;
-        if (std::filesystem::exists(std::string(c) + "/Common/Media/MediaWindows64.arc", ec)) {
+        std::error_code ecCheck;
+        if (std::filesystem::exists(std::string(c) + "/Common/Media/MediaWindows64.arc", ecCheck)) {
             return std::filesystem::path(c);
         }
     }
     for (const char* c : candidates) {
-        std::error_code ec;
-        if (std::filesystem::exists(c, ec)) {
+        std::error_code ecCheck;
+        if (std::filesystem::exists(c, ecCheck)) {
             return std::filesystem::path(c);
         }
     }
