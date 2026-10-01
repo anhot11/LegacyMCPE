@@ -91,8 +91,8 @@ public class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE ||
             requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
             if (mWidth > 0 && mHeight > 0) {
-                int maxDim = Math.max(mWidth, mHeight);
-                int minDim = Math.min(mWidth, mHeight);
+                int maxDim = (int) Math.max(mWidth, mHeight);
+                int minDim = (int) Math.min(mWidth, mHeight);
                 holder.setFixedSize(maxDim, minDim);
             }
         }
