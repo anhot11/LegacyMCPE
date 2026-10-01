@@ -64,8 +64,8 @@ jobs:
 
       - name: Bundle Game Assets
         run: |
-          python3 scripts/pack_game_assets.py
-          ls -lh android-launcher/android/assets/game_assets.zip
+          python3 scripts/pack_game_assets.py MCPL-Data.zip
+          ls -lh MCPL-Data.zip
 
       - name: Build Launcher APK
         run: |
@@ -82,13 +82,15 @@ jobs:
           python3 waf configure -T release --termux
           python3 waf build
           ls -lh build/android/mod-signed.apk
-          cp build/android/mod-signed.apk ../LegacyMCPE-arm64.apk
+          cp build/android/mod-signed.apk ../MCPL-Public.apk
 
-      - name: Upload APK Artifact
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: LegacyMCPE-arm64-apk
-          path: LegacyMCPE-arm64.apk
+          name: MCPL-Public-build
+          path: |
+            MCPL-Public.apk
+            MCPL-Data.zip
           retention-days: 14
 
       - name: Update GitHub Release
@@ -97,5 +99,8 @@ jobs:
         continue-on-error: true
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.0' }}
-          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Legacy MCPE v1.0.0' }}
-          files: LegacyMCPE-arm64.apk
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'MCPL-Public v1.0.0' }}
+          files: |
+            MCPL-Public.apk
+            MCPL-Data.zip
+

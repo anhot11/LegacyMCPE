@@ -6,7 +6,7 @@
     android:versionCode="1"
     android:versionName="1.0"
     android:debuggable="true"
-    package="com.minecraft.console"
+    package="y.MinecraftLegacyP"
     android:installLocation="auto">
 
     <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="34" />
@@ -35,21 +35,7 @@
         android:name="android.hardware.type.pc"
         android:required="false" />
 
-    <!-- Audio recording support -->
-    <!-- if you want to capture audio, uncomment this. -->
-    <!-- <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false" /> -->
-
-    <!-- Allow downloading to the external storage on Android 5.1 and older -->
-    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="22" /> -->
-
-    <!-- Allow access to Bluetooth devices -->
-    <!-- Currently this is just for Steam Controller support and requires setting SDL_HINT_JOYSTICK_HIDAPI_STEAM -->
-    <!-- <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" /> -->
-    <!-- <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /> -->
-
-    <!-- Allow access to the vibrator -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -57,29 +43,15 @@
 
     <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
 
-    <!-- if you want to capture audio, uncomment this. -->
-    <!-- <uses-permission android:name="android.permission.RECORD_AUDIO" /> -->
-
-    <!-- Create a Java class extending SDLActivity and place it in a
-         directory under app/src/main/java matching the package, e.g. app/src/main/java/com/gamemaker/game/MyGame.java
- 
-         then replace "SDLActivity" with the name of your class (e.g. "MyGame")
-         in the XML below.
-
-         An example Java class can be found in README-android.md
-    -->
-    <application android:label="Minecraft Console Edition (4jcraft)"
+    <application android:label="MCPL-Public"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:allowNativeHeapPointerTagging="false" >
-<!--    android:icon="@drawable/ic_launcher" -->
 
-        <!-- Example of setting SDL hints from AndroidManifest.xml:
-        <meta-data android:name="SDL_ENV.SDL_ACCELEROMETER_AS_JOYSTICK" android:value="0"/>
-         -->
-        <activity android:name=".MainActivity"
+        <activity android:name="com.minecraft.console.MainActivity"
             android:exported="true"
-            android:label="Minecraft Console Edition (4jcraft)" 
+            android:label="MCPL-Public" 
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:screenOrientation="sensorLandscape">
             <meta-data android:name="android.max_aspect" android:value="2.5" />
             <intent-filter>
@@ -91,9 +63,9 @@
             </intent-filter>
         </activity>
         
-        <activity android:name=".MainActivity2"
+        <activity android:name="com.minecraft.console.MainActivity2"
             android:exported="true"
-            android:label="Minecraft Console Edition"
+            android:label="MCPL-Public"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"

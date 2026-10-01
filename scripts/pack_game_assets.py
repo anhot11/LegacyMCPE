@@ -5,7 +5,10 @@ import zipfile
 
 def pack_assets():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    target_zip = os.path.join(repo_root, "android-launcher", "android", "assets", "game_assets.zip")
+    if len(sys.argv) > 1:
+        target_zip = os.path.abspath(sys.argv[1])
+    else:
+        target_zip = os.path.join(repo_root, "MCPL-Data.zip")
     
     # 1. MediaWindows64.arc
     arc_path = os.path.join(repo_root, "targets", "resources", "Common", "Media", "MediaWindows64.arc")

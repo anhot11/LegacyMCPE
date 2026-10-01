@@ -1,16 +1,17 @@
-# Legacy MCPE
+# MCPL-Public (Legacy MCPE)
 
 <div align="center">
 
-# 🎮 Legacy MCPE
+# 🎮 MCPL-Public
 ### *Minecraft Console Legacy Edition (TU19 / 1.6.1) for Android*
+**Package:** `y.MinecraftLegacyP`
 
 [![Android Build](https://github.com/anhot11/LegacyMCPE/actions/workflows/build-android.yml/badge.svg)](https://github.com/anhot11/LegacyMCPE/actions/workflows/build-android.yml)
 [![Latest Release](https://img.shields.io/github/v/release/anhot11/LegacyMCPE?color=green&label=Release)](https://github.com/anhot11/LegacyMCPE/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Android%20(ARM64)-brightgreen.svg)](https://github.com/anhot11/LegacyMCPE/releases)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-**Legacy MCPE** is a native Android port of the legendary **Minecraft Console Legacy Edition (Xbox 360 / PS3 - TU19 / 1.6.1)**, rewritten in modern C++23 with authentic Bedrock HD touch controls, full mobile hardware optimizations, and advanced thermal protection.
+**MCPL-Public** is a native Android port of the legendary **Minecraft Console Legacy Edition (Xbox 360 / PS3 - TU19 / 1.6.1)**, rewritten in modern C++23 with authentic Bedrock HD touch controls, zero-duplicate storage architecture, full Android 16 & 16KB page alignment support, and advanced thermal protection.
 
 [English](#features) • [Español](#características-en-español) • [Installation](#-installation--descarga) • [Controls](#-controls--controles) • [Thermal Control](#-thermal-protection--protección-térmica)
 
@@ -20,6 +21,18 @@
 
 ## ✨ Features
 
+- 📦 **Zero-Duplicate Storage Architecture:**
+  - Lightweight APK (~13 MB) decoupled from game data assets (`MCPL-Data.zip` ~208 MB).
+  - 1-tap fast automatic download & in-place setup that deletes the temporary archive immediately upon completion.
+  - Consumes only ~215 MB total on device instead of 450+ MB.
+- 📱 **Modern Android 16 & 16KB Page Size Alignment:**
+  - Native libraries compiled with 16KB max ELF page size alignment (`-Wl,-z,max-page-size=16384`) compliant with Android 15 & 16 requirements.
+  - Direct POSIX native directory management avoiding restricted Java hidden reflection APIs.
+  - Dynamic display cutout mode (`SHORT_EDGES`) preventing black screen on modern high-refresh/high-resolution displays.
+- 📺 **True Immersive Fullscreen:**
+  - Status bar (battery, clock, wifi) and navigation bar completely hidden via Android 11+ `WindowInsetsController` and sticky immersive mode.
+- ⏳ **Clean Loading Splash Screen:**
+  - Startup splash screen ("MCPL-Public / Cargando juego...") front-facing above the controls overlay, cleanly fading out after engine initialization.
 - 🎮 **Authentic Bedrock & Classic PE HD Touch Controls:**
   - Directional D-Pad with authentic Bedrock arrows and sneak button.
   - Dedicated action buttons: Attack Sword (`HIT`), Interaction Hand (`USE`), Jump (`SPACE`).
@@ -51,12 +64,16 @@
 
 ## 🇪🇸 Características (En Español)
 
-- 🎮 **Controles Táctiles HD Nativos de Bedrock y Classic PE:** Flechas direccionales, espada de ataque, mano de interacción, botón de salto, agacharse, perspectiva F5, menú de pausa y chat. Sin letras cuadradas feas.
+- 📦 **Almacenamiento Eficiente Sin Duplicados:** APK ultra ligero (~13 MB). Descarga directa en 1 toque de los datos (`MCPL-Data.zip` ~208 MB) con eliminación automática del zip temporal. Consumo total en disco de solo ~215 MB.
+- 📱 **Compatibilidad Total con Android 16 y Alineación ELF 16KB:** Compilado con soporte de páginas de memoria de 16KB para dispositivos modernos con Android 15 y 16.
+- 📺 **Pantalla Completa Inmersiva:** Ocultamiento total de barra de estado (batería, reloj, wifi) y barra de navegación inferior.
+- ⏳ **Pantalla de Carga Frontal:** Pantalla de bienvenida limpia ("MCPL-Public / Cargando juego...") que cubre los controles táctiles en los primeros segundos de inicio y se desvanece suavemente.
+- 🎮 **Controles Táctiles HD Nativos de Bedrock y Classic PE:** Flechas direccionales, espada de ataque, mano de interacción, botón de salto, agacharse, perspectiva F5, menú de pausa y chat. Sin letras feas.
 - 🎛️ **3 Estilos de Control Seleccionables:** Modern Bedrock (botones separados), Classic PE (cruz unida tradicional) y Joystick analógico fluido. Con escala y opacidad ajustables desde el menú de Lunar Client.
 - 🧼 **Menús Limpios y Nativos:** Los controles virtuales se ocultan automáticamente en el menú principal, selección de mundos, inventario y pausa. Navegación directa con 1 toque.
 - 🖼️ **Interfaz Renovada con Íconos HD:** Botón único "Jugar" con pestañas para Mundos y Servidores, e íconos temáticos en todos los botones del juego.
 - 🧍 **Steve 3D Interactivo:** Steve de pie en el menú principal siguiendo con la cabeza la posición de tu dedo en la pantalla.
-- ⚡ **Rendimiento Optimizado (30–60 FPS):** Carga dinámica de chunks (reducción del 75% de carga GPU en distancias cortas/mínimas) y bypass de nubes.
+- ⚡ **Rendimiento Optimizado (30–60 FPS):** Carga dinámica de chunks y bypass de nubes.
 - ❄️ **Protección Térmica de Batería:** Monitoreo de temperatura en tiempo real con 4 niveles (Desactivado, Moderado 45°C, Equilibrado 42°C, Máximo Ahorro 38°C) para evitar sobrecalentamiento.
 - 🚀 **Carga Instantánea de Mundos (< 2s):** Radio de generación de spawn optimizado a 9 chunks en Android, sin congelamientos ni desconexiones por timeout.
 
@@ -65,10 +82,12 @@
 ## 📥 Installation / Descarga
 
 1. Ve a la pestaña de [**Releases**](https://github.com/anhot11/LegacyMCPE/releases).
-2. Descarga la versión más reciente del archivo: **`LegacyMCPE-arm64.apk`**.
-3. En tu dispositivo Android, abre el archivo APK descargado e instala la aplicación (permite la instalación de orígenes desconocidos si el sistema lo solicita).
-4. Abre **Legacy MCPE** y concede los permisos de almacenamiento necesarios para guardar tus mundos en `/sdcard/LegacyMCPE/`.
-5. ¡Disfruta de la auténtica experiencia de Minecraft Console Edition en tu teléfono!
+2. Descarga la versión más reciente: **`MCPL-Public.apk`** (~13 MB).
+3. En tu dispositivo Android, instala el archivo APK.
+4. Abre **MCPL-Public**:
+   - En el primer inicio, pulsa **"Descargar e Iniciar Juego"** para obtener los recursos del juego (208 MB) automáticamente. El archivo temporal se borra al terminar para no ocupar espacio duplicado.
+   - Alternativamente, los desarrolladores y testers pueden usar **"Modo Desarrollador"** para seleccionar una carpeta externa de recursos.
+5. ¡Disfruta de la auténtica experiencia de Minecraft Console Edition a pantalla completa!
 
 ---
 

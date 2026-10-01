@@ -6,9 +6,9 @@
     android:background="#121212"
     android:padding="24dp">
 
-    <!-- Extraction / Installation View (shown on first launch in release) -->
+    <!-- Downloader / Extraction Progress View -->
     <LinearLayout
-        android:id="@+id/layout_extract"
+        android:id="@+id/layout_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
@@ -20,7 +20,7 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Legacy MCPE"
+            android:text="MCPL-Public"
             android:textColor="#FFFFFF"
             android:textSize="26sp"
             android:textStyle="bold"
@@ -30,13 +30,13 @@
             android:id="@+id/tv_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Instalando recursos del juego... Por favor espere."
+            android:text="Instalando recursos del juego..."
             android:textColor="#CCCCCC"
             android:textSize="14sp"
             android:layout_marginBottom="16dp" />
 
         <ProgressBar
-            android:id="@+id/extract_progress"
+            android:id="@+id/progress_bar"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="20dp"
@@ -55,7 +55,54 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <!-- Dev / Manual Launch View (shown in dev mode or when dev button clicked) -->
+    <!-- Initial Missing Assets Prompt View -->
+    <LinearLayout
+        android:id="@+id/layout_download_prompt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MCPL-Public"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Se requieren los datos del juego (200 MB) para jugar."
+            android:textColor="#CCCCCC"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/btn_download"
+            android:text="📥 Descargar Datos Oficiales"
+            android:textColor="#FFFFFF"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btn_open_dev"
+            android:text="⚙ Usar Carpeta Personalizada (Modo Dev)"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:background="@android:color/transparent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <!-- Dev / Manual Launch View -->
     <LinearLayout
         android:id="@+id/layout_dev"
         android:layout_width="match_parent"
@@ -68,7 +115,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Legacy MCPE Launcher"
+            android:text="MCPL-Public (Modo Dev)"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -78,7 +125,7 @@
             android:id="@+id/directory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Directorio del juego (/sdcard/LegacyMCPE)"
+            android:hint="Directorio (/sdcard/LegacyMCPE)"
             android:textColor="#FFFFFF"
             android:textColorHint="#888888"
             android:background="#282828"
@@ -94,18 +141,5 @@
             android:paddingLeft="32dp"
             android:paddingRight="32dp" />
     </LinearLayout>
-
-    <!-- Dev Mode Toggle Button at Bottom Right -->
-    <Button
-        android:id="@+id/btn_dev_toggle"
-        android:text="⚙ Modo Dev"
-        android:textColor="#777777"
-        android:textSize="11sp"
-        android:background="@android:color/transparent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:visibility="gone" />
 
 </RelativeLayout>

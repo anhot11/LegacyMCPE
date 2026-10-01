@@ -650,6 +650,13 @@ void GLRenderer::Initialise() {
         return;
     }
     SDL_DisplayMode dm;
+#if defined(__ANDROID__) || defined(ANDROID)
+    if (SDL_GetCurrentDisplayMode(0, &dm) == 0) {
+        s_windowWidth = dm.w;
+        s_windowHeight = dm.h;
+    }
+    s_fullscreen = true;
+#else
     if (s_reqWidth > 0 && s_reqHeight > 0) {
         s_windowWidth = s_reqWidth;
         s_windowHeight = s_reqHeight;
@@ -657,6 +664,7 @@ void GLRenderer::Initialise() {
         s_windowWidth = (int)(dm.w * 0.4f);
         s_windowHeight = (int)(dm.h * 0.4f);
     }
+#endif
 #ifdef GLES
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -671,7 +679,11 @@ void GLRenderer::Initialise() {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     Uint32 wf = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+#if defined(__ANDROID__) || defined(ANDROID)
+    wf |= SDL_WINDOW_FULLSCREEN;
+#else
     if (s_fullscreen) wf |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+#endif
     s_window = SDL_CreateWindow("Minecraft Console Edition",
                                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                 s_windowWidth, s_windowHeight, wf);
@@ -711,6 +723,7 @@ void GLRenderer::Initialise() {
     s_glCtx = s_glContext;
 
     SDL_GL_MakeCurrent(s_window, s_glContext);
+#if !defined(__ANDROID__) && !defined(ANDROID)
     for (int i = 0; i < MAX_SHARED_CTXS; i++) {
         SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
         SDL_Window* w = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED,
@@ -726,6 +739,7 @@ void GLRenderer::Initialise() {
         s_sharedCtxs[s_sharedCtxCount] = ctx;
         s_sharedCtxCount++;
     }
+#endif
     SDL_GL_MakeCurrent(s_window, s_glContext);
     pushRenderState();
 

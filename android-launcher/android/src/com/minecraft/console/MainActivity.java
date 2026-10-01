@@ -17,6 +17,9 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -29,23 +32,29 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import y.MinecraftLegacyP.R;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class MainActivity extends Activity {
-    private static final String TAG = "LegacyMCPE";
+    private static final String TAG = "MCPL-Public";
     private static final int PERMISSION_REQ_CODE = 1001;
+    private static final String DATA_URL = "https://github.com/anhot11/LegacyMCPE/releases/download/v1.0.0/MCPL-Data.zip";
 
-    private LinearLayout layoutExtract;
+    private LinearLayout layoutProgress;
+    private LinearLayout layoutDownloadPrompt;
     private LinearLayout layoutDev;
     private ProgressBar progressBar;
     private TextView tvStatus;
     private TextView tvProgress;
     private EditText etDirectory;
     private Button btnLaunch;
-    private Button btnDevToggle;
+    private Button btnDownload;
+    private Button btnOpenDev;
 
-    private boolean isExtracting = false;
+    private boolean isWorking = false;
     private boolean devModeActive = false;
 
     @Override
@@ -53,15 +62,18 @@ public class MainActivity extends Activity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        hideSystemBars();
 
-        layoutExtract = findViewById(R.id.layout_extract);
+        layoutProgress = findViewById(R.id.layout_progress);
+        layoutDownloadPrompt = findViewById(R.id.layout_download_prompt);
         layoutDev = findViewById(R.id.layout_dev);
-        progressBar = findViewById(R.id.extract_progress);
+        progressBar = findViewById(R.id.progress_bar);
         tvStatus = findViewById(R.id.tv_status);
         tvProgress = findViewById(R.id.tv_progress);
         etDirectory = findViewById(R.id.directory);
         btnLaunch = findViewById(R.id.launch);
-        btnDevToggle = findViewById(R.id.btn_dev_toggle);
+        btnDownload = findViewById(R.id.btn_download);
+        btnOpenDev = findViewById(R.id.btn_open_dev);
 
         SharedPreferences prefs = getSharedPreferences("dirPrefs", Context.MODE_PRIVATE);
         String defaultPath = getDefaultGameDir();
@@ -79,13 +91,24 @@ public class MainActivity extends Activity {
             }
         });
 
-        btnDevToggle.setOnClickListener(new View.OnClickListener() {
+        btnOpenDev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 devModeActive = true;
-                layoutExtract.setVisibility(View.GONE);
+                layoutDownloadPrompt.setVisibility(View.GONE);
+                layoutProgress.setVisibility(View.GONE);
                 layoutDev.setVisibility(View.VISIBLE);
-                btnDevToggle.setVisibility(View.GONE);
+            }
+        });
+
+        btnDownload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!hasStoragePermission()) {
+                    requestStoragePermission();
+                    return;
+                }
+                startDownloadAndSetup(getDefaultGameDir());
             }
         });
     }
@@ -93,8 +116,44 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!devModeActive && !isExtracting) {
+        hideSystemBars();
+        if (!devModeActive && !isWorking) {
             checkAndStart();
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemBars();
+        }
+    }
+
+    private void hideSystemBars() {
+        if (getWindow() == null) return;
+        View decorView = getWindow().getDecorView();
+        if (decorView == null) return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            final WindowInsetsController insetsController = decorView.getWindowInsetsController();
+            if (insetsController != null) {
+                insetsController.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+            );
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
     }
 
@@ -134,6 +193,11 @@ public class MainActivity extends Activity {
         }
     }
 
+    private boolean isGameInstalled(String dirPath) {
+        File arcFile = new File(dirPath, "Common/Media/MediaWindows64.arc");
+        return arcFile.exists() && arcFile.length() > 5 * 1024 * 1024;
+    }
+
     private boolean hasBundledAssets() {
         try {
             InputStream is = getAssets().open("game_assets.zip");
@@ -142,11 +206,6 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             return false;
         }
-    }
-
-    private boolean isGameInstalled(String dirPath) {
-        File arcFile = new File(dirPath, "Common/Media/MediaWindows64.arc");
-        return arcFile.exists() && arcFile.length() > 5 * 1024 * 1024;
     }
 
     private void checkAndStart() {
@@ -162,26 +221,28 @@ public class MainActivity extends Activity {
         }
 
         if (isGameInstalled(targetDir)) {
-            // Already installed! Launch immediately
+            // Game is already installed and ready! Launch directly
             launchGame(targetDir);
             return;
         }
 
-        // Check if bundled assets are available inside APK
+        // If an offline APK includes bundled assets in assets/
         if (hasBundledAssets()) {
             startAssetExtraction(targetDir);
-        } else {
-            // Dev mode: Show directory selector
-            layoutExtract.setVisibility(View.GONE);
-            layoutDev.setVisibility(View.VISIBLE);
+            return;
         }
+
+        // Otherwise: show the clean download prompt (prevents double storage!)
+        layoutProgress.setVisibility(View.GONE);
+        layoutDev.setVisibility(View.GONE);
+        layoutDownloadPrompt.setVisibility(View.VISIBLE);
     }
 
-    private void startAssetExtraction(final String targetDirPath) {
-        isExtracting = true;
-        layoutExtract.setVisibility(View.VISIBLE);
+    private void startDownloadAndSetup(final String targetDirPath) {
+        isWorking = true;
+        layoutDownloadPrompt.setVisibility(View.GONE);
         layoutDev.setVisibility(View.GONE);
-        btnDevToggle.setVisibility(View.VISIBLE);
+        layoutProgress.setVisibility(View.VISIBLE);
 
         final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -193,31 +254,162 @@ public class MainActivity extends Activity {
                     targetDir.mkdirs();
                 }
 
-                long totalBytes = 230 * 1024 * 1024L; // Default estimate
+                File tempZip = new File(targetDir, "MCPL_Download.tmp");
+
                 try {
-                    AssetFileDescriptor afd = getAssets().openFd("game_assets.zip");
-                    if (afd != null && afd.getLength() > 0) {
-                        totalBytes = afd.getLength();
+                    // 1. Download
+                    mainHandler.post(new Runnable() {
+                        @Override public void run() {
+                            tvStatus.setText("Descargando recursos oficiales...");
+                            progressBar.setProgress(0);
+                            tvProgress.setText("Conectando con el servidor...");
+                        }
+                    });
+
+                    URL url = new URL(DATA_URL);
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setConnectTimeout(15000);
+                    connection.setReadTimeout(30000);
+                    connection.setInstanceFollowRedirects(true);
+                    connection.connect();
+
+                    int responseCode = connection.getResponseCode();
+                    if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == 307 || responseCode == 308) {
+                        String newUrl = connection.getHeaderField("Location");
+                        connection = (HttpURLConnection) new URL(newUrl).openConnection();
+                        connection.connect();
                     }
-                    if (afd != null) {
-                        afd.close();
+
+                    int fileLength = connection.getContentLength();
+                    InputStream input = new BufferedInputStream(connection.getInputStream(), 65536);
+                    FileOutputStream output = new FileOutputStream(tempZip);
+
+                    byte[] data = new byte[65536];
+                    long totalDownloaded = 0;
+                    int count;
+                    long lastUpdateTime = 0;
+
+                    while ((count = input.read(data)) != -1) {
+                        output.write(data, 0, count);
+                        totalDownloaded += count;
+
+                        long now = System.currentTimeMillis();
+                        if (now - lastUpdateTime > 200) {
+                            lastUpdateTime = now;
+                            final int percent = fileLength > 0 ? (int) ((totalDownloaded * 100) / fileLength) : 0;
+                            final long mb = totalDownloaded / (1024 * 1024);
+                            mainHandler.post(new Runnable() {
+                                @Override public void run() {
+                                    progressBar.setProgress(percent);
+                                    tvProgress.setText(percent + "% (" + mb + " MB)");
+                                }
+                            });
+                        }
                     }
-                } catch (Exception ignored) {}
+
+                    output.flush();
+                    output.close();
+                    input.close();
+
+                    // 2. Unpack
+                    mainHandler.post(new Runnable() {
+                        @Override public void run() {
+                            tvStatus.setText("Instalando recursos del juego...");
+                            progressBar.setProgress(0);
+                            tvProgress.setText("Preparando archivos...");
+                        }
+                    });
+
+                    unzipFile(tempZip, targetDir, mainHandler);
+
+                    // 3. DELETE TEMPORARY ZIP (Eliminates double space consumption!)
+                    if (tempZip.exists()) {
+                        tempZip.delete();
+                        Log.d(TAG, "Temporary download zip deleted successfully. Storage consumption freed.");
+                    }
+
+                    mainHandler.post(new Runnable() {
+                        @Override public void run() {
+                            progressBar.setProgress(100);
+                            tvProgress.setText("100% - ¡Instalación Completada!");
+                            tvStatus.setText("Iniciando MCPL-Public...");
+                            launchGame(targetDirPath);
+                        }
+                    });
+
+                } catch (final Exception e) {
+                    Log.e(TAG, "Error during download/setup", e);
+                    if (tempZip.exists()) {
+                        tempZip.delete();
+                    }
+                    mainHandler.post(new Runnable() {
+                        @Override public void run() {
+                            isWorking = false;
+                            Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            layoutProgress.setVisibility(View.GONE);
+                            layoutDownloadPrompt.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void unzipFile(File zipFile, File targetDir, final Handler mainHandler) throws IOException {
+        InputStream is = new BufferedInputStream(new java.io.FileInputStream(zipFile), 65536);
+        ZipInputStream zis = new ZipInputStream(is);
+        ZipEntry entry;
+        byte[] buffer = new byte[65536];
+        long totalBytes = zipFile.length();
+        long totalBytesRead = 0;
+
+        while ((entry = zis.getNextEntry()) != null) {
+            File outFile = new File(targetDir, entry.getName());
+            if (entry.isDirectory()) {
+                outFile.mkdirs();
+            } else {
+                File parent = outFile.getParentFile();
+                if (parent != null && !parent.exists()) {
+                    parent.mkdirs();
+                }
+
+                FileOutputStream fos = new FileOutputStream(outFile);
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                    totalBytesRead += len;
+                }
+                fos.flush();
+                fos.close();
+            }
+            zis.closeEntry();
+        }
+        zis.close();
+    }
+
+    private void startAssetExtraction(final String targetDirPath) {
+        isWorking = true;
+        layoutDownloadPrompt.setVisibility(View.GONE);
+        layoutDev.setVisibility(View.GONE);
+        layoutProgress.setVisibility(View.VISIBLE);
+
+        final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                File targetDir = new File(targetDirPath);
+                if (!targetDir.exists()) {
+                    targetDir.mkdirs();
+                }
 
                 byte[] buffer = new byte[65536];
-                long totalBytesRead = 0;
-
                 try {
                     InputStream rawIs = getAssets().open("game_assets.zip");
                     ZipInputStream zis = new ZipInputStream(new BufferedInputStream(rawIs, 65536));
                     ZipEntry entry;
 
                     while ((entry = zis.getNextEntry()) != null) {
-                        if (devModeActive) {
-                            zis.close();
-                            return;
-                        }
-
                         File outFile = new File(targetDir, entry.getName());
                         if (entry.isDirectory()) {
                             outFile.mkdirs();
@@ -231,18 +423,6 @@ public class MainActivity extends Activity {
                             int len;
                             while ((len = zis.read(buffer)) > 0) {
                                 fos.write(buffer, 0, len);
-                                totalBytesRead += len;
-
-                                final int percent = (int) Math.min(99, (totalBytesRead * 100) / totalBytes);
-                                final long mbRead = totalBytesRead / (1024 * 1024);
-
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        progressBar.setProgress(percent);
-                                        tvProgress.setText(percent + "% (" + mbRead + " MB)");
-                                    }
-                                });
                             }
                             fos.flush();
                             fos.close();
@@ -256,19 +436,19 @@ public class MainActivity extends Activity {
                         public void run() {
                             progressBar.setProgress(100);
                             tvProgress.setText("100% - ¡Completado!");
-                            tvStatus.setText("¡Iniciando Legacy MCPE!");
+                            tvStatus.setText("Iniciando MCPL-Public...");
                             launchGame(targetDirPath);
                         }
                     });
 
                 } catch (final Exception e) {
-                    Log.e(TAG, "Error extracting game assets", e);
+                    Log.e(TAG, "Error extracting bundled assets", e);
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            isExtracting = false;
-                            Toast.makeText(MainActivity.this, "Error al extraer recursos: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            layoutExtract.setVisibility(View.GONE);
+                            isWorking = false;
+                            Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            layoutProgress.setVisibility(View.GONE);
                             layoutDev.setVisibility(View.VISIBLE);
                         }
                     });

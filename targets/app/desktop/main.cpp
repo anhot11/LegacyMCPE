@@ -417,8 +417,17 @@ extern "C" MC_EXPORT int main(int argc, const char* argv[]) {
     sigaction(SIGABRT, &sa, nullptr);
     sigaction(SIGBUS, &sa, nullptr);
     sigaction(SIGTRAP, &sa, nullptr);
-#endif
     app.DebugPrintf("---main()\n");
+
+#if defined(__ANDROID__) || defined(ANDROID)
+    {
+        std::string basePath = PlatformFilesystem.getBasePath().string();
+        if (!basePath.empty()) {
+            ::chdir(basePath.c_str());
+            app.DebugPrintf("[Android] Native chdir to: %s\n", basePath.c_str());
+        }
+    }
+#endif
 
     // ---- Parse CLI arguments ----
     // Usage: Minecraft.Client [--width W] [--height H] [--fullscreen]
