@@ -543,10 +543,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         } else {
            nativeFocusChanged(false);
-           if (!mHasMultiWindow) {
-               mNextNativeState = NativeState.PAUSED;
-               SDLActivity.handleNativeState();
-           }
+           // Do NOT pause the native game thread on window focus loss; only onPause() triggers pause.
         }
     }
 

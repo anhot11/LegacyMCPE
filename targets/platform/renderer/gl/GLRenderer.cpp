@@ -154,6 +154,11 @@ enum GLShadowBits {
 };
 
 static void onFramebufferResize(int w, int h) {
+#if defined(__ANDROID__) || defined(ANDROID)
+    if (w < h) {
+        std::swap(w, h);
+    }
+#endif
     if (w < 1) w = 1;
     if (h < 1) h = 1;
     s_windowWidth = w;
@@ -652,8 +657,8 @@ void GLRenderer::Initialise() {
     SDL_DisplayMode dm;
 #if defined(__ANDROID__) || defined(ANDROID)
     if (SDL_GetCurrentDisplayMode(0, &dm) == 0) {
-        s_windowWidth = dm.w;
-        s_windowHeight = dm.h;
+        s_windowWidth = std::max(dm.w, dm.h);
+        s_windowHeight = std::min(dm.w, dm.h);
     }
     s_fullscreen = true;
 #else
@@ -788,6 +793,11 @@ void GLRenderer::StartFrame() {
     Set_matrixDirty();
     int w, h;
     SDL_GetWindowSize(s_window, &w, &h);
+#if defined(__ANDROID__) || defined(ANDROID)
+    if (w < h) {
+        std::swap(w, h);
+    }
+#endif
     s_windowWidth = w > 0 ? w : 1;
     s_windowHeight = h > 0 ? h : 1;
     glViewport(0, 0, s_windowWidth, s_windowHeight);

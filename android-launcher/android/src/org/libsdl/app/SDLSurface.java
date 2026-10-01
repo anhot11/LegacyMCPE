@@ -85,6 +85,17 @@ public class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v("SDL", "surfaceCreated()");
+        int requestedOrientation = SDLActivity.mSingleton != null ? SDLActivity.mSingleton.getRequestedOrientation() : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+        if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE ||
+            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE ||
+            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE ||
+            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+            if (mWidth > 0 && mHeight > 0) {
+                int maxDim = Math.max(mWidth, mHeight);
+                int minDim = Math.min(mWidth, mHeight);
+                holder.setFixedSize(maxDim, minDim);
+            }
+        }
         SDLActivity.onNativeSurfaceCreated();
     }
 
@@ -126,6 +137,28 @@ public class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         } catch(Exception ignored) {
         }
 
+        // Ensure orientation conforms to landscape BEFORE reporting to native!
+        int requestedOrientation = SDLActivity.mSingleton.getRequestedOrientation();
+        if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE ||
+            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE ||
+            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE ||
+            requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+            if (width < height) {
+                int temp = width;
+                width = height;
+                height = temp;
+            }
+            if (nDeviceWidth < nDeviceHeight) {
+                int temp = nDeviceWidth;
+                nDeviceWidth = nDeviceHeight;
+                nDeviceHeight = temp;
+            }
+        }
+
+        mWidth = width;
+        mHeight = height;
+        holder.setFixedSize(width, height);
+
         synchronized(SDLActivity.getContext()) {
             // In case we're waiting on a size change after going fullscreen, send a notification.
             SDLActivity.getContext().notifyAll();
@@ -135,16 +168,6 @@ public class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         Log.v("SDL", "Device size: " + nDeviceWidth + "x" + nDeviceHeight);
         SDLActivity.nativeSetScreenResolution(width, height, nDeviceWidth, nDeviceHeight, mDisplay.getRefreshRate());
         SDLActivity.onNativeResize();
-
-        // Ensure orientation conforms to landscape if required, but NEVER skip initializing the surface!
-        int requestedOrientation = SDLActivity.mSingleton.getRequestedOrientation();
-        if ((requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) && width < height) {
-            int temp = width;
-            width = height;
-            height = temp;
-            mWidth = width;
-            mHeight = height;
-        }
 
         /* If the surface has been previously destroyed by onNativeSurfaceDestroyed, recreate it here */
         SDLActivity.onNativeSurfaceChanged();

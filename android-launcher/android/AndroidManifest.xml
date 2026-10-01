@@ -54,6 +54,7 @@
             android:exported="true"
             android:label="MCPL-Public" 
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:resizeableActivity="false"
             android:screenOrientation="sensorLandscape">
             <meta-data android:name="android.max_aspect" android:value="2.5" />
             <intent-filter>
@@ -71,6 +72,7 @@
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
+            android:resizeableActivity="false"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
             android:screenOrientation="sensorLandscape">
             <meta-data android:name="android.max_aspect" android:value="2.5" />
