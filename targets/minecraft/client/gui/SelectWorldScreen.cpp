@@ -25,6 +25,16 @@
 #include "minecraft/world/level/storage/LevelStorageSource.h"
 #include "minecraft/world/level/storage/LevelSummary.h"
 #include "minecraft/world/level/tile/Tile.h"
+#include "MessageScreen.h"
+#include "minecraft/GameEnums.h"
+#include "minecraft/IGameServices.h"
+#include "minecraft/network/INetworkService.h"
+#include "platform/storage/storage.h"
+#include "app/common/Network/GameNetworkManager.h"
+#include "app/common/UI/All Platforms/UIStructs.h"
+#include "app/common/UI/ConsoleUIController.h"
+#include "minecraft/SharedConstants.h"
+#include "platform/network/NetTypes.h"
 #include "platform/input/input.h"
 #include "util/StringHelpers.h"
 
@@ -338,16 +348,47 @@ void SelectWorldScreen::buttonClicked(Button* button) {
 }
 
 void SelectWorldScreen::worldSelected(int id) {
-    minecraft->setScreen(nullptr);
     if (done) return;
     done = true;
-    minecraft->gameMode = nullptr;
 
     std::string worldFolderName = getWorldId(id);
-    if (worldFolderName == "")
-    {
-        worldFolderName = "World" + toWString<int>(id);
+    std::string worldName = getWorldName(id);
+    if (worldName.empty()) {
+        worldName = worldFolderName.empty() ? ("World" + toWString<int>(id)) : worldFolderName;
     }
+
+    PlatformStorage.ResetSaveData();
+    PlatformStorage.SetSaveTitle((char*)worldName.c_str());
+
+    NetworkGameInitData* param = new NetworkGameInitData();
+    param->seed = 0;
+    param->saveData = nullptr;
+    param->texturePackId = 0;
+    param->settings = gameServices().getGameHostOption(eGameHostOption_All);
+    param->xzSize = LEVEL_MAX_WIDTH;
+    param->hellScale = HELL_LEVEL_MAX_SCALE;
+
+    NetworkService.HostGame(0, false, false, MINECRAFT_NET_MAX_PLAYERS, 0);
+    NetworkService.FakeLocalPlayerJoined();
+
+    LoadingInputParams* loadingParams = new LoadingInputParams();
+    loadingParams->func = &CGameNetworkManager::RunNetworkGameThreadProc;
+    loadingParams->lpParam = param;
+
+    gameServices().setAutosaveTimerTime();
+
+    UIFullscreenProgressCompletionData* completionData =
+        new UIFullscreenProgressCompletionData();
+    completionData->bShowBackground = true;
+    completionData->bShowLogo = true;
+    completionData->type = e_ProgressCompletion_CloseAllPlayersUIScenes;
+    completionData->iPad = 0;
+    loadingParams->completionData = completionData;
+
+    ui.NavigateToScene(0, eUIScene_FullscreenProgress, loadingParams);
+    Language* language = Language::getInstance();
+    minecraft->setScreen(
+        new MessageScreen(language->getElement("menu.generatingLevel")));
 }
 
 void SelectWorldScreen::confirmResult(bool result, int id) {

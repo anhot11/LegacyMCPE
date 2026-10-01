@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 #include <chrono>
 #include <compare>
 #include <cstdint>
@@ -150,7 +154,11 @@ void Game::DebugPrintf(const char* szFormat, ...) {
     va_start(ap, szFormat);
     vsnprintf(buf, sizeof(buf), szFormat, ap);
     va_end(ap);
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "LegacyMCPE", "%s", buf);
+#else
     fputs(buf, stderr);
+#endif
 #endif
 }
 
@@ -162,7 +170,11 @@ void Game::DebugPrintf(int user, const char* szFormat, ...) {
     va_start(ap, szFormat);
     vsnprintf(buf, sizeof(buf), szFormat, ap);
     va_end(ap);
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "LegacyMCPE", "%s", buf);
+#else
     fputs(buf, stderr);
+#endif
     if (user == USER_UI) {
         ui.logDebugString(buf);
     }

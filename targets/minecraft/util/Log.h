@@ -3,6 +3,10 @@
 #include <cstdarg>
 #include <cstdio>
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 namespace Log {
 
 #if defined(_FINAL_BUILD)
@@ -18,7 +22,11 @@ inline void info(const char* /*fmt*/, ...) {}
 inline void info(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
+#if defined(__ANDROID__)
+    __android_log_vprint(ANDROID_LOG_INFO, "LegacyMCPE", fmt, args);
+#else
     std::vfprintf(stderr, fmt, args);
+#endif
     va_end(args);
 }
 #endif

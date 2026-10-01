@@ -296,8 +296,10 @@ void Minecraft::init() {
     // glClearColor(0.2f, 0.2f, 0.2f, 1);
 
     workingDirectory = getWorkingDirectory();
+    File savesDir(workingDirectory, "saves");
+    savesDir.mkdirs();
     levelSource =
-        new McRegionLevelStorageSource(File(workingDirectory, "saves"));
+        new McRegionLevelStorageSource(savesDir);
     //        levelSource = new MemoryLevelStorageSource();
     options = new Options(this, workingDirectory);
     skins = new TexturePackRepository(workingDirectory, this);
