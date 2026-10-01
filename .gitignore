@@ -28,3 +28,4 @@
 !/meson.build
 !/meson.options
 !/README.md
+/android-launcher/android/assets/game_assets.zip
