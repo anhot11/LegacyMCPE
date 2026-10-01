@@ -1,167 +1,134 @@
-# Portable LCE
+# Legacy MCPE
 
 <div align="center">
 
-![](.github-assets/transrights.png) ![](.github-assets/progress.png) ![](.github-assets/freepalestine.gif) ![](.github-assets/internetarchive.gif) ![](.github-assets//ieget-an.gif) ![](.github-assets/minecraft.gif) ![](.github-assets/powered-llvm.gif)
-![](.github-assets/opengl.gif) ![](.github-assets/sgi.gif) ![](.github-assets/not-binary.png) ![](.github-assets/adobe_getflash2.gif) ![](.github-assets/flash_get_20010813.gif) ![](.github-assets/SiliconValley_7479_English_imagens_get_flashplayer.gif) ![](.github-assets/problematic-media.gif) ![](.github-assets/seal.gif) ![](.github-assets/notepad-logo3.webp) ![](.github-assets/hrt-e2.gif) ![](.github-assets/4j.png)
+# 🎮 Legacy MCPE
+### *Minecraft Console Legacy Edition (TU19 / 1.6.1) for Android*
+
+[![Android Build](https://github.com/anhot11/LegacyMCPE/actions/workflows/build-android.yml/badge.svg)](https://github.com/anhot11/LegacyMCPE/actions/workflows/build-android.yml)
+[![Latest Release](https://img.shields.io/github/v/release/anhot11/LegacyMCPE?color=green&label=Release)](https://github.com/anhot11/LegacyMCPE/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Android%20(ARM64)-brightgreen.svg)](https://github.com/anhot11/LegacyMCPE/releases)
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
+**Legacy MCPE** is a native Android port of the legendary **Minecraft Console Legacy Edition (Xbox 360 / PS3 - TU19 / 1.6.1)**, rewritten in modern C++23 with authentic Bedrock HD touch controls, full mobile hardware optimizations, and advanced thermal protection.
+
+[English](#features) • [Español](#características-en-español) • [Installation](#-installation--descarga) • [Controls](#-controls--controles) • [Thermal Control](#-thermal-protection--protección-térmica)
 
 </div>
 
 ---
 
-This project is a heavily modified version of the Minecraft Console Legacy Edition codebase, aimed at porting old Minecraft (TU19/1.6.1) to different platforms and refactoring the codebase to improve organization and use modern C++ features.
+## ✨ Features
 
-## Status
-
-|  | [![Linux](https://github.com/portable-lce/portable-lce/actions/workflows/build-linux.yml/badge.svg)](https://github.com/portable-lce/portable-lce/actions/workflows/build-linux.yml) | [![Windows](https://github.com/portable-lce/portable-lce/actions/workflows/build-windows.yml/badge.svg)](https://github.com/portable-lce/portable-lce/actions/workflows/build-windows.yml) | [![macOS](https://github.com/portable-lce/portable-lce/actions/workflows/build-macos.yml/badge.svg)](https://github.com/portable-lce/portable-lce/actions/workflows/build-macos.yml) |
-| - | - | - | - |
-| **app** | `desktop` | `desktop` | `desktop` |
-| **ui** | `java`, `shiggy`[^2] | `java`, `shiggy`[^2] | `java` |
-| **fs** | `std` | `std` | `std` |
-| **renderer** | `gl` | `gl` | `gl` |
-| **sound** | `miniaudio` | `miniaudio` | `miniaudio` |
-| **input** | `sdl2` | `sdl2` | `sdl2` |
-| **thread** | `std` | `std` | `std` |
-| **game** | `stub` | `stub` | `stub` |
-| **network** | `stub` | `stub` | `stub` |
-| **storage** | `stub` | `stub` | `stub` |
-| **profile** | `stub` | `stub` | `stub` |
-| **leaderboard** | `stub` | `stub` | `stub` |
-
-[^2]: `-Dui_backend=shiggy` supports the x86-64 architecture with AVX2 extensions only.
-
-> [!TIP]
->
-> This table describes the current backend used for each game component on each platform. If a backend is `stub`, that means that the game uses a [stubbed implementation](https://en.wikipedia.org/wiki/Method_stub) and the feature is unsupported at the moment. In some cases (e.g. leaderboards and profile) it makes sense to use a stubbed implementation, since we don't have access to console services like Xbox live on desktop operating systems. In other cases, it is used temporarily while work is done to properly implement the feature (such as storage for world/DLC saving and loading).
-
-These platforms are currently work-in-progress:
-- **Android**: Game runs, but the port predates many refactors and therefore can't be easily upstreamed at the moment. `ui-backend=java` only.
-- **Emscripten**: Works except for audio. Predates a major refactor, and requires a rebase. `ui-backend=java` only.
-
----
-
-## Join our community:
-* **Discord:** https://discord.gg/SC6WCZezry
-
-## Building (Linux)
-
-### Prerequisites
-
-#### System Libraries
-
-Debian/Ubuntu:
-```bash
-sudo apt-get install -y build-essential libsdl2-dev libgl-dev libglu1-mesa-dev libpthread-stubs0-dev
-```
-
-Arch/Manjaro:
-```bash
-sudo pacman -S base-devel pkgconf sdl2-compat mesa glu
-```
-
-Fedora/Red Hat/Nobara:
-```bash
-sudo dnf install gcc gcc-c++ make SDL2-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel
-```
-
-#### Toolchain
-
-This project requires a C++23 compiler with full standard library support.
-
-**If your distro ships GCC 15+**, you're good - just use the system compiler:
-
-```bash
-meson setup build
-```
-
-**If your distro ships an older GCC:** install LLVM with libc++ and use the provided toolchain file:
-
-```bash
-# Debian/Ubuntu
-wget https://apt.llvm.org/llvm.sh
-chmod +x llvm.sh
-sudo ./llvm.sh 20
-sudo apt install libc++-20-dev libc++abi-20-dev
-```
-
-```bash
-# Fedora/RHEL (if needed)
-sudo dnf install clang lld libcxx-devel libcxxabi-devel
-```
-
-Then configure with the LLVM native file (see Configure & Build below).
-
-#### Meson + Ninja
-
-Install [Meson](https://mesonbuild.com/) and [Ninja](https://ninja-build.org/):
-
-```bash
-pip install meson ninja
-```
-
-Or follow the [Meson quickstart guide](https://mesonbuild.com/Quick-guide.html).
-
-#### Docker (alternative)
-
-If you don't want to install dependencies, use the included devcontainer. Open the project in VS Code with the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension, or build manually:
-
-```bash
-docker build -t portable-lce-dev .devcontainer/
-docker run -it --rm -v $(pwd):/workspaces/portable-lce -w /workspaces/portable-lce portable-lce-dev bash
-```
-
-### Configure & Build
-
-```bash
-# If using system GCC 15+
-meson setup build
-
-# If using LLVM/libc++
-meson setup --native-file ./scripts/llvm_native.txt build
-
-# Compile
-meson compile -C build
-```
-
-The binary is output to:
-
-```
-./build/targets/app/Minecraft.Client
-```
-
-#### Clean
-
-To perform a clean compilation:
-
-```bash
-meson compile --clean -C build
-```
-
-...or to reconfigure an existing build directory:
-
-```bash
-meson setup --native-file ./scripts/llvm_native.txt build --reconfigure
-```
-
-...or to hard reset the build directory:
-
-```bash
-rm -r ./build
-meson setup --native-file ./scripts/llvm_native.txt build
-```
+- 🎮 **Authentic Bedrock & Classic PE HD Touch Controls:**
+  - Directional D-Pad with authentic Bedrock arrows and sneak button.
+  - Dedicated action buttons: Attack Sword (`HIT`), Interaction Hand (`USE`), Jump (`SPACE`).
+  - Top in-game action bar: Third-person Perspective Eye (`F5`), Pause Menu (`ESC`), and Chat (`T`).
+  - Hotbar with 9 slots and native 3-dots (`...`) Inventory button.
+  - Absolutely **zero letter boxes** — 100% authentic Minecraft high-definition textures.
+- 🎛️ **3 In-Game Switchable Control Themes:**
+  - **Modern Bedrock (Style 0):** Separated directional buttons with tactile spacing.
+  - **Classic Pocket Edition (Style 1):** Classic connected cross D-pad.
+  - **Dynamic Joystick (Style 2):** Smooth analog touch joystick.
+  - Adjustable size/scale and opacity sliders in the Lunar Client menu.
+- 🧼 **Clean Native Menus (Auto-Hiding Controls):**
+  - Virtual touch overlay automatically hides (`View.GONE`) in all menus, inventory screens, pause screens, and title screens.
+  - Full native 1-tap touch navigation across all UI elements.
+- 🖼️ **Modernized Bedrock Menu UI:**
+  - Single **"Jugar" (Play)** button on TitleScreen with dedicated tabs for **Mundos (Worlds)** and **Servidores (Servers)**.
+  - High-definition item & texture icons across all UI buttons (settings cog, back arrow, create world green plus, delete trashcan, exit door, etc.).
+- 🧍 **Interactive 3D Steve in TitleScreen:**
+  - Steve stands grounded on the right side of the main menu with interactive head tracking that smoothly follows your finger and idle breathing sway.
+- ⚡ **Optimized Mobile Performance (30–60 FPS):**
+  - Dynamic chunk column scaling based on render distance (cuts GPU memory load by 75% on Short/Tiny view distance).
+  - Sky/clouds rendering bypass when clouds are disabled in options.
+  - Instant world generation (< 2 seconds) with optimized 9-chunk ($3 \times 3$) mobile spawn area, eliminating connection timeouts.
+- ❄️ **Built-in Hardware Thermal Protection (`modThermalProtection`):**
+  - Real-time battery temperature monitoring via Android `BatteryManager`.
+  - 4 customizable protection levels: Disabled, Moderate (45°C), Balanced (42°C), and Maximum Savings (38°C) to keep your phone cool during long gameplay sessions.
 
 ---
 
-## Running
+## 🇪🇸 Características (En Español)
 
-Game assets are automatically copied to the build output directory during compilation. Run from that directory:
+- 🎮 **Controles Táctiles HD Nativos de Bedrock y Classic PE:** Flechas direccionales, espada de ataque, mano de interacción, botón de salto, agacharse, perspectiva F5, menú de pausa y chat. Sin letras cuadradas feas.
+- 🎛️ **3 Estilos de Control Seleccionables:** Modern Bedrock (botones separados), Classic PE (cruz unida tradicional) y Joystick analógico fluido. Con escala y opacidad ajustables desde el menú de Lunar Client.
+- 🧼 **Menús Limpios y Nativos:** Los controles virtuales se ocultan automáticamente en el menú principal, selección de mundos, inventario y pausa. Navegación directa con 1 toque.
+- 🖼️ **Interfaz Renovada con Íconos HD:** Botón único "Jugar" con pestañas para Mundos y Servidores, e íconos temáticos en todos los botones del juego.
+- 🧍 **Steve 3D Interactivo:** Steve de pie en el menú principal siguiendo con la cabeza la posición de tu dedo en la pantalla.
+- ⚡ **Rendimiento Optimizado (30–60 FPS):** Carga dinámica de chunks (reducción del 75% de carga GPU en distancias cortas/mínimas) y bypass de nubes.
+- ❄️ **Protección Térmica de Batería:** Monitoreo de temperatura en tiempo real con 4 niveles (Desactivado, Moderado 45°C, Equilibrado 42°C, Máximo Ahorro 38°C) para evitar sobrecalentamiento.
+- 🚀 **Carga Instantánea de Mundos (< 2s):** Radio de generación de spawn optimizado a 9 chunks en Android, sin congelamientos ni desconexiones por timeout.
 
-```sh
-./build/targets/app/Minecraft.Client
+---
+
+## 📥 Installation / Descarga
+
+1. Ve a la pestaña de [**Releases**](https://github.com/anhot11/LegacyMCPE/releases).
+2. Descarga la versión más reciente del archivo: **`LegacyMCPE-arm64.apk`**.
+3. En tu dispositivo Android, abre el archivo APK descargado e instala la aplicación (permite la instalación de orígenes desconocidos si el sistema lo solicita).
+4. Abre **Legacy MCPE** y concede los permisos de almacenamiento necesarios para guardar tus mundos en `/sdcard/LegacyMCPE/`.
+5. ¡Disfruta de la auténtica experiencia de Minecraft Console Edition en tu teléfono!
+
+---
+
+## 🕹️ Controls / Controles
+
+| Botón / Control | Acción en el Juego | Equivalente Teclado / Mando |
+| :--- | :--- | :--- |
+| **D-Pad Flecha Arriba** | Caminar hacia adelante | `W` / Stick Izquierdo Arriba |
+| **D-Pad Flecha Abajo** | Caminar hacia atrás | `S` / Stick Izquierdo Abajo |
+| **D-Pad Flecha Izquierda** | Desplazamiento a la izquierda | `A` / Stick Izquierdo Izquierda |
+| **D-Pad Flecha Derecha** | Desplazamiento a la derecha | `D` / Stick Izquierdo Derecha |
+| **Botón Central D-Pad** | Agacharse / Sneak (alternar) | `Shift` / Stick Derecho Clic |
+| **Flecha Salto (Derecha)** | Saltar | `Espacio` / Botón `A` |
+| **Espada (Derecha)** | Atacar / Romper bloque | Clic Izquierdo / Gatillo Derecho |
+| **Mano (Derecha)** | Colocar bloque / Usar objeto | Clic Derecho / Gatillo Izquierdo |
+| **Barra Hotbar (1-9)** | Seleccionar ranura rápida | Teclas `1`-`9` / Gatillos Sup. |
+| **Botón `...` (Hotbar)** | Abrir Inventario / Crafteo | `E` / Botón `Y` |
+| **Ojo (Superior)** | Cambiar Perspectiva (1ª / 3ª persona) | `F5` / Stick Izquierdo Clic |
+| **Menú Pausa (Superior)** | Pausar juego y abrir menú | `Escape` / Botón `Start` |
+| **Chat (Superior)** | Abrir Chat / Mensajes | `T` |
+| **Deslizar en Pantalla** | Mover cámara / Mirar alrededor | Ratón / Stick Derecho |
+
+---
+
+## 🌡️ Thermal Protection / Protección Térmica
+
+Legacy MCPE incluye un sistema pionero de control térmico por hardware para dispositivos móviles. Puedes configurarlo en cualquier momento desde **Mods (Lunar Client) ➔ Thermal Protection**:
+
+- **Off (0):** Sin límite de temperatura.
+- **Moderado (1):** Actúa a partir de los **45°C**, introduciendo pausas de microsegundos entre frames para frenar la subida térmica.
+- **Equilibrado (2):** Mantiene el dispositivo estable entre **42°C y 45°C**.
+- **Máximo Ahorro (3 - Recomendado por defecto):** Mantiene la batería fresca alrededor de **38°C**, garantizando sesiones largas sin degradación de batería ni quemaduras en las manos.
+
+---
+
+## 🛠️ Building from Source / Compilación
+
+El proyecto utiliza CMake / Meson con NDK y toolchain moderno C++23. Se compila automáticamente para Android mediante el workflow de GitHub Actions:
+
+```bash
+# Workflow de compilación en GitHub Actions:
+.github/workflows/build-android.yml
 ```
 
-<!-- ### View the online documentation [here](https://portable-lce.github.io/portable-lce). -->
+Los artefactos `.apk` generados se firman con `apksigner` y `zipalign` con soporte de arquitectura `arm64-v8a`.
 
-## Generative AI Policy
+---
 
-Submitting code to this repository authored by generative AI tools (LLMs, agentic coding tools, etc...) is strictly forbidden (see [CONTRIBUTING.md](./CONTRIBUTING.md)). Pull requests that are clearly vibe-coded or written by an LLM will be closed. Contributors are expected to both fully understand the code that they write **and** have the necessary skills to *maintain it*.
+## 📋 System Requirements / Requisitos del Sistema
+
+- **Arquitectura:** Android ARM64 (`aarch64` / `arm64-v8a`).
+- **Sistema Operativo:** Android 7.0 (Nougat) o superior.
+- **Gráficos:** Soporte para OpenGL ES 2.0 / 3.0.
+- **Almacenamiento:** Mínimo 200 MB de espacio libre.
+
+---
+
+## 📜 Credits & License
+
+- Basado en el proyecto **Portable LCE** y la ingeniería inversa comunitaria de **Minecraft Console Edition (4J Studios / Mojang)**.
+- Mods integrados adaptados de **Lunar Client** para Minecraft Portable LCE.
+- Íconos y texturas remasterizadas estilo Bedrock Edition y Classic Pocket Edition.
+- Licenciado bajo la **GNU General Public License v3.0 (GPLv3)**.
