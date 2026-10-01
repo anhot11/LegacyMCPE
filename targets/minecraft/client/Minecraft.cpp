@@ -3930,7 +3930,11 @@ void Minecraft::prepareLevel(int title) {
         this->progressRenderer->progressStart(title);
         this->progressRenderer->progressStage(IDS_PROGRESS_BUILDING_TERRAIN);
     }
+#ifdef __ANDROID__
+    int r = 16;
+#else
     int r = 128;
+#endif
     if (gameMode->isCutScene()) r = 64;
     int pp = 0;
     int max = r * 2 / 16 + 1;

@@ -415,8 +415,12 @@ void Connection::tick() {
     }
     if (empty) {
 #if CONNECTION_ENABLE_TIMEOUT_DISCONNECT
-        if (noInputTicks++ == MAX_TICKS_WITHOUT_INPUT) {
-            close(DisconnectPacket::eDisconnect_TimeOut);
+        if (!NetworkService.IsHost()) {
+            if (noInputTicks++ == MAX_TICKS_WITHOUT_INPUT) {
+                close(DisconnectPacket::eDisconnect_TimeOut);
+            }
+        } else {
+            noInputTicks = 0;
         }
 #endif
     }

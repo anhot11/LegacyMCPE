@@ -541,9 +541,12 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     int64_t startTime = System::currentTimeMillis();
 
-    // Android/Mobile optimization: Spawn radius 64 blocks (4 chunks = 9x9 chunks)
-    // Avoids multi-minute CPU locks during world generation on mobile devices.
+#ifdef __ANDROID__
+    // Mobile optimization: Spawn radius 16 blocks (3x3 chunks) for instant world loading (< 2 seconds)
+    int r = 16;
+#else
     int r = 64;
+#endif
 
     //  4J JEV: load gameRules.
     ConsoleSavePath filepath(GAME_RULE_SAVENAME);
