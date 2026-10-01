@@ -417,6 +417,7 @@ extern "C" MC_EXPORT int main(int argc, const char* argv[]) {
     sigaction(SIGABRT, &sa, nullptr);
     sigaction(SIGBUS, &sa, nullptr);
     sigaction(SIGTRAP, &sa, nullptr);
+#endif
     app.DebugPrintf("---main()\n");
 
 #if defined(__ANDROID__) || defined(ANDROID)

@@ -7,6 +7,10 @@ app_common_sources = files(fs.read('common_sources.txt').strip().split('\n'))
 app_dependencies = []
 app_link_args = []
 
+if host_machine.system() == 'android'
+    app_link_args += ['-Wl,-z,max-page-size=16384']
+endif
+
 # mimalloc must come first so the linker resolves malloc/free symbols to it
 # before glibc. --no-as-needed prevents the linker from dropping it as
 # "unreferenced" (the override happens via weak symbols, not direct calls).
