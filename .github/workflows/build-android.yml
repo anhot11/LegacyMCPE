@@ -46,6 +46,10 @@ jobs:
         run: |
           echo "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
+      - name: Validate Shaders & GPU Compatibility
+        run: |
+          python3 scripts/validate_shaders.py
+
       - name: Build libMinecraftClient.so
         run: |
           meson subprojects download || true
