@@ -47,6 +47,7 @@
 
 #define GLM_FORCE_RADIANS
 
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -81,6 +82,88 @@ static const char* FRAG_SRC =
 #include "./shaders/fragment_es.frag"
 
     ;
+
+static const char* VERT_SRC_ES2 =
+"precision highp float;\n"
+"precision highp int;\n"
+"attribute vec3  aPos;\n"
+"attribute vec2  aUV0;\n"
+"attribute vec4  aColor;\n"
+"attribute vec3  aNormal;\n"
+"attribute vec2  aLMraw;\n"
+"uniform mat4  uMVP;\n"
+"uniform mat4  uMV;\n"
+"uniform mat3  uNormalMatrix;\n"
+"uniform float uNormalSign;\n"
+"uniform mat4  uTexMat0;\n"
+"uniform vec4  uBaseColor;\n"
+"uniform int   uLighting;\n"
+"uniform vec3  uLight0Dir;\n"
+"uniform vec3  uLight1Dir;\n"
+"uniform vec3  uLightDiffuse;\n"
+"uniform vec3  uLightAmbient;\n"
+"uniform vec3  uChunkOffset;\n"
+"uniform int   uFogMode;\n"
+"uniform float uFogStart;\n"
+"uniform float uFogEnd;\n"
+"uniform float uFogDensity;\n"
+"uniform vec4  uLMTransform;\n"
+"uniform vec2  uGlobalLM;\n"
+"varying vec2  vUV0;\n"
+"varying vec2  vUV1;\n"
+"varying vec4  vColor;\n"
+"varying float vFogFactor;\n"
+"void main() {\n"
+"    vec4 aPos4   = vec4(aPos + uChunkOffset, 1.0);\n"
+"    vec4 eyePos  = uMV  * aPos4;\n"
+"    gl_Position  = uMVP * aPos4;\n"
+"    vUV0 = (uTexMat0 * vec4(aUV0, 0.0, 1.0)).xy;\n"
+"    vec2 lm = (aLMraw.x <= -500.0) ? uGlobalLM : aLMraw;\n"
+"    vUV1 = (lm / 256.0) * uLMTransform.xy + uLMTransform.zw;\n"
+"    bool sentinel = (aColor.x < 0.02 && aColor.y < 0.02 && aColor.z < 0.02 && aColor.w < 0.02);\n"
+"    vec4 col = sentinel ? uBaseColor : vec4(aColor.w, aColor.z, aColor.y, aColor.x);\n"
+"    if (uLighting == 1) {\n"
+"        vec3 n = normalize(uNormalMatrix * aNormal) * uNormalSign;\n"
+"        float d0 = max(dot(n, uLight0Dir), 0.0);\n"
+"        float d1 = max(dot(n, uLight1Dir), 0.0);\n"
+"        vColor = vec4(col.rgb * (uLightAmbient + uLightDiffuse * (d0 + d1)), col.a);\n"
+"    } else {\n"
+"        vColor = col;\n"
+"    }\n"
+"    float eDist = length(eyePos.xyz);\n"
+"    if      (uFogMode == 1) vFogFactor = clamp((uFogEnd - eDist) / max(uFogEnd - uFogStart, 1e-4), 0.0, 1.0);\n"
+"    else if (uFogMode == 2) vFogFactor = clamp(exp(-uFogDensity * eDist), 0.0, 1.0);\n"
+"    else if (uFogMode == 3) { float d = uFogDensity * eDist; vFogFactor = clamp(exp(-d*d), 0.0, 1.0); }\n"
+"    else                    vFogFactor = 1.0;\n"
+"}\n";
+
+static const char* FRAG_SRC_ES2 =
+"precision highp float;\n"
+"precision highp int;\n"
+"uniform sampler2D uTex0;\n"
+"uniform sampler2D uTex1;\n"
+"uniform int   uUseTexture;\n"
+"uniform int   uUseLightmap;\n"
+"uniform float uAlphaRef;\n"
+"uniform vec4  uFogColor;\n"
+"uniform int   uFogEnable;\n"
+"uniform float uInvGamma;\n"
+"uniform int   uShaderPreset;\n"
+"varying vec2  vUV0;\n"
+"varying vec2  vUV1;\n"
+"varying vec4  vColor;\n"
+"varying float vFogFactor;\n"
+"void main() {\n"
+"    vec4 texColor = (uUseTexture != 0) ? texture2D(uTex0, vUV0) : vec4(1.0);\n"
+"    vec4 c = texColor * vColor;\n"
+"    if (uAlphaRef > 0.0 && c.a < uAlphaRef) discard;\n"
+"    if (uUseLightmap != 0) c.rgb *= texture2D(uTex1, vUV1).rgb;\n"
+"    if (uFogEnable != 0) c.rgb = mix(uFogColor.rgb, c.rgb, vFogFactor);\n"
+"    if (uInvGamma > 0.01 && abs(uInvGamma - 1.0) > 0.05) {\n"
+"        c.rgb = pow(clamp(c.rgb, 0.0001, 1.0), vec3(clamp(uInvGamma, 0.1, 5.0)));\n"
+"    }\n"
+"    gl_FragColor = c;\n"
+"}\n";
 #else
 static const char* VERT_SRC =
 #include "./shaders/vertex.vert"
@@ -119,6 +202,24 @@ static std::mutex s_glCallMtx;
 static std::thread::id s_mainThreadId;
 static bool s_mainThreadSet = false;
 static thread_local unsigned int s_rs_dirty_mask = 0xFFFFFFFF;
+static GLuint s_defaultTex = 0;
+
+static void appendDiagnosticLog(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    char buf[2048];
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    const char* mcPath = getenv("MC_PATH");
+    FILE* f1 = fopen("/sdcard/LegacyMCPE/render_diagnostic.txt", "a");
+    if (f1) { fputs(buf, f1); fclose(f1); }
+    if (mcPath) {
+        std::string p = std::string(mcPath) + "/render_diagnostic.txt";
+        FILE* f2 = fopen(p.c_str(), "a");
+        if (f2) { fputs(buf, f2); fclose(f2); }
+    }
+}
 
 struct GLShadowState {
     bool blend;
@@ -171,47 +272,61 @@ static void onFramebufferResize(int w, int h) {
     glViewport(0, 0, w, h);
 }
 
-static GLuint compileShader(GLenum type, const char* src) {
+static GLuint compileShader(GLenum type, const char* src, const char* name = "") {
+    while (src && (*src == '\r' || *src == '\n' || *src == ' ' || *src == '\t')) {
+        src++;
+    }
     GLuint s = glCreateShader(type);
     glShaderSource(s, 1, &src, nullptr);
     glCompileShader(s);
     GLint ok = 0;
     glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
     if (!ok) {
-        char log[1024];
+        char log[2048] = {0};
         glGetShaderInfoLog(s, sizeof(log), nullptr, log);
-        fprintf(stderr, "[4J_Render] shader error:\n%s\n", log);
+        fprintf(stderr, "[4J_Render] shader %s error:\n%s\n", name, log);
 #if defined(__ANDROID__)
-        __android_log_print(ANDROID_LOG_ERROR, "4J_Render", "shader compile error (type=0x%x):\n%s\n", (unsigned int)type, log);
+        __android_log_print(ANDROID_LOG_ERROR, "4J_Render", "shader %s compile error (type=0x%x):\n%s\n", name, (unsigned int)type, log);
 #endif
+        appendDiagnosticLog("[4J_Render] shader %s compile error (type=0x%x):\n%s\n", name, (unsigned int)type, log);
         glDeleteShader(s);
         return 0;
     }
 #if defined(__ANDROID__)
-    __android_log_print(ANDROID_LOG_INFO, "4J_Render", "shader compile OK (type=0x%x, id=%u)\n", (unsigned int)type, s);
+    __android_log_print(ANDROID_LOG_INFO, "4J_Render", "shader %s compile OK (type=0x%x, id=%u)\n", name, (unsigned int)type, s);
 #endif
     return s;
 }
 
-static GLuint linkProgram(GLuint v, GLuint f) {
+static GLuint linkProgram(GLuint v, GLuint f, bool isFallback = false) {
     GLuint p = glCreateProgram();
     glAttachShader(p, v);
     glAttachShader(p, f);
+#ifdef GLES
+    if (isFallback) {
+        glBindAttribLocation(p, 0, "aPos");
+        glBindAttribLocation(p, 1, "aUV0");
+        glBindAttribLocation(p, 2, "aColor");
+        glBindAttribLocation(p, 3, "aNormal");
+        glBindAttribLocation(p, 4, "aLMraw");
+    }
+#endif
     glLinkProgram(p);
     GLint ok = 0;
     glGetProgramiv(p, GL_LINK_STATUS, &ok);
     if (!ok) {
-        char log[1024];
+        char log[2048] = {0};
         glGetProgramInfoLog(p, sizeof(log), nullptr, log);
         fprintf(stderr, "[4J_Render] link error:\n%s\n", log);
 #if defined(__ANDROID__)
         __android_log_print(ANDROID_LOG_ERROR, "4J_Render", "program link error (id=%u):\n%s\n", p, log);
 #endif
+        appendDiagnosticLog("[4J_Render] program link error (id=%u, fallback=%d):\n%s\n", p, (int)isFallback, log);
         glDeleteProgram(p);
         return 0;
     }
 #if defined(__ANDROID__)
-    __android_log_print(ANDROID_LOG_INFO, "4J_Render", "program link OK (id=%u)\n", p);
+    __android_log_print(ANDROID_LOG_INFO, "4J_Render", "program link OK (id=%u, fallback=%d)\n", p, (int)isFallback);
 #endif
     return p;
 }
@@ -235,12 +350,29 @@ struct ShaderUniforms {
     GLint uChunkOffset = -1;
 
     void build(const char* vs, const char* fs) {
-        GLuint v = compileShader(GL_VERTEX_SHADER, vs);
-        GLuint f = compileShader(GL_FRAGMENT_SHADER, fs);
-        prog = linkProgram(v, f);
-        glDeleteShader(v);
-        glDeleteShader(f);
-        if (!prog) return;
+        GLuint v = compileShader(GL_VERTEX_SHADER, vs, "Vertex ES3");
+        GLuint f = compileShader(GL_FRAGMENT_SHADER, fs, "Fragment ES3");
+        if (v && f) {
+            prog = linkProgram(v, f, false);
+            glDeleteShader(v);
+            glDeleteShader(f);
+        }
+#ifdef GLES
+        if (!prog) {
+            appendDiagnosticLog("[4J_Render] ES3 shader failed, attempting GLES 2.0 fallback...\n");
+            GLuint v2 = compileShader(GL_VERTEX_SHADER, VERT_SRC_ES2, "Vertex ES2 Fallback");
+            GLuint f2 = compileShader(GL_FRAGMENT_SHADER, FRAG_SRC_ES2, "Fragment ES2 Fallback");
+            if (v2 && f2) {
+                prog = linkProgram(v2, f2, true);
+                glDeleteShader(v2);
+                glDeleteShader(f2);
+            }
+        }
+#endif
+        if (!prog) {
+            appendDiagnosticLog("[4J_Render] CRITICAL FATAL: Both primary and fallback shader programs failed to link!\n");
+            return;
+        }
 
 #define L(x) x = glGetUniformLocation(prog, #x)
         L(uMVP);
@@ -510,7 +642,11 @@ static thread_local bool s_chunkOffsetValid = false;
 static thread_local glm::vec3 s_chunkOffset;
 
 static void pushRenderState() {
-    if (!s_shader.prog) return;
+    if (!s_shader.prog) {
+        ::glClearColor(0.8f, 0.1f, 0.1f, 1.0f);
+        ::glClear(GL_COLOR_BUFFER_BIT);
+        return;
+    }
 
     // only call glUseProgram when something actually changed the binding
     if (s_boundProgram != s_shader.prog) {
@@ -746,6 +882,14 @@ void GLRenderer::Initialise() {
     }
     onFramebufferResize(fw, fh);
     Log::info("[4J_Render] Initial window size: %dx%d, framebuffer: %dx%d\n", s_windowWidth, s_windowHeight, fw, fh);
+
+    appendDiagnosticLog("=== 4J_Render Startup Diagnostics ===\n");
+    appendDiagnosticLog("GL Vendor: %s\n", glVendor ? glVendor : "null");
+    appendDiagnosticLog("GL Renderer: %s\n", glRenderer ? glRenderer : "null");
+    appendDiagnosticLog("GL Version: %s\n", glVersion ? glVersion : "null");
+    appendDiagnosticLog("GLSL Version: %s\n", glslVersion ? glslVersion : "null");
+    appendDiagnosticLog("Window size: %dx%d, Framebuffer: %dx%d\n", s_windowWidth, s_windowHeight, fw, fh);
+
     glShadowSetDepthTest(true);
     ::glDepthFunc(GL_LEQUAL);
 #ifdef GLES
@@ -762,12 +906,14 @@ void GLRenderer::Initialise() {
     s_shader.build(VERT_SRC, FRAG_SRC);
     if (!s_shader.prog) {
         Log::info("[4J_Render] FATAL: Shader program failed to compile or link!\n");
+        appendDiagnosticLog("[4J_Render] FATAL: Shader program failed to compile or link!\n");
+        ::glClearColor(0.8f, 0.1f, 0.1f, 1.0f); // Bright red indicates shader failure
     } else {
         Log::info("[4J_Render] Shader program compiled & linked successfully (prog=%u)\n", s_shader.prog);
+        appendDiagnosticLog("[4J_Render] Shader program compiled & linked successfully (prog=%u)\n", s_shader.prog);
     }
     initStreamingVAOs();
 
-    static GLuint s_defaultTex = 0;
     if (!s_defaultTex) {
         glGenTextures(1, &s_defaultTex);
         glBindTexture(GL_TEXTURE_2D, s_defaultTex);
@@ -786,6 +932,7 @@ void GLRenderer::Initialise() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, s_defaultTex);
     }
+    appendDiagnosticLog("Default 1x1 white texture: %u, VAO: %u, VBO: %u\n", s_defaultTex, s_sVAO_std, s_sVBO_std);
 
     s_mainThreadId = std::this_thread::get_id();
     s_mainThreadSet = true;
@@ -885,6 +1032,17 @@ void GLRenderer::Present() {
     }
     glFlush();
     SDL_GL_SwapWindow(s_window);
+
+    // 60 FPS frame limiter (16.6ms) to prevent phone overheating and CPU spin
+    static auto s_lastFrameTime = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(now - s_lastFrameTime).count();
+    const int64_t targetFrameUs = 16666; // 60 FPS
+    if (elapsedUs > 0 && elapsedUs < targetFrameUs) {
+        std::this_thread::sleep_for(std::chrono::microseconds(targetFrameUs - elapsedUs));
+    }
+    s_lastFrameTime = std::chrono::steady_clock::now();
+
     static uint32_t s_presentCount = 0;
     if (++s_presentCount % 120 == 1) {
         Log::info("[4J_Render] Present frame #%u (win=%dx%d)\n", s_presentCount, s_windowWidth, s_windowHeight);
@@ -1030,16 +1188,38 @@ void GLRenderer::DrawVertices(ePrimitiveType ptype, int count, void* dataIn,
         s_chunkOffsetValid = true;
     }
 
-    glBindVertexArray(s_sVAO_std);
+    if (!s_sVAO_std) {
+        initStreamingVAOs();
+    }
+    if (s_sVAO_std) {
+        glBindVertexArray(s_sVAO_std);
+    }
     glBindBuffer(GL_ARRAY_BUFFER, s_sVBO_std);
 
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytes, dataIn, GL_STREAM_DRAW);
     bindStdAttribs();
     s_streamVBOSize = (GLsizeiptr)bytes;
 
+    static int s_loggedDraws = 0;
+    if (s_loggedDraws < 10) {
+        s_loggedDraws++;
+        GLenum errB = glGetError();
+        appendDiagnosticLog("Draw #%d: mode=%u, count=%d, bytes=%zu, prog=%u, vao=%u, vbo=%u, errB=0x%x\n",
+            s_loggedDraws, glMode, count, bytes, s_shader.prog, s_sVAO_std, s_sVBO_std, errB);
+    }
+
     glDrawArrays(glMode, 0, count);
 
-    glBindVertexArray(0);
+    if (s_loggedDraws <= 10) {
+        GLenum errA = glGetError();
+        if (errA != GL_NO_ERROR) {
+            appendDiagnosticLog("Draw #%d glDrawArrays error: 0x%x\n", s_loggedDraws, errA);
+        }
+    }
+
+    if (s_sVAO_std) {
+        glBindVertexArray(0);
+    }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -1407,13 +1587,23 @@ void GLRenderer::TextureFree(int i) {
 }
 void GLRenderer::TextureBind(int idx) {
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, idx < 0 ? 0 : (GLuint)idx);
+    if (idx <= 0 && s_defaultTex) {
+        glBindTexture(GL_TEXTURE_2D, s_defaultTex);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, idx < 0 ? 0 : (GLuint)idx);
+    }
 }
 void GLRenderer::TextureBindVertex(int idx, bool scaleLight) {
     if (idx < 0) {
         if (s_rs.useLightmap) {
             s_rs.useLightmap = false;
             markDirty(DIRTY_TEXTURE);
+        }
+        glActiveTexture(GL_TEXTURE1);
+        if (s_defaultTex) {
+            glBindTexture(GL_TEXTURE_2D, s_defaultTex);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
         glActiveTexture(GL_TEXTURE0);
         return;

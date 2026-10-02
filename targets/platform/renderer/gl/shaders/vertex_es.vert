@@ -1,5 +1,4 @@
-R"GLSL(
-#version 300 es
+R"GLSL(#version 300 es
 precision highp float;
 precision highp int;
 
@@ -42,8 +41,8 @@ void main() {
     vec2 lm = (aLMraw.x <= -500) ? uGlobalLM : vec2(aLMraw);
     vUV1 = (lm / 256.0) * uLMTransform.xy + uLMTransform.zw;
 
-    bool sentinel = all(equal(aColor, vec4(0.0)));
-    vec4 col = sentinel ? uBaseColor : aColor.abgr;
+    bool sentinel = (aColor.x < 0.02 && aColor.y < 0.02 && aColor.z < 0.02 && aColor.w < 0.02);
+    vec4 col = sentinel ? uBaseColor : vec4(aColor.w, aColor.z, aColor.y, aColor.x);
     if (uLighting == 1) {
         vec3 n = normalize(uNormalMatrix * aNormal) * uNormalSign;
 

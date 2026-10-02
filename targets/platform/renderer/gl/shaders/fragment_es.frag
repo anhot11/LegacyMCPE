@@ -1,7 +1,7 @@
-R"GLSL(
-#version 300 es
+R"GLSL(#version 300 es
 precision highp float;
 precision highp int;
+precision lowp sampler2D;
 
 uniform sampler2D uTex0;
 uniform sampler2D uTex1;
@@ -22,11 +22,11 @@ out vec4  oColor;
 void main() {
     vec4 texColor = (uUseTexture != 0) ? texture(uTex0, vUV0) : vec4(1.0);
     vec4 c = texColor * vColor;
-    if (c.a < uAlphaRef) discard;
+    if (uAlphaRef > 0.0 && c.a < uAlphaRef) discard;
     if (uUseLightmap != 0) c.rgb *= texture(uTex1, vUV1).rgb;
     if (uFogEnable != 0) c.rgb = mix(uFogColor.rgb, c.rgb, vFogFactor);
 
-    if (uInvGamma > 0.01 && abs(uInvGamma - 1.0) > 0.01) {
+    if (uInvGamma > 0.01 && abs(uInvGamma - 1.0) > 0.05) {
         c.rgb = pow(clamp(c.rgb, 0.0001, 1.0), vec3(clamp(uInvGamma, 0.1, 5.0)));
     }
 
