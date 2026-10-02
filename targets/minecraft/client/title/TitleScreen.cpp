@@ -438,71 +438,100 @@ void TitleScreen::render(int xm, int ym, float a) {
 
     // 3D Player Character on the right side (Bedrock / PE style)
     if (playerModel != nullptr) {
-        float ss = (height >= 300) ? 96.0f : 80.0f;
+        float ss = (height >= 300) ? 96.0f : 75.0f;
         int playerX = width * 3 / 4;
         if (width < 450) {
-            playerX = width - 90;
+            playerX = width - 80;
         }
-        // HumanoidModel origin is at neck/shoulders.
-        // Feet are at +1.5 * ss below origin.
-        // We position feet grounded above the bottom copyright bar.
-        int playerY = (int)((float)height - 18.0f - 1.5f * ss);
+        // Feet anchored near bottom, above copyright bar
+        int playerY = height - 20;
 
         // Reset OpenGL color so yellow splash text or previous GUI draw doesn't tint the skin
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         glDisable(GL_COLOR_MATERIAL);
         glEnable(GL_RESCALE_NORMAL);
 
-        glPushMatrix();
-        glTranslatef((float)playerX, (float)playerY, 50.0f);
-        glScalef(ss, ss, ss);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        glDepthMask(true);
+        glClear(GL_DEPTH_BUFFER_BIT);
 
-        // Gentle Bedrock/PE style angle facing forward towards screen center
-        glRotatef(202.0f, 0, 1, 0);
-
-        // Natural GUI lighting
-        Lighting::turnOnGui();
-
-        // Interactive head tracking towards touch & idle breathing sway
-        float steveEyeX = (float)playerX;
-        float steveEyeY = (float)playerY - 0.1f * ss;
-        float dx = (float)xm - steveEyeX; // negative = left (towards buttons), positive = right
-        float dy = (float)ym - steveEyeY; // negative = up, positive = down
-
-        // Yaw: positive dx (touch on right) turns head right (+lookY).
-        // Negative dx (touch on left) turns head left (-lookY).
-        // When touching Steve directly (dx == 0), Steve looks straight out towards the player.
-        float targetAngleY = (float)atan2(dx, 140.0f) * 57.29578f - 22.0f;
-        if (targetAngleY > 45.0f) targetAngleY = 45.0f;
-        if (targetAngleY < -45.0f) targetAngleY = -45.0f;
-        float lookY = targetAngleY + sinf(vo * 0.035f) * 3.0f;
-
-        // Pitch: negative dy (touch above) tilts head up.
-        // Positive dy (touch below) tilts head down.
-        // Local X axis is flipped under 180+ deg Y rotation, so negate the angle.
-        float targetAngleX = -(float)atan2(dy, 140.0f) * 57.29578f;
-        if (targetAngleX > 28.0f) targetAngleX = 28.0f;
-        if (targetAngleX < -28.0f) targetAngleX = -28.0f;
-        float lookX = targetAngleX + cosf(vo * 0.035f) * 1.5f;
-
-        glBindTexture(GL_TEXTURE_2D,
-                      minecraft->textures->loadTexture(TN_MOB_CHAR));
         glEnable(GL_ALPHA_TEST);
         glAlphaFunc(GL_GREATER, 0.1f);
         glDisable(GL_CULL_FACE);
 
-        playerModel->young = false;
+        Lighting::turnOnGui();
+
+        glPushMatrix();
+        // Canonical Minecraft GUI player transformation stack:
+        glTranslatef((float)playerX, (float)playerY, 50.0f);
+        glScalef(-ss, ss, ss);
+        glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
+
+        // Interactive touch/mouse tracking
+        // Steve's eyes are at roughly 1.6 * ss above his feet
+        float steveEyeX = (float)playerX;
+        float steveEyeY = (float)playerY - 1.6f * ss;
+
+        float dx = 0.0f;
+        float dy = 0.0f;
+        if (xm <= 0 && ym <= 0) {
+            // Default idle orientation: look slightly towards the screen center buttons
+            dx = -(float)width * 0.25f;
+            dy = 0.0f;
+        } else {
+            dx = (float)xm - steveEyeX;
+            dy = (float)ym - steveEyeY;
+        }
+
+        // Body rotation: base angle of 20 deg facing slightly towards center,
+        // turning naturally with touch
+        float bodyTurn = (float)atan2(dx, 160.0f) * 57.29578f * 0.35f;
+        float bodyRot = 20.0f - bodyTurn;
+        if (bodyRot > 60.0f) bodyRot = 60.0f;
+        if (bodyRot < -20.0f) bodyRot = -20.0f;
+
+        glRotatef(180.0f - bodyRot, 0.0f, 1.0f, 0.0f);
+        glScalef(-1.0f, -1.0f, 1.0f);
+        glTranslatef(0.0f, -24.0f * (1.0f / 16.0f), 0.0f);
+
+        // Head tracking
+        float targetYaw = -(float)atan2(dx, 100.0f) * 57.29578f;
+        float relYaw = targetYaw - bodyRot;
+        if (relYaw > 45.0f) relYaw = 45.0f;
+        if (relYaw < -45.0f) relYaw = -45.0f;
+        float headYaw = relYaw + sinf(vo * 0.04f) * 1.5f;
+
+        float targetPitch = -(float)atan2(dy, 100.0f) * 57.29578f;
+        if (targetPitch > 28.0f) targetPitch = 28.0f;
+        if (targetPitch < -28.0f) targetPitch = -28.0f;
+        float headPitch = targetPitch + cosf(vo * 0.04f) * 1.0f;
+
+        glBindTexture(GL_TEXTURE_2D,
+                      minecraft->textures->loadTexture(TN_MOB_CHAR));
+
+        playerModel->attackTime = 0.0f;
         playerModel->holdingRightHand = 0;
         playerModel->holdingLeftHand = 0;
         playerModel->sneaking = false;
+        playerModel->idle = false;
+        playerModel->eating = false;
+        playerModel->eating_swing = 0.0f;
+        playerModel->eating_t = 0.0f;
+        playerModel->young = false;
+        playerModel->riding = false;
 
-        // Render Steve upright with head looking towards touch/cursor
-        playerModel->render(nullptr, 0, 0, 0, lookY, lookX, 1.0f / 16.0f, false);
+        // Render Steve using compiled lists (canonical across the engine)
+        playerModel->render(nullptr, 0.0f, 0.0f, 0.0f, headYaw, headPitch, 1.0f / 16.0f, true);
 
         glPopMatrix();
         Lighting::turnOff();
         glDisable(GL_RESCALE_NORMAL);
         glDisable(GL_COLOR_MATERIAL);
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(false);
+        glEnable(GL_CULL_FACE);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     drawString(

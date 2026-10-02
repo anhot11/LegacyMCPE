@@ -200,6 +200,9 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         s_scrollTicksForGetValue += y;
         s_scrollTicksForButtonPressed += y;
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
+        s_mouseX = e->button.x;
+        s_mouseY = e->button.y;
+        s_hasTouchPos = true;
         if (e->button.button == SDL_BUTTON_LEFT) {
             s_mouseLeftQueued = true;
         } else if (e->button.button == 4) {
@@ -226,6 +229,9 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
             s_mouseLeftQueued = true;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
+        s_mouseX = e->motion.x;
+        s_mouseY = e->motion.y;
+        s_hasTouchPos = true;
         s_accumRelX += (float)e->motion.xrel;
         s_accumRelY += (float)e->motion.yrel;
     } else if (e->type == SDL_TEXTINPUT && s_keyboardActive) {

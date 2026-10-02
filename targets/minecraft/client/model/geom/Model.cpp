@@ -3,8 +3,9 @@
 #include "TexOffs.h"
 
 Model::Model() {
+    attackTime = 0.0f;
     riding = false;
-    young = true;
+    young = false;
     texWidth = 64;
     texHeight = 32;
 }

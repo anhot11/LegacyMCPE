@@ -11,10 +11,10 @@ class Tesselator;
 class _Polygon {
 public:
     std::vector<Vertex> vertices;
-    int vertexCount;
+    int vertexCount = 0;
 
 private:
-    bool _flipNormal;
+    bool _flipNormal = false;
 
 public:
     _Polygon() = default;

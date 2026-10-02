@@ -16,10 +16,10 @@ class Entity;
 
 class Model {
 public:
-    float attackTime;
-    bool riding;
+    float attackTime = 0.0f;
+    bool riding = false;
     std::vector<ModelPart*> cubes;
-    bool young;
+    bool young = false;
     std::unordered_map<std::string, TexOffs*> mappedTexOffs;
     int texWidth;
     int texHeight;
