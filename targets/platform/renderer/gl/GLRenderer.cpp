@@ -739,8 +739,11 @@ void GLRenderer::Initialise() {
     Log::info("[4J_Render] GL Renderer: %s\n", glRenderer ? glRenderer : "null");
     Log::info("[4J_Render] GL Version: %s\n", glVersion ? glVersion : "null");
     Log::info("[4J_Render] GLSL Version: %s\n", glslVersion ? glslVersion : "null");
-    int fw, fh;
-    SDL_GetWindowSize(s_window, &fw, &fh);
+    int fw = 0, fh = 0;
+    SDL_GL_GetDrawableSize(s_window, &fw, &fh);
+    if (fw <= 0 || fh <= 0) {
+        SDL_GetWindowSize(s_window, &fw, &fh);
+    }
     onFramebufferResize(fw, fh);
     Log::info("[4J_Render] Initial window size: %dx%d, framebuffer: %dx%d\n", s_windowWidth, s_windowHeight, fw, fh);
     glShadowSetDepthTest(true);
@@ -763,6 +766,26 @@ void GLRenderer::Initialise() {
         Log::info("[4J_Render] Shader program compiled & linked successfully (prog=%u)\n", s_shader.prog);
     }
     initStreamingVAOs();
+
+    static GLuint s_defaultTex = 0;
+    if (!s_defaultTex) {
+        glGenTextures(1, &s_defaultTex);
+        glBindTexture(GL_TEXTURE_2D, s_defaultTex);
+        uint32_t whitePixel = 0xFFFFFFFF;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, &whitePixel);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, s_defaultTex);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, s_defaultTex);
+    }
 
     s_mainThreadId = std::this_thread::get_id();
     s_mainThreadSet = true;
@@ -832,8 +855,11 @@ void GLRenderer::InitialiseContext() {
 
 void GLRenderer::StartFrame() {
     Set_matrixDirty();
-    int w, h;
-    SDL_GetWindowSize(s_window, &w, &h);
+    int w = 0, h = 0;
+    SDL_GL_GetDrawableSize(s_window, &w, &h);
+    if (w <= 0 || h <= 0) {
+        SDL_GetWindowSize(s_window, &w, &h);
+    }
 #if defined(__ANDROID__) || defined(ANDROID)
     if (w < h) {
         std::swap(w, h);

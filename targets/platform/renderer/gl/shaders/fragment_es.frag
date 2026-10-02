@@ -1,7 +1,7 @@
 R"GLSL(
 #version 300 es
-precision mediump float;
-precision mediump int;
+precision highp float;
+precision highp int;
 
 uniform sampler2D uTex0;
 uniform sampler2D uTex1;
