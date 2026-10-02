@@ -1015,12 +1015,6 @@ void GLRenderer::DrawVertices(ePrimitiveType ptype, int count, void* dataIn,
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    static uint32_t s_drawCount = 0;
-    if (++s_drawCount % 300 == 1) {
-        Log::info("[4J_Render] DrawVertices #%u: mode=%d, count=%d, bytes=%zu, err=0x%x\n",
-                  s_drawCount, (int)glMode, count, bytes, glGetError());
-    }
 }
 
 void GLRenderer::ReadPixels(int x, int y, int w, int h, void* buf) {

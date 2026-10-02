@@ -165,6 +165,7 @@ void Connection::send(std::shared_ptr<Packet> packet) {
         }
     }
 
+    if (m_hWakeWriteThread) m_hWakeWriteThread->set();
     // 4J Jev, end synchronized.
 }
 
@@ -175,6 +176,7 @@ void Connection::queueSend(std::shared_ptr<Packet> packet) {
         estimatedRemaining += packet->getEstimatedSize() + 1;
         outgoing_slow.push(packet);
     }
+    if (m_hWakeWriteThread) m_hWakeWriteThread->set();
 }
 
 bool Connection::writeTick() {
@@ -553,7 +555,7 @@ int Connection::runRead(void* lpParam) {
         // std::this_thread::sleep_for(std::chrono::milliseconds(100L));
         // TODO - 4J Stu - 1.8.2 changes these sleeps to 2L, but not sure
         // whether we should do that as well
-        con->m_hWakeReadThread->waitForSignal(100L);
+        con->m_hWakeReadThread->waitForSignal(20L);
     }
 
     /* 4J JEV, removed try/catch
@@ -599,13 +601,9 @@ int Connection::runWrite(void* lpParam) {
         ShutdownManager::ShouldRun(ShutdownManager::eConnectionWriteThreads)) {
         while (con->writeTick());
 
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100L));
-        //  TODO - 4J Stu - 1.8.2 changes these sleeps to 2L, but not sure
-        //  whether we should do that as well
-        waitResult = con->m_hWakeWriteThread->waitForSignal(100L);
-
         if (con->bufferedDos != nullptr) con->bufferedDos->flush();
-        // if (con->byteArrayDos != nullptr) con->byteArrayDos->flush();
+
+        waitResult = con->m_hWakeWriteThread->waitForSignal(20L);
     }
 
     // 4J was in a finally block.

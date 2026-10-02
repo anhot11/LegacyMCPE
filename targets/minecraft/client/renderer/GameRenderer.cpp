@@ -1218,9 +1218,13 @@ int GameRenderer::runUpdate(void* lpParam) {
             m_deleteStackSparseDataStorage.clear();
         }
 
-        //
-
         m_updateEvents->set(eUpdateEventIsFinished);
+
+        if (!shouldContinue) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
 
     ShutdownManager::HasFinished(ShutdownManager::eRenderChunkUpdateThread);

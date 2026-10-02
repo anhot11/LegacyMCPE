@@ -1064,6 +1064,13 @@ void ClientConnection::handleMovePlayer(
     std::shared_ptr<MovePlayerPacket> packet) {
     std::shared_ptr<Player> player =
         minecraft->localplayers[m_userIndex];  // minecraft->player;
+    if (!player) {
+        player = minecraft->player;
+    }
+    if (!player) {
+        Log::info("[CLIENT] handleMovePlayer: player is null (m_userIndex=%d)!\n", m_userIndex);
+        return;
+    }
 
     double x = player->x;
     double y = player->y;
@@ -1090,6 +1097,8 @@ void ClientConnection::handleMovePlayer(
     packet->yView = player->y;
     connection->send(packet);
     if (!started) {
+        Log::info("[CLIENT] handleMovePlayer: starting game! pos=(%.2f, %.2f, %.2f), rot=(%.2f, %.2f)\n",
+                  x, y, z, yRot, xRot);
         if (!NetworkService.IsHost()) {
             Minecraft::GetInstance()->progressRenderer->progressStagePercentage(
                 (eCCConnected * 100) / (eCCConnected));
@@ -1904,9 +1913,8 @@ void ClientConnection::handleEntityActionAtPosition(
 }
 
 void ClientConnection::handlePreLogin(std::shared_ptr<PreLoginPacket> packet) {
-    fprintf(stderr,
-            "[LOGIN-CLI] handlePreLogin entered, isHost=%d, userIdx=%d\n",
-            (int)NetworkService.IsHost(), m_userIndex);
+    Log::info("[LOGIN-CLI] handlePreLogin entered, isHost=%d, userIdx=%d\n",
+              (int)NetworkService.IsHost(), m_userIndex);
     // 4J - Check that we can play with all the players already in the game who
     // have Friends-Only UGC set
     bool canPlay = true;
@@ -2045,12 +2053,12 @@ void ClientConnection::handlePreLogin(std::shared_ptr<PreLoginPacket> packet) {
         bool friendsAllowed = false;
         PlatformProfile.AllowedPlayerCreatedContent(
             m_userIndex, true, &allAllowed, &friendsAllowed);
-        fprintf(stderr,
-                "[LOGIN] Sending LoginPacket: user=%s netVer=%d userIdx=%d "
-                "isHost=%d\n",
-                minecraft->user->name.c_str(),
-                SharedConstants::NETWORK_PROTOCOL_VERSION, m_userIndex,
-                (int)NetworkService.IsHost());
+        Log::info(
+            "[LOGIN] Sending LoginPacket: user=%s netVer=%d userIdx=%d "
+            "isHost=%d\n",
+            minecraft->user->name.c_str(),
+            SharedConstants::NETWORK_PROTOCOL_VERSION, m_userIndex,
+            (int)NetworkService.IsHost());
         send(std::make_shared<LoginPacket>(
             minecraft->user->name, SharedConstants::NETWORK_PROTOCOL_VERSION,
             offlineXUID, onlineXUID, (!allAllowed && friendsAllowed),
@@ -2058,7 +2066,7 @@ void ClientConnection::handlePreLogin(std::shared_ptr<PreLoginPacket> packet) {
             gameServices().getPlayerSkinId(m_userIndex),
             gameServices().getPlayerCapeId(m_userIndex),
             PlatformProfile.IsGuest(m_userIndex)));
-        fprintf(stderr, "[LOGIN] LoginPacket sent successfully\n");
+        Log::info("[LOGIN] LoginPacket sent successfully\n");
 
         if (!NetworkService.IsHost()) {
             Minecraft::GetInstance()->progressRenderer->progressStagePercentage(

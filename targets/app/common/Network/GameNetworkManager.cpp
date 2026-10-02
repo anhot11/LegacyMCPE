@@ -323,8 +323,12 @@ bool CGameNetworkManager::StartNetworkGame(Minecraft* minecraft,
     }
 
     TexturePack* tPack = Minecraft::GetInstance()->skins->getSelected();
+    static int s_tickLogCount = 0;
     do {
-        app.DebugPrintf("ticking connection A\n");
+        if (++s_tickLogCount % 40 == 1) {
+            app.DebugPrintf("[NET] ticking connection (started=%d, inSession=%d)...\n",
+                            connection->isStarted(), IsInSession());
+        }
         connection->tick();
 
         // 4J Stu - We were ticking this way too fast which could cause the

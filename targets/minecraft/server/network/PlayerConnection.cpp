@@ -436,9 +436,15 @@ void PlayerConnection::teleport(double x, double y, double z, float yRot,
     // that receives this will presume it represents y + heightOffset at that
     // end This is different to the way that height is sent back to the server,
     // where it represents the bottom of the player bounding volume
-    if (sendPacket)
+    if (sendPacket) {
+        Log::info("[SERVER] PlayerConnection::teleport sending MovePlayerPacket to %s at (%.2f, %.2f, %.2f)\n",
+                  player->name.c_str(), x, y + 1.62f, z);
         player->connection->send(std::make_shared<MovePlayerPacket::PosRot>(
             x, y + 1.62f, y, z, yRot, xRot, false, false));
+        if (connection != nullptr) {
+            connection->flush();
+        }
+    }
 }
 
 void PlayerConnection::handlePlayerAction(

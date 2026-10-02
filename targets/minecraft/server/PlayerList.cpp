@@ -305,10 +305,13 @@ void PlayerList::placeNewPlayer(Connection* connection,
         true, true,
         false);  // 4J - added - force sending of the nearest chunk before the
                  // player is teleported, so we have somewhere to arrive on...
+    Log::info("[SERVER] placeNewPlayer: teleporting player %s to (%.2f, %.2f, %.2f)\n",
+              player->name.c_str(), player->x, player->y, player->z);
     playerConnection->teleport(player->x, player->y, player->z, player->yRot,
                                player->xRot);
 
     server->getConnection()->addPlayerConnection(playerConnection);
+    connection->flush();
     playerConnection->send(std::make_shared<SetTimePacket>(
         level->getGameTime(), level->getDayTime(),
         level->getGameRules()->getBoolean(GameRules::RULE_DAYLIGHT)));

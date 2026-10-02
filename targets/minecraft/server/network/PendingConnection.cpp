@@ -142,8 +142,8 @@ void PendingConnection::sendPreLoginResponse() {
 }
 
 void PendingConnection::handleLogin(std::shared_ptr<LoginPacket> packet) {
-    fprintf(stderr, "[LOGIN-SRV] handleLogin called! clientVersion=%d\n",
-            packet->clientVersion);
+    Log::info("[LOGIN-SRV] handleLogin called! clientVersion=%d\n",
+              packet->clientVersion);
     // name = packet->userName;
     if (packet->clientVersion != SharedConstants::NETWORK_PROTOCOL_VERSION) {
         Log::info("Client version is %d not equal to %d\n",
@@ -188,6 +188,7 @@ void PendingConnection::handleAcceptedLogin(
     std::shared_ptr<ServerPlayer> playerEntity =
         server->getPlayers()->getPlayerForLogin(this, name, playerXuid,
                                                 packet->m_onlineXuid);
+    Log::info("[LOGIN-SRV] handleAcceptedLogin: playerEntity=%p, placing player...\n", playerEntity.get());
     if (playerEntity != nullptr) {
         server->getPlayers()->placeNewPlayer(connection, playerEntity, packet);
         connection = nullptr;  // We've moved responsibility for this over to
