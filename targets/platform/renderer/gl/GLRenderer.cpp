@@ -556,6 +556,13 @@ static void pushRenderState() {
             glUniform2fv(s_shader.uGlobalLM, 1, glm::value_ptr(s_rs.globalLM));
         s_rs_dirty_mask = 0;
     }
+    if (s_shader.uChunkOffset >= 0) {
+        if (s_chunkOffsetValid) {
+            glUniform3f(s_shader.uChunkOffset, s_chunkOffset.x, s_chunkOffset.y, s_chunkOffset.z);
+        } else {
+            glUniform3f(s_shader.uChunkOffset, 0.0f, 0.0f, 0.0f);
+        }
+    }
     if (s_shader.uShaderPreset >= 0) {
         static int s_appliedPreset = -1;
         extern int s_currentShaderPreset;
@@ -991,18 +998,29 @@ void GLRenderer::DrawVertices(ePrimitiveType ptype, int count, void* dataIn,
     std::lock_guard<std::mutex> lk(s_glCallMtx);
     pushRenderState();
 
+    if (s_shader.uChunkOffset >= 0) {
+        glUniform3f(s_shader.uChunkOffset, 0.0f, 0.0f, 0.0f);
+        s_chunkOffset = {0.0f, 0.0f, 0.0f};
+        s_chunkOffsetValid = true;
+    }
+
     glBindVertexArray(s_sVAO_std);
     glBindBuffer(GL_ARRAY_BUFFER, s_sVBO_std);
 
-    // Standard orphaning
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytes, nullptr, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)bytes, dataIn);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytes, dataIn, GL_STREAM_DRAW);
+    bindStdAttribs();
     s_streamVBOSize = (GLsizeiptr)bytes;
 
     glDrawArrays(glMode, 0, count);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    static uint32_t s_drawCount = 0;
+    if (++s_drawCount % 300 == 1) {
+        Log::info("[4J_Render] DrawVertices #%u: mode=%d, count=%d, bytes=%zu, err=0x%x\n",
+                  s_drawCount, (int)glMode, count, bytes, glGetError());
+    }
 }
 
 void GLRenderer::ReadPixels(int x, int y, int w, int h, void* buf) {
@@ -1138,7 +1156,7 @@ void GLRenderer::MatrixTranslate(float x, float y, float z) {
     if (s_matMode == 0) markNormalDirty();
 }
 void GLRenderer::MatrixRotate(float a, float x, float y, float z) {
-    activeStack().mul(glm::rotate(glm::mat4(1.f), a, {x, y, z}));
+    activeStack().mul(glm::rotate(glm::mat4(1.f), glm::radians(a), {x, y, z}));
     markMatrixDirty();
     if (s_matMode == 0) markNormalDirty();
 }

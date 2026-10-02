@@ -1097,7 +1097,9 @@ void GameRenderer::render(float a, bool bFirst) {
             mc->gui->render(a, mc->screen != nullptr, xMouse, yMouse);
         }
     } else {
-        glViewport(0, 0, mc->width, mc->height);
+        int fbw = mc->width, fbh = mc->height;
+        PlatformRenderer.GetFramebufferSize(fbw, fbh);
+        glViewport(0, 0, fbw, fbh);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
@@ -1851,6 +1853,7 @@ void GameRenderer::renderSnowAndRain(float a) {
 void GameRenderer::setupGuiScreen(int forceScale /*=-1*/) {
     int fbw, fbh;
     PlatformRenderer.GetFramebufferSize(fbw, fbh);
+    glViewport(0, 0, fbw, fbh);
 
     // 4jcraft: use actual framebuffer dimensions instead of mc->width/height
     // to ensure GUI scales correctly after a window resize.
