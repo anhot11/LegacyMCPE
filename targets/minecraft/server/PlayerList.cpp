@@ -299,12 +299,10 @@ void PlayerList::placeNewPlayer(Connection* connection,
     broadcastAll(std::shared_ptr<ChatPacket>(
         new ChatPacket(player->name, ChatPacket::e_ChatPlayerJoinedGame)));
 
+    Log::info("[SERVER] placeNewPlayer: calling add(player)...\n");
     add(player);
+    Log::info("[SERVER] placeNewPlayer: add(player) completed\n");
 
-    player->doTick(
-        true, true,
-        false);  // 4J - added - force sending of the nearest chunk before the
-                 // player is teleported, so we have somewhere to arrive on...
     Log::info("[SERVER] placeNewPlayer: teleporting player %s to (%.2f, %.2f, %.2f)\n",
               player->name.c_str(), player->x, player->y, player->z);
     playerConnection->teleport(player->x, player->y, player->z, player->yRot,
@@ -312,6 +310,15 @@ void PlayerList::placeNewPlayer(Connection* connection,
 
     server->getConnection()->addPlayerConnection(playerConnection);
     connection->flush();
+    Log::info("[SERVER] placeNewPlayer: playerConnection added and flushed!\n");
+
+    Log::info("[SERVER] placeNewPlayer: running initial doTick...\n");
+    player->doTick(
+        true, true,
+        false);  // 4J - added - force sending of the nearest chunk before the
+                 // player arrives
+    Log::info("[SERVER] placeNewPlayer: initial doTick completed!\n");
+
     playerConnection->send(std::make_shared<SetTimePacket>(
         level->getGameTime(), level->getDayTime(),
         level->getGameRules()->getBoolean(GameRules::RULE_DAYLIGHT)));
@@ -393,9 +400,11 @@ void PlayerList::changeDimension(std::shared_ptr<ServerPlayer> player,
     ServerLevel* to = player->getLevel();
 
     if (from != nullptr) from->getChunkMap()->remove(player);
+    Log::info("[SERVER] changeDimension: adding player to chunkMap...\n");
     to->getChunkMap()->add(player);
-
+    Log::info("[SERVER] changeDimension: creating player chunk in cache...\n");
     to->cache->create(((int)player->x) >> 4, ((int)player->z) >> 4);
+    Log::info("[SERVER] changeDimension: done\n");
 }
 
 int PlayerList::getMaxRange() {
@@ -519,8 +528,11 @@ void PlayerList::add(std::shared_ptr<ServerPlayer> player) {
     // 4J Stu - Swapped these lines about so that we get the chunk visiblity
     // packet way ahead of all the add tracked entity packets Fix for #9169 -
     // ART : Sign text is replaced with the words Awaiting approval.
+    Log::info("[SERVER] PlayerList::add: calling changeDimension...\n");
     changeDimension(player, nullptr);
+    Log::info("[SERVER] PlayerList::add: calling level->addEntity...\n");
     level->addEntity(player);
+    Log::info("[SERVER] PlayerList::add: addEntity completed\n");
 
     for (int i = 0; i < players.size(); i++) {
         std::shared_ptr<ServerPlayer> op = players.at(i);

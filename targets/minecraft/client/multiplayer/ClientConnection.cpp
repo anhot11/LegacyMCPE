@@ -1115,16 +1115,8 @@ void ClientConnection::handleMovePlayer(
 
         started = true;
         minecraft->setScreen(nullptr);
-
-        // Fix for #105852 - TU12: Content: Gameplay: Local splitscreen Players
-        // are spawned at incorrect places after re-joining previously saved and
-        // loaded "Mass Effect World". Move this check from
-        // Minecraft::createExtraLocalPlayer 4J-PB - can't call this when this
-        // function is called from the qnet thread (GetGameStarted will be
-        // false)
-        if (gameServices().getGameStarted()) {
-            ui.CloseUIScenes(m_userIndex);
-        }
+        gameServices().setGameStarted(true);
+        ui.CloseUIScenes(m_userIndex);
     }
 }
 
