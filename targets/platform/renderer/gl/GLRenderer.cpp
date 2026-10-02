@@ -10,6 +10,7 @@
 #include "java/IntBuffer.h"
 #include "platform/PlatformTypes.h"
 #include "platform/renderer/renderer.h"
+#include "minecraft/util/Log.h"
 
 #if defined(__ANDROID__)
 #include <android/log.h>
@@ -350,6 +351,7 @@ struct RenderState {
     float fogStart = 0, fogEnd = 1000, fogDensity = 0;
     int fogMode = 0;
     bool fogEnable = false;
+    bool alphaTest = true;
     float alphaRef = 0.1f;
     float gamma = 1.0f;
     bool useTexture = true, useLightmap = false, lighting = false;
@@ -542,8 +544,10 @@ static void pushRenderState() {
             glUniform1i(s_shader.uUseTexture, s_rs.useTexture ? 1 : 0);
             glUniform1i(s_shader.uUseLightmap, s_rs.useLightmap ? 1 : 0);
         }
-        if (s_rs_dirty_mask & DIRTY_ALPHA)
-            glUniform1f(s_shader.uAlphaRef, s_rs.alphaRef);
+        if (s_rs_dirty_mask & DIRTY_ALPHA) {
+            float effAlpha = s_rs.alphaTest ? s_rs.alphaRef : -1.0f;
+            glUniform1f(s_shader.uAlphaRef, effAlpha);
+        }
         if (s_rs_dirty_mask & DIRTY_GAMMA)
             glUniform1f(s_shader.uInvGamma, 1.0f / s_rs.gamma);
         if (s_rs_dirty_mask & DIRTY_LMT)
@@ -720,9 +724,18 @@ void GLRenderer::Initialise() {
 #ifndef GLES
     gl3_load();
 #endif
+    const char* glVendor = (const char*)glGetString(GL_VENDOR);
+    const char* glRenderer = (const char*)glGetString(GL_RENDERER);
+    const char* glVersion = (const char*)glGetString(GL_VERSION);
+    const char* glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    Log::info("[4J_Render] GL Vendor: %s\n", glVendor ? glVendor : "null");
+    Log::info("[4J_Render] GL Renderer: %s\n", glRenderer ? glRenderer : "null");
+    Log::info("[4J_Render] GL Version: %s\n", glVersion ? glVersion : "null");
+    Log::info("[4J_Render] GLSL Version: %s\n", glslVersion ? glslVersion : "null");
     int fw, fh;
     SDL_GetWindowSize(s_window, &fw, &fh);
     onFramebufferResize(fw, fh);
+    Log::info("[4J_Render] Initial window size: %dx%d, framebuffer: %dx%d\n", s_windowWidth, s_windowHeight, fw, fh);
     glShadowSetDepthTest(true);
     ::glDepthFunc(GL_LEQUAL);
 #ifdef GLES
@@ -734,9 +747,14 @@ void GLRenderer::Initialise() {
     glShadowSetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glShadowSetCull(true);
     ::glCullFace(GL_BACK);
-    ::glClearColor(0, 0, 0, 1);
+    ::glClearColor(0.1f, 0.12f, 0.16f, 1.0f);
     glViewport(0, 0, s_windowWidth, s_windowHeight);
     s_shader.build(VERT_SRC, FRAG_SRC);
+    if (!s_shader.prog) {
+        Log::info("[4J_Render] FATAL: Shader program failed to compile or link!\n");
+    } else {
+        Log::info("[4J_Render] Shader program compiled & linked successfully (prog=%u)\n", s_shader.prog);
+    }
     initStreamingVAOs();
 
     s_mainThreadId = std::this_thread::get_id();
@@ -834,6 +852,10 @@ void GLRenderer::Present() {
     }
     glFlush();
     SDL_GL_SwapWindow(s_window);
+    static uint32_t s_presentCount = 0;
+    if (++s_presentCount % 120 == 1) {
+        Log::info("[4J_Render] Present frame #%u (win=%dx%d)\n", s_presentCount, s_windowWidth, s_windowHeight);
+    }
 }
 
 void GLRenderer::SetWindowSize(int w, int h) {
@@ -1208,9 +1230,8 @@ void GLRenderer::StateSetWriteEnable(bool r, bool g, bool b, bool a) {
 }
 void GLRenderer::StateSetDepthTestEnable(bool e) { glShadowSetDepthTest(e); }
 void GLRenderer::StateSetAlphaTestEnable(bool e) {
-    float v = e ? 0.1f : 0.f;
-    if (s_rs.alphaRef != v) {
-        s_rs.alphaRef = v;
+    if (s_rs.alphaTest != e) {
+        s_rs.alphaTest = e;
         markDirty(DIRTY_ALPHA);
     }
 }
@@ -1327,11 +1348,19 @@ void GLRenderer::StateSetTextureEnable(bool e) {
 }
 void GLRenderer::StateSetActiveTexture(int tex) {
     s_rs.activeTexture = (tex == 0x84C1 /*GL_TEXTURE1*/) ? 1 : 0;
+    ::glActiveTexture(tex);
 }
 
 int GLRenderer::TextureCreate() {
-    GLuint id;
+    GLuint id = 0;
     glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     return (int)id;
 }
 void GLRenderer::TextureFree(int i) {
@@ -1371,6 +1400,7 @@ void GLRenderer::TextureBindVertex(int idx, bool scaleLight) {
     }
 }
 void GLRenderer::TextureSetTextureLevels(int l) {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, l > 0 ? l - 1 : 0);
     if (l > 1)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -1383,11 +1413,14 @@ void GLRenderer::TextureData(int w, int h, void* d, int lvl, eTextureFormat) {
     glTexImage2D(GL_TEXTURE_2D, lvl, GL_RGBA, w, h, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, d);
     if (lvl == 0) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        GLint maxLvl = 0;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        GLint maxLvl = 1000;
         glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &maxLvl);
-        if (maxLvl == 0)
+        if (maxLvl <= 0 || maxLvl == 1000) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        }
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
 }
 void GLRenderer::TextureDataUpdate(int xo, int yo, int w, int h, void* d,
@@ -1441,13 +1474,13 @@ void GLRenderer::UpdateGamma(unsigned short usGamma) {
 // MARK: C hooks
 
 int glGenTextures_4J() {
-    GLuint id = 0;
-    ::glGenTextures(1, &id);
-    return (int)id;
+    return PlatformRenderer.TextureCreate();
 }
 
 void glGenTextures_4J(int n, unsigned int* textures) {
-    ::glGenTextures(n, textures);
+    for (int i = 0; i < n; i++) {
+        textures[i] = (unsigned int)PlatformRenderer.TextureCreate();
+    }
 }
 
 void glDeleteTextures_4J(int id) {

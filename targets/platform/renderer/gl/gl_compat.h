@@ -567,16 +567,15 @@ void glTexImage2D_4J(int target, int level, int internalformat, int width,
 
 template <typename T>
 inline void glGenTextures_4J(T* buf) {
-    unsigned int id = 0;
-    ::glGenTextures(1, &id);
+    unsigned int id = (unsigned int)PlatformRenderer.TextureCreate();
     buf->put((int)id);
     buf->flip();
 }
 template <typename T>
 inline void glDeleteTextures_4J(T* buf) {
     if (buf->limit() > 0) {
-        unsigned int id = (unsigned int)buf->get(0);
-        ::glDeleteTextures(1, &id);
+        int id = buf->get(0);
+        PlatformRenderer.TextureFree(id);
     }
 }
 template <typename T>

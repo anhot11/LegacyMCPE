@@ -24,6 +24,14 @@ inline void info(const char* fmt, ...) {
     va_start(args, fmt);
 #if defined(__ANDROID__)
     __android_log_vprint(ANDROID_LOG_INFO, "LegacyMCPE", fmt, args);
+    FILE* f = fopen("/sdcard/LegacyMCPE/latest_log.txt", "a");
+    if (f) {
+        va_list args2;
+        va_start(args2, fmt);
+        vfprintf(f, fmt, args2);
+        va_end(args2);
+        fclose(f);
+    }
 #else
     std::vfprintf(stderr, fmt, args);
 #endif

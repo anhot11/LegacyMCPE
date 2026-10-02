@@ -156,6 +156,11 @@ void Game::DebugPrintf(const char* szFormat, ...) {
     va_end(ap);
 #if defined(__ANDROID__)
     __android_log_print(ANDROID_LOG_INFO, "LegacyMCPE", "%s", buf);
+    FILE* f = fopen("/sdcard/LegacyMCPE/latest_log.txt", "a");
+    if (f) {
+        fputs(buf, f);
+        fclose(f);
+    }
 #else
     fputs(buf, stderr);
 #endif
@@ -172,6 +177,11 @@ void Game::DebugPrintf(int user, const char* szFormat, ...) {
     va_end(ap);
 #if defined(__ANDROID__)
     __android_log_print(ANDROID_LOG_INFO, "LegacyMCPE", "%s", buf);
+    FILE* f = fopen("/sdcard/LegacyMCPE/latest_log.txt", "a");
+    if (f) {
+        fputs(buf, f);
+        fclose(f);
+    }
 #else
     fputs(buf, stderr);
 #endif
