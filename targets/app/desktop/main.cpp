@@ -39,6 +39,24 @@ static void sigsegv_handler(int sig) {
     write(STDERR_FILENO, msg2, sizeof(msg2) - 1);
     _exit(139);
 }
+#elif defined(__ANDROID__)
+#include <android/log.h>
+#include <unistd.h>
+#include <signal.h>
+static void android_sig_handler(int sig) {
+    __android_log_print(ANDROID_LOG_FATAL, "LegacyMCPE", "CRITICAL FATAL: Signal caught: %d\n", sig);
+    const char* mcPath = getenv("MC_PATH");
+    if (mcPath) {
+        char buf[512];
+        snprintf(buf, sizeof(buf), "%s/crash_log.txt", mcPath);
+        FILE* f = fopen(buf, "a");
+        if (f) {
+            fprintf(f, "FATAL CRASH: Signal %d caught\n", sig);
+            fclose(f);
+        }
+    }
+    _exit(128 + sig);
+}
 #endif
 
 #include <stdint.h>
@@ -417,6 +435,15 @@ extern "C" MC_EXPORT int main(int argc, const char* argv[]) {
     sigaction(SIGABRT, &sa, nullptr);
     sigaction(SIGBUS, &sa, nullptr);
     sigaction(SIGTRAP, &sa, nullptr);
+#elif defined(__ANDROID__)
+    struct sigaction sa;
+    sa.sa_handler = android_sig_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESETHAND;
+    sigaction(SIGSEGV, &sa, nullptr);
+    sigaction(SIGABRT, &sa, nullptr);
+    sigaction(SIGBUS, &sa, nullptr);
+    sigaction(SIGFPE, &sa, nullptr);
 #endif
     app.DebugPrintf("---main()\n");
 
@@ -425,6 +452,7 @@ extern "C" MC_EXPORT int main(int argc, const char* argv[]) {
         std::string basePath = PlatformFilesystem.getBasePath().string();
         if (!basePath.empty()) {
             ::chdir(basePath.c_str());
+            mkdir((basePath + "/saves").c_str(), 0777);
             app.DebugPrintf("[Android] Native chdir to: %s\n", basePath.c_str());
         }
     }

@@ -210,9 +210,13 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
             s_scrollTicksForButtonPressed--;
         }
     } else if (e->type == SDL_FINGERDOWN || e->type == SDL_FINGERMOTION) {
-        SDL_Window* win = SDL_GL_GetCurrentWindow();
+        SDL_Window* win = SDL_GetWindowFromID(e->tfinger.windowID);
+        if (!win) win = SDL_GL_GetCurrentWindow();
         int w = 0, h = 0;
-        if (win) SDL_GetWindowSize(win, &w, &h);
+        if (win) {
+            SDL_GL_GetDrawableSize(win, &w, &h);
+            if (w <= 0 || h <= 0) SDL_GetWindowSize(win, &w, &h);
+        }
         if (w > 0 && h > 0) {
             s_mouseX = (int)(e->tfinger.x * (float)w);
             s_mouseY = (int)(e->tfinger.y * (float)h);

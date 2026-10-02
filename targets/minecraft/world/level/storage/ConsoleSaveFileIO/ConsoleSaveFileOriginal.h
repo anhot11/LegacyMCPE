@@ -19,11 +19,11 @@ private:
     // pages that are actually touched, so this gives the same demand-paging
     // behaviour the legacy VirtualAlloc reserve/commit pattern relied on,
     // without any OS-specific calls.
-#if defined(_LARGE_WORLDS)
+#if defined(__ANDROID__) || !defined(_LARGE_WORLDS)
+    static constexpr std::size_t MAX_SAVE_SIZE = 64u * 1024u * 1024u;  // 64MB (Mobile Safe)
+#else
     static constexpr std::size_t MAX_SAVE_SIZE =
         2u * 1024u * 1024u * 1024u;  // 2GB
-#else
-    static constexpr std::size_t MAX_SAVE_SIZE = 64u * 1024u * 1024u;  // 64MB
 #endif
     std::vector<std::uint8_t> saveBuffer;
     void* pvSaveMem = saveBuffer.data();
