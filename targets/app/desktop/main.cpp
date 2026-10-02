@@ -43,6 +43,7 @@ static void sigsegv_handler(int sig) {
 #include <android/log.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/stat.h>
 static void android_sig_handler(int sig) {
     __android_log_print(ANDROID_LOG_FATAL, "LegacyMCPE", "CRITICAL FATAL: Signal caught: %d\n", sig);
     const char* mcPath = getenv("MC_PATH");
