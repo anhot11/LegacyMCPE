@@ -438,13 +438,15 @@ void TitleScreen::render(int xm, int ym, float a) {
 
     // 3D Player Character on the right side (Bedrock / PE style)
     if (playerModel != nullptr) {
-        float ss = (height >= 300) ? 96.0f : 75.0f;
+        float ss = (height >= 300) ? 96.0f : 80.0f;
         int playerX = width * 3 / 4;
         if (width < 450) {
             playerX = width - 80;
         }
-        // Feet anchored near bottom, above copyright bar
-        int playerY = height - 20;
+        // HumanoidModel origin is at neck/shoulders.
+        // Feet are at +1.5 * ss below origin.
+        // We position feet grounded above the bottom copyright bar.
+        int playerY = (int)((float)height - 18.0f - 1.5f * ss);
 
         // Reset OpenGL color so yellow splash text or previous GUI draw doesn't tint the skin
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -463,15 +465,13 @@ void TitleScreen::render(int xm, int ym, float a) {
         Lighting::turnOnGui();
 
         glPushMatrix();
-        // Canonical Minecraft GUI player transformation stack:
         glTranslatef((float)playerX, (float)playerY, 50.0f);
         glScalef(-ss, ss, ss);
-        glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
 
         // Interactive touch/mouse tracking
-        // Steve's eyes are at roughly 1.6 * ss above his feet
+        // Steve's eyes are at roughly 0.25 * ss above neck
         float steveEyeX = (float)playerX;
-        float steveEyeY = (float)playerY - 1.6f * ss;
+        float steveEyeY = (float)playerY - 0.25f * ss;
 
         float dx = 0.0f;
         float dy = 0.0f;
@@ -491,18 +491,17 @@ void TitleScreen::render(int xm, int ym, float a) {
         if (bodyRot > 60.0f) bodyRot = 60.0f;
         if (bodyRot < -20.0f) bodyRot = -20.0f;
 
+        // Rotate Steve to face forward towards the camera (180 deg base)
         glRotatef(180.0f - bodyRot, 0.0f, 1.0f, 0.0f);
-        glScalef(-1.0f, -1.0f, 1.0f);
-        glTranslatef(0.0f, -24.0f * (1.0f / 16.0f), 0.0f);
 
         // Head tracking
-        float targetYaw = -(float)atan2(dx, 100.0f) * 57.29578f;
-        float relYaw = targetYaw - bodyRot;
+        float targetYaw = (float)atan2(dx, 100.0f) * 57.29578f;
+        float relYaw = (targetYaw - 20.0f) * 0.7f;
         if (relYaw > 45.0f) relYaw = 45.0f;
         if (relYaw < -45.0f) relYaw = -45.0f;
         float headYaw = relYaw + sinf(vo * 0.04f) * 1.5f;
 
-        float targetPitch = -(float)atan2(dy, 100.0f) * 57.29578f;
+        float targetPitch = (float)atan2(dy, 100.0f) * 57.29578f;
         if (targetPitch > 28.0f) targetPitch = 28.0f;
         if (targetPitch < -28.0f) targetPitch = -28.0f;
         float headPitch = targetPitch + cosf(vo * 0.04f) * 1.0f;
