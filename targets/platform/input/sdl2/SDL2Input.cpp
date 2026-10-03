@@ -761,6 +761,14 @@ bool SDL2Input::PollReturnPressed() {
     s_screenReturnPressed = false;
     return res;
 }
+
+void SDL2Input::StartTextInput() {
+    SDL_StartTextInput();
+}
+
+void SDL2Input::StopTextInput() {
+    SDL_StopTextInput();
+}
 bool SDL2Input::VerifyStrings(char**, int,
                               std::function<int(STRING_VERIFY_RESPONSE*)>) {
     return true;

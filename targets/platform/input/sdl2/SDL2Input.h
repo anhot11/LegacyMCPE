@@ -57,6 +57,8 @@ public:
     std::string PollTextInput() override;
     bool PollBackspacePressed() override;
     bool PollReturnPressed() override;
+    void StartTextInput() override;
+    void StopTextInput() override;
 
     // Online check strings against offensive list - TCR 92
     // 	TCR # 092  CMTV Player Text String Verification

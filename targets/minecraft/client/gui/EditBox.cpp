@@ -2,8 +2,8 @@
 
 #include "minecraft/SharedConstants.h"
 #include "minecraft/client/gui/Screen.h"
+#include "platform/input/input.h"
 #include "platform/stubs.h"
-#include "SDL.h"
 
 EditBox::EditBox(Screen* screen, Font* font, int x, int y, int width,
                  int height, const std::string& value) {
@@ -25,7 +25,7 @@ EditBox::EditBox(Screen* screen, Font* font, int x, int y, int width,
 
 EditBox::~EditBox() {
     if (inFocus) {
-        SDL_StopTextInput();
+        PlatformInput.StopTextInput();
     }
 }
 
@@ -75,9 +75,9 @@ void EditBox::focus(bool newFocus) {
     if (newFocus && !inFocus) {
         // reset the underscore counter to give quicker selection feedback
         frame = 0;
-        SDL_StartTextInput();
+        PlatformInput.StartTextInput();
     } else if (!newFocus && inFocus) {
-        SDL_StopTextInput();
+        PlatformInput.StopTextInput();
     }
     inFocus = newFocus;
 }

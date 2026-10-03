@@ -87,6 +87,8 @@ public:
     virtual std::string PollTextInput() { return ""; }
     virtual bool PollBackspacePressed() { return false; }
     virtual bool PollReturnPressed() { return false; }
+    virtual void StartTextInput() {}
+    virtual void StopTextInput() {}
 
     // String verification (TCR 92)
     virtual bool VerifyStrings(
