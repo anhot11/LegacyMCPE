@@ -58,7 +58,7 @@ void GuiComponent::fill(int x0, int y0, int x1, int y1, int col) {
 }
 
 void GuiComponent::fillGradient(int x0, int y0, int x1, int y1, int col1,
-                                int col2) {
+                                int col2, float z) {
     float a1 = ((col1 >> 24) & 0xff) / 255.0f;
     float r1 = ((col1 >> 16) & 0xff) / 255.0f;
     float g1 = ((col1 >> 8) & 0xff) / 255.0f;
@@ -77,11 +77,11 @@ void GuiComponent::fillGradient(int x0, int y0, int x1, int y1, int col1,
     Tesselator* t = Tesselator::getInstance();
     t->begin();
     t->color(r1, g1, b1, a1);
-    t->vertex((float)(x1), (float)(y0), blitOffset);
-    t->vertex((float)(x0), (float)(y0), blitOffset);
+    t->vertex((float)(x1), (float)(y0), z);
+    t->vertex((float)(x0), (float)(y0), z);
     t->color(r2, g2, b2, a2);
-    t->vertex((float)(x0), (float)(y1), blitOffset);
-    t->vertex((float)(x1), (float)(y1), blitOffset);
+    t->vertex((float)(x0), (float)(y1), z);
+    t->vertex((float)(x1), (float)(y1), z);
     t->end();
 
     glShadeModel(GL_FLAT);

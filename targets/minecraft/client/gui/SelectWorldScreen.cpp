@@ -29,6 +29,7 @@
 #include "RenameWorldScreen.h"
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/Options.h"
+#include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/client/gui/ScrolledSelectionList.h"
 #include "minecraft/client/multiplayer/ConnectScreen.h"
