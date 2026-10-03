@@ -14,6 +14,7 @@
 #include "minecraft/client/renderer/Tesselator.h"
 #include "minecraft/client/renderer/Textures.h"
 #include "minecraft/locale/Language.h"
+#include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
 #include "minecraft/world/entity/player/Player.h"
 #include "minecraft/world/entity/player/SkinTypes.h"
 #include "app/common/Audio/SoundTypes.h"
