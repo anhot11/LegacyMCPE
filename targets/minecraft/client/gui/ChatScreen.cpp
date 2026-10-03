@@ -123,8 +123,8 @@ void ChatScreen::mouseClicked(int x, int y, int buttonNum) {
 
     if (buttonNum == 0) {
         // If clicked on any button, buttonClicked handles it
-        if ((btnClose != nullptr && btnClose->isInside(x, y)) ||
-            (btnSend != nullptr && btnSend->isInside(x, y))) {
+        if ((btnClose != nullptr && x >= btnClose->x && x < btnClose->x + btnClose->w && y >= btnClose->y && y < btnClose->y + btnClose->h) ||
+            (btnSend != nullptr && x >= btnSend->x && x < btnSend->x + btnSend->w && y >= btnSend->y && y < btnSend->y + btnSend->h)) {
             return;
         }
 
