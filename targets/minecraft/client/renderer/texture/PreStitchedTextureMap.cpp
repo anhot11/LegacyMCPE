@@ -225,10 +225,7 @@ Icon* PreStitchedTextureMap::registerIcon(const std::string& name) {
     if (it != texturesByName.end()) result = it->second;
 
     if (result == nullptr) {
-#if !defined(_CONTENT_PACKAGE)
-        Log::info("Could not find uv data for icon %s\n", name.c_str());
-        assert(0);
-#endif
+        Log::info("Icon %s not found in pre-stitched map, falling back to missingPosition\n", name.c_str());
         result = missingPosition;
     }
 
@@ -592,6 +589,24 @@ void PreStitchedTextureMap::loadUVs() {
                          oldCompass->getU1(), oldCompass->getV1());
         delete oldCompass;
         texturesByName["compassP3"] = compass;
+
+        // MCPE 0.15.10 Items
+        if (texturesByName.count("beefRaw")) texturesByName["mutton_raw"] = texturesByName["beefRaw"];
+        if (texturesByName.count("beefCooked")) texturesByName["mutton_cooked"] = texturesByName["beefCooked"];
+        if (texturesByName.count("chickenRaw")) texturesByName["rabbit_raw"] = texturesByName["chickenRaw"];
+        if (texturesByName.count("chickenCooked")) texturesByName["rabbit_cooked"] = texturesByName["chickenCooked"];
+        if (texturesByName.count("mushroomStew")) texturesByName["rabbit_stew"] = texturesByName["mushroomStew"];
+        if (texturesByName.count("doorWood")) {
+            texturesByName["door_spruce"] = texturesByName["doorWood"];
+            texturesByName["door_birch"] = texturesByName["doorWood"];
+            texturesByName["door_jungle"] = texturesByName["doorWood"];
+            texturesByName["door_acacia"] = texturesByName["doorWood"];
+            texturesByName["door_dark_oak"] = texturesByName["doorWood"];
+        }
+        if (texturesByName.count("apple")) texturesByName["beetroot"] = texturesByName["apple"];
+        if (texturesByName.count("seeds")) texturesByName["seeds_beetroot"] = texturesByName["seeds"];
+        if (texturesByName.count("mushroomStew")) texturesByName["beetroot_soup"] = texturesByName["mushroomStew"];
+        if (texturesByName.count("clock")) texturesByName["camera"] = texturesByName["clock"];
     } else {
         float horizRatio = 1.0f / 16.0f;
         float vertRatio = 1.0f / 32.0f;
@@ -935,5 +950,30 @@ void PreStitchedTextureMap::loadUVs() {
         ADD_ICON(19, 13, "glass_pane_top_silver");
         ADD_ICON(19, 14, "glass_pane_top_white");
         ADD_ICON(19, 15, "glass_pane_top_yellow");
+
+        // MCPE 0.15.10 Blocks
+        if (texturesByName.count("stone")) {
+            texturesByName["stonecutter"] = texturesByName["stone"];
+            texturesByName["observer"] = texturesByName["stone"];
+        }
+        if (texturesByName.count("obsidian")) texturesByName["glowing_obsidian"] = texturesByName["obsidian"];
+        if (texturesByName.count("ironBlock")) texturesByName["reactor_core"] = texturesByName["ironBlock"];
+        if (texturesByName.count("dirt")) texturesByName["grass_path"] = texturesByName["dirt"];
+        if (texturesByName.count("cloth_0")) texturesByName["slime_block"] = texturesByName["cloth_0"];
+        if (texturesByName.count("daylight_detector_top")) texturesByName["daylight_detector_inverted"] = texturesByName["daylight_detector_top"];
+        if (texturesByName.count("fence_gate")) {
+            texturesByName["spruce_fence_gate"] = texturesByName["fence_gate"];
+            texturesByName["birch_fence_gate"] = texturesByName["fence_gate"];
+            texturesByName["jungle_fence_gate"] = texturesByName["fence_gate"];
+            texturesByName["dark_oak_fence_gate"] = texturesByName["fence_gate"];
+            texturesByName["acacia_fence_gate"] = texturesByName["fence_gate"];
+        }
+        if (texturesByName.count("doorWood_upper")) {
+            texturesByName["door_spruce"] = texturesByName["doorWood_upper"];
+            texturesByName["door_birch"] = texturesByName["doorWood_upper"];
+            texturesByName["door_jungle"] = texturesByName["doorWood_upper"];
+            texturesByName["door_acacia"] = texturesByName["doorWood_upper"];
+            texturesByName["door_dark_oak"] = texturesByName["doorWood_upper"];
+        }
     }
 }

@@ -381,6 +381,25 @@ public:
     static const int woolCarpet_Id = 171;
     static const int clayHardened_Id = 172;
     static const int coalBlock_Id = 173;
+    // MCPE 0.15.10 Tiles
+    static const int slimeBlock_Id = 165;
+    static const int daylightDetector_inverted_Id = 178;
+    static const int spruceFenceGate_Id = 183;
+    static const int birchFenceGate_Id = 184;
+    static const int jungleFenceGate_Id = 185;
+    static const int darkOakFenceGate_Id = 186;
+    static const int acaciaFenceGate_Id = 187;
+    static const int spruceDoor_Id = 193;
+    static const int birchDoor_Id = 194;
+    static const int jungleDoor_Id = 195;
+    static const int acaciaDoor_Id = 196;
+    static const int darkOakDoor_Id = 197;
+    static const int grassPath_Id = 208;
+    static const int observer_Id = 218;
+    static const int beetroot_Id = 244;
+    static const int stonecutter_Id = 245;
+    static const int glowingObsidian_Id = 246;
+    static const int netherReactor_Id = 247;
 
     static Tile* stone;
     static GrassTile* grass;
@@ -556,6 +575,25 @@ public:
     static Tile* woolCarpet;
     static Tile* clayHardened;
     static Tile* coalBlock;
+    // MCPE 0.15.10 Tiles
+    static Tile* slimeBlock;
+    static DaylightDetectorTile* daylightDetector_inverted;
+    static Tile* spruceFenceGate;
+    static Tile* birchFenceGate;
+    static Tile* jungleFenceGate;
+    static Tile* darkOakFenceGate;
+    static Tile* acaciaFenceGate;
+    static Tile* spruceDoor;
+    static Tile* birchDoor;
+    static Tile* jungleDoor;
+    static Tile* acaciaDoor;
+    static Tile* darkOakDoor;
+    static Tile* grassPath;
+    static Tile* observer;
+    static Tile* beetroot;
+    static Tile* stonecutter;
+    static Tile* glowingObsidian;
+    static Tile* netherReactor;
 
     static void staticCtor();
 

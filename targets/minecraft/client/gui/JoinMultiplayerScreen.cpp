@@ -72,7 +72,7 @@ void JoinMultiplayerScreen::loadServerList() {
                 std::string rest = line.substr(semi1 + 1);
                 size_t semi2 = rest.find(';');
                 std::string ip;
-                int port = 25565;
+                int port = 19132;
                 if (semi2 != std::string::npos) {
                     ip = rest.substr(0, semi2);
                     std::string portStr = rest.substr(semi2 + 1);
@@ -85,7 +85,7 @@ void JoinMultiplayerScreen::loadServerList() {
                 }
             } else {
                 std::string ip;
-                int port = 25565;
+                int port = 19132;
                 parseIpPort(line, ip, port);
                 if (!ip.empty()) {
                     serverList.push_back({ip, ip, port});
@@ -96,8 +96,13 @@ void JoinMultiplayerScreen::loadServerList() {
     }
 
     if (serverList.empty()) {
-        // Add a helpful default entry
-        serverList.push_back({"Local Server", "127.0.0.1", 25565});
+        // Preload MCPE 0.15 Community Servers
+        serverList.push_back({"HYDRA Remastered", "hydrahcf.net", 19132});
+        serverList.push_back({"MineBox PE", "mbox.shockbyte.me", 8116});
+        serverList.push_back({"InPvP Network", "play.inpvp.net", 19132});
+        serverList.push_back({"Lifeboat Network", "play.lbsg.net", 19132});
+        serverList.push_back({"CookieBuild Brasil", "br.cookie-build.com", 19132});
+        serverList.push_back({"Local Server", "127.0.0.1", 19132});
         saveServerList();
     }
 }
@@ -115,14 +120,14 @@ void JoinMultiplayerScreen::saveServerList() {
 
 void JoinMultiplayerScreen::parseIpPort(const std::string& input, std::string& outIp, int& outPort) {
     outIp = input;
-    outPort = 25565;
+    outPort = 19132;
     size_t col = input.find(':');
     if (col != std::string::npos) {
         outIp = input.substr(0, col);
         std::string p = input.substr(col + 1);
         if (!p.empty()) {
             outPort = std::atoi(p.c_str());
-            if (outPort <= 0 || outPort > 65535) outPort = 25565;
+            if (outPort <= 0 || outPort > 65535) outPort = 19132;
         }
     }
 }

@@ -415,6 +415,21 @@ public:
     static Item* horseArmorDiamond;
     static Item* lead;
     static Item* nameTag;
+    // MCPE 0.15.10 Items
+    static Item* rabbit_raw;
+    static Item* rabbit_cooked;
+    static Item* rabbit_stew;
+    static Item* mutton_raw;
+    static Item* mutton_cooked;
+    static Item* door_spruce;
+    static Item* door_birch;
+    static Item* door_jungle;
+    static Item* door_acacia;
+    static Item* door_dark_oak;
+    static Item* beetroot;
+    static Item* beetroot_seeds;
+    static Item* beetroot_soup;
+    static Item* camera;
 
     static const int shovel_iron_Id = 256;
     static const int pickAxe_iron_Id = 257;
@@ -620,6 +635,21 @@ public:
     static const int horseArmorDiamond_Id = 419;
     static const int lead_Id = 420;
     static const int nameTag_Id = 421;
+    // MCPE 0.15.10 Items
+    static const int rabbit_raw_Id = 411;
+    static const int rabbit_cooked_Id = 412;
+    static const int rabbit_stew_Id = 413;
+    static const int mutton_raw_Id = 423;
+    static const int mutton_cooked_Id = 424;
+    static const int door_spruce_Id = 427;
+    static const int door_birch_Id = 428;
+    static const int door_jungle_Id = 429;
+    static const int door_acacia_Id = 430;
+    static const int door_dark_oak_Id = 431;
+    static const int beetroot_Id = 457;
+    static const int beetroot_seeds_Id = 458;
+    static const int beetroot_soup_Id = 459;
+    static const int camera_Id = 498;
 
 public:
     const int id;

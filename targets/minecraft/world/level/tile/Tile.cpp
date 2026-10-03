@@ -357,6 +357,24 @@ Tile* Tile::hayBlock = nullptr;
 Tile* Tile::woolCarpet = nullptr;
 Tile* Tile::clayHardened = nullptr;
 Tile* Tile::coalBlock = nullptr;
+Tile* Tile::slimeBlock = nullptr;
+DaylightDetectorTile* Tile::daylightDetector_inverted = nullptr;
+Tile* Tile::spruceFenceGate = nullptr;
+Tile* Tile::birchFenceGate = nullptr;
+Tile* Tile::jungleFenceGate = nullptr;
+Tile* Tile::darkOakFenceGate = nullptr;
+Tile* Tile::acaciaFenceGate = nullptr;
+Tile* Tile::spruceDoor = nullptr;
+Tile* Tile::birchDoor = nullptr;
+Tile* Tile::jungleDoor = nullptr;
+Tile* Tile::acaciaDoor = nullptr;
+Tile* Tile::darkOakDoor = nullptr;
+Tile* Tile::grassPath = nullptr;
+Tile* Tile::observer = nullptr;
+Tile* Tile::beetroot = nullptr;
+Tile* Tile::stonecutter = nullptr;
+Tile* Tile::glowingObsidian = nullptr;
+Tile* Tile::netherReactor = nullptr;
 
 thread_local Tile::ThreadStorage* Tile::m_tlsShape = nullptr;
 
@@ -1709,6 +1727,89 @@ void Tile::staticCtor() {
                           ->setIconName("coal_block")
                           ->setDescriptionId(IDS_TILE_COAL)
                           ->setUseDescriptionId(IDS_DESC_COAL_BLOCK);
+
+    // MCPE 0.15.10 Blocks
+    Tile::slimeBlock = (new Tile(slimeBlock_Id, Material::clay))
+                           ->setDestroyTime(0.0f)
+                           ->setSoundType(SOUND_CLOTH)
+                           ->setIconName("slime_block");
+    Tile::daylightDetector_inverted = (DaylightDetectorTile*)(new DaylightDetectorTile(daylightDetector_inverted_Id))
+                                          ->setDestroyTime(0.2f)
+                                          ->setSoundType(SOUND_WOOD)
+                                          ->setIconName("daylight_detector_inverted");
+    Tile::spruceFenceGate = (new FenceGateTile(spruceFenceGate_Id))
+                                ->setDestroyTime(2.0f)
+                                ->setExplodeable(5.0f)
+                                ->setSoundType(SOUND_WOOD)
+                                ->setIconName("spruce_fence_gate");
+    Tile::birchFenceGate = (new FenceGateTile(birchFenceGate_Id))
+                               ->setDestroyTime(2.0f)
+                               ->setExplodeable(5.0f)
+                               ->setSoundType(SOUND_WOOD)
+                               ->setIconName("birch_fence_gate");
+    Tile::jungleFenceGate = (new FenceGateTile(jungleFenceGate_Id))
+                                ->setDestroyTime(2.0f)
+                                ->setExplodeable(5.0f)
+                                ->setSoundType(SOUND_WOOD)
+                                ->setIconName("jungle_fence_gate");
+    Tile::darkOakFenceGate = (new FenceGateTile(darkOakFenceGate_Id))
+                                 ->setDestroyTime(2.0f)
+                                 ->setExplodeable(5.0f)
+                                 ->setSoundType(SOUND_WOOD)
+                                 ->setIconName("dark_oak_fence_gate");
+    Tile::acaciaFenceGate = (new FenceGateTile(acaciaFenceGate_Id))
+                                ->setDestroyTime(2.0f)
+                                ->setExplodeable(5.0f)
+                                ->setSoundType(SOUND_WOOD)
+                                ->setIconName("acacia_fence_gate");
+    Tile::spruceDoor = (new DoorTile(spruceDoor_Id, Material::wood))
+                           ->setDestroyTime(3.0f)
+                           ->setSoundType(SOUND_WOOD)
+                           ->setIconName("door_spruce");
+    Tile::birchDoor = (new DoorTile(birchDoor_Id, Material::wood))
+                          ->setDestroyTime(3.0f)
+                          ->setSoundType(SOUND_WOOD)
+                          ->setIconName("door_birch");
+    Tile::jungleDoor = (new DoorTile(jungleDoor_Id, Material::wood))
+                           ->setDestroyTime(3.0f)
+                           ->setSoundType(SOUND_WOOD)
+                           ->setIconName("door_jungle");
+    Tile::acaciaDoor = (new DoorTile(acaciaDoor_Id, Material::wood))
+                           ->setDestroyTime(3.0f)
+                           ->setSoundType(SOUND_WOOD)
+                           ->setIconName("door_acacia");
+    Tile::darkOakDoor = (new DoorTile(darkOakDoor_Id, Material::wood))
+                            ->setDestroyTime(3.0f)
+                            ->setSoundType(SOUND_WOOD)
+                            ->setIconName("door_dark_oak");
+    Tile::grassPath = (new Tile(grassPath_Id, Material::dirt))
+                          ->setDestroyTime(0.65f)
+                          ->setSoundType(SOUND_GRASS)
+                          ->setIconName("grass_path");
+    Tile::observer = (new Tile(observer_Id, Material::stone))
+                         ->setDestroyTime(3.5f)
+                         ->setExplodeable(10.0f)
+                         ->setSoundType(SOUND_STONE)
+                         ->setIconName("observer");
+    Tile::beetroot = (new CropTile(beetroot_Id))
+                         ->setSoundType(SOUND_GRASS)
+                         ->setIconName("beetroot");
+    Tile::stonecutter = (new Tile(stonecutter_Id, Material::stone))
+                            ->setDestroyTime(3.5f)
+                            ->setExplodeable(10.0f)
+                            ->setSoundType(SOUND_STONE)
+                            ->setIconName("stonecutter");
+    Tile::glowingObsidian = (new Tile(glowingObsidian_Id, Material::stone))
+                                ->setDestroyTime(50.0f)
+                                ->setExplodeable(2000.0f)
+                                ->setSoundType(SOUND_STONE)
+                                ->setLightEmission(0.75f)
+                                ->setIconName("glowing_obsidian");
+    Tile::netherReactor = (new Tile(netherReactor_Id, Material::metal))
+                              ->setDestroyTime(3.0f)
+                              ->setExplodeable(15.0f)
+                              ->setSoundType(SOUND_METAL)
+                              ->setIconName("reactor_core");
 
     // Special cases for certain items since they can have different icons
     Item::items[wool_Id] = (new WoolTileItem(Tile::wool_Id - 256))

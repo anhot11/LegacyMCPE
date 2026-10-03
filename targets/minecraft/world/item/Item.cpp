@@ -314,6 +314,21 @@ Item* Item::horseArmorGold = nullptr;
 Item* Item::horseArmorDiamond = nullptr;
 Item* Item::lead = nullptr;
 Item* Item::nameTag = nullptr;
+// MCPE 0.15.10 Items
+Item* Item::rabbit_raw = nullptr;
+Item* Item::rabbit_cooked = nullptr;
+Item* Item::rabbit_stew = nullptr;
+Item* Item::mutton_raw = nullptr;
+Item* Item::mutton_cooked = nullptr;
+Item* Item::door_spruce = nullptr;
+Item* Item::door_birch = nullptr;
+Item* Item::door_jungle = nullptr;
+Item* Item::door_acacia = nullptr;
+Item* Item::door_dark_oak = nullptr;
+Item* Item::beetroot = nullptr;
+Item* Item::beetroot_seeds = nullptr;
+Item* Item::beetroot_soup = nullptr;
+Item* Item::camera = nullptr;
 
 void Item::staticCtor() {
     Item::sword_wood =
@@ -1337,6 +1352,52 @@ void Item::staticCtor() {
                         ->setIconName("name_tag")
                         ->setDescriptionId(IDS_ITEM_NAME_TAG)
                         ->setUseDescriptionId(IDS_DESC_NAME_TAG);
+
+    // MCPE 0.15.10 Items
+    Item::rabbit_raw = (new FoodItem(155, 3, 0.3f, true))
+                           ->setIconName("rabbit_raw")
+                           ->setDescriptionId(IDS_ITEM_PORKCHOP_RAW);
+    Item::rabbit_cooked = (new FoodItem(156, 5, 0.6f, true))
+                             ->setIconName("rabbit_cooked")
+                             ->setDescriptionId(IDS_ITEM_PORKCHOP_COOKED);
+    Item::rabbit_stew = (new BowlFoodItem(157, 10))
+                            ->setMaxStackSize(1)
+                            ->setIconName("rabbit_stew")
+                            ->setDescriptionId(IDS_ITEM_MUSHROOM_STEW);
+    Item::mutton_raw = (new FoodItem(167, 2, 0.3f, true))
+                           ->setIconName("mutton_raw")
+                           ->setDescriptionId(IDS_ITEM_BEEF_RAW);
+    Item::mutton_cooked = (new FoodItem(168, 6, 0.8f, true))
+                             ->setIconName("mutton_cooked")
+                             ->setDescriptionId(IDS_ITEM_BEEF_COOKED);
+    Item::door_spruce = (new DoorItem(171, Material::wood))
+                            ->setIconName("door_spruce")
+                            ->setDescriptionId(IDS_ITEM_DOOR_WOOD);
+    Item::door_birch = (new DoorItem(172, Material::wood))
+                           ->setIconName("door_birch")
+                           ->setDescriptionId(IDS_ITEM_DOOR_WOOD);
+    Item::door_jungle = (new DoorItem(173, Material::wood))
+                            ->setIconName("door_jungle")
+                            ->setDescriptionId(IDS_ITEM_DOOR_WOOD);
+    Item::door_acacia = (new DoorItem(174, Material::wood))
+                            ->setIconName("door_acacia")
+                            ->setDescriptionId(IDS_ITEM_DOOR_WOOD);
+    Item::door_dark_oak = (new DoorItem(175, Material::wood))
+                              ->setIconName("door_dark_oak")
+                              ->setDescriptionId(IDS_ITEM_DOOR_WOOD);
+    Item::beetroot = (new FoodItem(201, 1, 0.6f, false))
+                         ->setIconName("beetroot")
+                         ->setDescriptionId(IDS_ITEM_APPLE);
+    Item::beetroot_seeds = (new Item(202))
+                               ->setIconName("seeds_beetroot")
+                               ->setDescriptionId(IDS_ITEM_WHEAT_SEEDS);
+    Item::beetroot_soup = (new BowlFoodItem(203, 6))
+                              ->setMaxStackSize(1)
+                              ->setIconName("beetroot_soup")
+                              ->setDescriptionId(IDS_ITEM_MUSHROOM_STEW);
+    Item::camera = (new Item(242))
+                       ->setMaxStackSize(1)
+                       ->setIconName("camera");
 }
 
 // 4J Stu - We need to do this after the staticCtor AND after staticCtors for

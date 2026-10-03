@@ -9,6 +9,8 @@ public:
     static void staticCtor();
     static const std::string VERSION_STRING;
     static inline constexpr int NETWORK_PROTOCOL_VERSION = 78;
+    static inline constexpr int BEDROCK_PROTOCOL_VERSION = 84; // MCPE 0.15.10 Protocol
+    static inline constexpr int BEDROCK_DEFAULT_PORT = 19132;
     static const bool INGAME_DEBUG_OUTPUT = false;
 
     // NOT texture resolution. How many sub-blocks each block face is made up

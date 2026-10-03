@@ -3,6 +3,9 @@
 #include <vector>
 
 #include "minecraft/world/item/DiggerItem.h"
+#include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/entity/player/Player.h"
+#include "minecraft/world/level/Level.h"
 #include "minecraft/world/level/tile/GrassTile.h"
 #include "minecraft/world/level/tile/MycelTile.h"
 #include "minecraft/world/level/tile/Tile.h"
@@ -29,5 +32,29 @@ ShovelItem::ShovelItem(int id, const Tier* tier)
 bool ShovelItem::canDestroySpecial(Tile* tile) {
     if (tile == Tile::topSnow) return true;
     if (tile == Tile::snow) return true;
+    return false;
+}
+
+bool ShovelItem::useOn(std::shared_ptr<ItemInstance> instance,
+                       std::shared_ptr<Player> player, Level* level, int x,
+                       int y, int z, int face, float clickX, float clickY,
+                       float clickZ, bool bTestUseOnOnly) {
+    if (!player->mayUseItemAt(x, y, z, face, instance)) return false;
+
+    int targetTile = level->getTile(x, y, z);
+    int aboveTile = level->getTile(x, y + 1, z);
+
+    // Right-clicking / tapping grass with shovel creates Grass Path (MCPE 0.15 feature)
+    if (face != 0 && aboveTile == 0 && targetTile == Tile::grass_Id) {
+        if (Tile::grassPath != nullptr) {
+            if (bTestUseOnOnly) return true;
+            level->playSound(x + 0.5f, y + 0.5f, z + 0.5f, "step.grass", 1.0f, 0.8f);
+            if (!level->isClientSide) {
+                level->setTile(x, y, z, Tile::grassPath_Id);
+                instance->hurtAndBreak(1, player);
+            }
+            return true;
+        }
+    }
     return false;
 }
