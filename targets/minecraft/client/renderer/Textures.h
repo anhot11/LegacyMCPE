@@ -326,11 +326,7 @@ public:
 
 public:
     void clearLastBoundId();
-
-private:
     int loadTexture(TEXTURE_NAME texId, const std::string& resourceName);
-
-public:
     int loadTexture(int idx);  // 4J added
     int getTexture(BufferedImage* img,
                    IPlatformRenderer::eTextureFormat format =

@@ -553,10 +553,10 @@ void Font::loadUnicodePage(int page) {
     if (page < 0 || page >= 256) return;
     char fileName[64];
     snprintf(fileName, sizeof(fileName), "1_2_2/font/glyph_%02X.png", page);
-    int texId = textures->loadTexture(static_cast<TEXTURE_NAME>(-1), fileName);
+    int texId = textures->loadTexture(TN_COUNT, fileName);
     if (texId <= 0) {
         snprintf(fileName, sizeof(fileName), "font/glyph_%02X.png", page);
-        texId = textures->loadTexture(static_cast<TEXTURE_NAME>(-1), fileName);
+        texId = textures->loadTexture(TN_COUNT, fileName);
     }
     m_unicodeTexID[page] = texId;
 }
