@@ -48,11 +48,14 @@ bool ShovelItem::useOn(std::shared_ptr<ItemInstance> instance,
     if (face != 0 && aboveTile == 0 && targetTile == Tile::grass_Id) {
         if (Tile::grassPath != nullptr) {
             if (bTestUseOnOnly) return true;
-            level->playSound(x + 0.5f, y + 0.5f, z + 0.5f, "step.grass", 1.0f, 0.8f);
-            if (!level->isClientSide) {
-                level->setTile(x, y, z, Tile::grassPath_Id);
-                instance->hurtAndBreak(1, player);
-            }
+            Tile* tile = Tile::grassPath;
+            level->playSound(x + 0.5f, y + 0.5f, z + 0.5f,
+                             tile->soundType->getStepSound(),
+                             (tile->soundType->getVolume() + 1.0f) / 2.0f,
+                             tile->soundType->getPitch() * 0.8f);
+            if (level->isClientSide) return true;
+            level->setTileAndUpdate(x, y, z, tile->id);
+            instance->hurtAndBreak(1, player);
             return true;
         }
     }

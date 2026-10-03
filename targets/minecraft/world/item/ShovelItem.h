@@ -15,7 +15,7 @@ public:
     static void staticCtor();
     ShovelItem(int id, const Tier* tier);
 
-    bool canDestroySpecial(Tile* tile);
+    bool canDestroySpecial(Tile* tile) override;
     virtual bool useOn(std::shared_ptr<ItemInstance> instance,
                        std::shared_ptr<Player> player, Level* level, int x,
                        int y, int z, int face, float clickX, float clickY,
