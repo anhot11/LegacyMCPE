@@ -1,4 +1,5 @@
 #include "Button.h"
+#include "Font.h"
 
 #include "minecraft/client/Lighting.h"
 #include "minecraft/client/Minecraft.h"
