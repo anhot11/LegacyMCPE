@@ -1314,7 +1314,7 @@ void MinecraftServer::tick() {
     players->tick();
 
     // Periodic autosave every 1200 ticks (~60 seconds)
-    if (tickCount % 1200 == 0 && didInit && !PlatformStorage.GetSaveDisabled()) {
+    if (tickCount % 1200 == 0 && !PlatformStorage.GetSaveDisabled()) {
         saveAllChunks();
         if (players != nullptr) {
             players->saveAll(Minecraft::GetInstance()->progressRenderer, false);
