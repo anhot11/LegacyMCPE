@@ -491,19 +491,19 @@ void TitleScreen::render(int xm, int ym, float a) {
         if (bodyRot > 60.0f) bodyRot = 60.0f;
         if (bodyRot < -20.0f) bodyRot = -20.0f;
 
-        // Rotate Steve to face forward towards the camera (180 deg base)
-        glRotatef(180.0f - bodyRot, 0.0f, 1.0f, 0.0f);
+        // Rotate Steve to face forward towards the user (front)
+        glRotatef(-bodyRot, 0.0f, 1.0f, 0.0f);
 
         // Head tracking
-        float targetYaw = (float)atan2(dx, 100.0f) * 57.29578f;
-        float relYaw = (targetYaw - 20.0f) * 0.7f;
+        float targetYaw = -(float)atan2(dx, 90.0f) * 57.29578f;
+        float relYaw = targetYaw - bodyRot;
         if (relYaw > 45.0f) relYaw = 45.0f;
         if (relYaw < -45.0f) relYaw = -45.0f;
         float headYaw = relYaw + sinf(vo * 0.04f) * 1.5f;
 
-        float targetPitch = (float)atan2(dy, 100.0f) * 57.29578f;
-        if (targetPitch > 28.0f) targetPitch = 28.0f;
-        if (targetPitch < -28.0f) targetPitch = -28.0f;
+        float targetPitch = (float)atan2(dy, 90.0f) * 57.29578f;
+        if (targetPitch > 25.0f) targetPitch = 25.0f;
+        if (targetPitch < -25.0f) targetPitch = -25.0f;
         float headPitch = targetPitch + cosf(vo * 0.04f) * 1.0f;
 
         glBindTexture(GL_TEXTURE_2D,

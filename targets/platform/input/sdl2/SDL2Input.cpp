@@ -9,6 +9,7 @@
 
 #include "../../PlatformTypes.h"
 #include "../InputConstants.h"
+#include "platform/renderer/renderer.h"
 #include "SDL.h"
 #include "SDL_events.h"
 #include "SDL_gamecontroller.h"
@@ -213,12 +214,15 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
             s_scrollTicksForButtonPressed--;
         }
     } else if (e->type == SDL_FINGERDOWN || e->type == SDL_FINGERMOTION) {
-        SDL_Window* win = SDL_GetWindowFromID(e->tfinger.windowID);
-        if (!win) win = SDL_GL_GetCurrentWindow();
         int w = 0, h = 0;
-        if (win) {
-            SDL_GL_GetDrawableSize(win, &w, &h);
-            if (w <= 0 || h <= 0) SDL_GetWindowSize(win, &w, &h);
+        PlatformRenderer.GetFramebufferSize(w, h);
+        if (w <= 0 || h <= 0) {
+            SDL_Window* win = SDL_GetWindowFromID(e->tfinger.windowID);
+            if (!win) win = SDL_GL_GetCurrentWindow();
+            if (win) {
+                SDL_GL_GetDrawableSize(win, &w, &h);
+                if (w <= 0 || h <= 0) SDL_GetWindowSize(win, &w, &h);
+            }
         }
         if (w > 0 && h > 0) {
             s_mouseX = (int)(e->tfinger.x * (float)w);
@@ -365,7 +369,7 @@ void SDL2Input::Tick() {
 
     int mx = 0, my = 0;
     Uint32 btns = SDL_GetMouseState(&mx, &my);
-    if (btns != 0 || !s_hasTouchPos) {
+    if (btns != 0) {
         s_mouseX = mx;
         s_mouseY = my;
     }
