@@ -21,6 +21,7 @@
 #include "minecraft/GameEnums.h"
 #include "minecraft/IGameServices.h"
 #include "minecraft/SharedConstants.h"
+#include "minecraft/util/Mth.h"
 #include "minecraft/client/BufferedImage.h"
 #include "minecraft/client/Camera.h"
 #include "minecraft/client/Lighting.h"
@@ -308,8 +309,8 @@ void GameRenderer::pick(float a) {
 
         float yRot = mc->cameraTargetPlayer->yRotO + (mc->cameraTargetPlayer->yRot - mc->cameraTargetPlayer->yRotO) * a;
         float rightYRot = yRot + 90.0f;
-        float rightCos = cosf(-rightYRot * Mth::DEG_TO_RAD - std::numbers::pi);
-        float rightSin = sinf(-rightYRot * Mth::DEG_TO_RAD - std::numbers::pi);
+        float rightCos = cosf(-rightYRot * Mth::DEG_TO_RAD - 3.141592653589793f);
+        float rightSin = sinf(-rightYRot * Mth::DEG_TO_RAD - 3.141592653589793f);
         Vec3 right(rightSin, 0.0f, rightCos);
 
         Vec3 up(
