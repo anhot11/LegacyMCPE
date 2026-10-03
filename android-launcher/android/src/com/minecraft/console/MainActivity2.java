@@ -171,9 +171,9 @@ public class MainActivity2 extends SDLActivity
         centerParams.addRule(RelativeLayout.CENTER_IN_PARENT);
 
         TextView title = new TextView(this);
-        title.setText("MCPL-Public");
+        title.setText("Minecraft: Legacy Console Edition");
         title.setTextColor(0xFFFFFFFF);
-        title.setTextSize(28);
+        title.setTextSize(24);
         title.setTypeface(null, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
         title.setSingleLine(true);
@@ -185,12 +185,12 @@ public class MainActivity2 extends SDLActivity
             LinearLayout.LayoutParams.WRAP_CONTENT
         );
         spinnerParams.gravity = Gravity.CENTER_HORIZONTAL;
-        spinnerParams.setMargins(0, 32, 0, 20);
+        spinnerParams.setMargins(0, 24, 0, 16);
 
         TextView subtext = new TextView(this);
-        subtext.setText("Cargando juego...");
+        subtext.setText("Iniciando motor gráfico y recursos...");
         subtext.setTextColor(0xFFAAAAAA);
-        subtext.setTextSize(15);
+        subtext.setTextSize(14);
         subtext.setGravity(Gravity.CENTER);
         subtext.setSingleLine(true);
 
