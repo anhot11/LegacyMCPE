@@ -11,6 +11,8 @@
 #include "minecraft/client/renderer/LevelRenderer.h"
 #include "minecraft/locale/Language.h"
 #include "minecraft/world/item/Item.h"
+#include "minecraft/world/item/ArmorItem.h"
+#include "minecraft/world/item/BowItem.h"
 #include "minecraft/world/item/ItemInstance.h"
 #include "minecraft/world/level/tile/Tile.h"
 
@@ -71,7 +73,7 @@ void VideoSettingsScreen::init() {
         } else if (item == Options::Option::RENDER_CLOUDS) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::feather)));
         } else if (item == Options::Option::VIEW_BOBBING) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::boots_iron)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Item*)Item::boots_iron)));
         } else if (item == Options::Option::GUI_SCALE) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting)));
         } else if (item == Options::Option::ADVANCED_OPENGL) {
@@ -79,7 +81,7 @@ void VideoSettingsScreen::init() {
         } else if (item == Options::Option::GAMMA) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::torch)));
         } else if (item == Options::Option::FOV) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::bow)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Item*)Item::bow)));
         }
 
         buttons.push_back(btn);

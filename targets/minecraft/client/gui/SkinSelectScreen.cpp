@@ -27,8 +27,7 @@
 #include "platform/stubs.h"
 
 #if defined(__ANDROID__)
-#include <jni.h>
-#include "SDL_system.h"
+extern "C" void Android_OpenFilePickerForSkin();
 #endif
 
 #define DONE_BUTTON_ID 200
@@ -263,17 +262,7 @@ void SkinSelectScreen::buttonClicked(Button* button) {
         minecraft->setScreen(lastScreen);
     } else if (button->id == CUSTOM_SKIN_BUTTON_ID) {
 #if defined(__ANDROID__)
-        JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
-        if (env) {
-            jclass clazz = env->FindClass("org/libsdl/app/SDLActivity");
-            if (clazz) {
-                jmethodID mid = env->GetStaticMethodID(clazz, "openFilePickerForSkin", "()V");
-                if (mid) {
-                    env->CallStaticVoidMethod(clazz, mid);
-                }
-                env->DeleteLocalRef(clazz);
-            }
-        }
+        Android_OpenFilePickerForSkin();
 #endif
         size_t prevCount = skins.size();
         scanStorageSkins();

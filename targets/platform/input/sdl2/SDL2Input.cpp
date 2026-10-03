@@ -43,6 +43,18 @@ extern "C" float Android_GetDeviceTemperature() {
     env->DeleteLocalRef(cls);
     return (float)temp;
 }
+
+extern "C" void Android_OpenFilePickerForSkin() {
+    JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+    if (!env) return;
+    jclass cls = env->FindClass("org/libsdl/app/SDLActivity");
+    if (!cls) return;
+    jmethodID mid = env->GetStaticMethodID(cls, "openFilePickerForSkin", "()V");
+    if (mid) {
+        env->CallStaticVoidMethod(cls, mid);
+    }
+    env->DeleteLocalRef(cls);
+}
 #endif
 
 namespace platform_internal {
