@@ -3460,7 +3460,11 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
                 Minecraft::GetInstance()->player;
             ui.PlayUISFX(eSFX_Press);
 #if defined(ENABLE_JAVA_GUIS)
-            setScreen(new InventoryScreen(player));
+            if (gameMode->hasInfiniteItems()) {
+                setScreen(new CreativeInventoryScreen(player));
+            } else {
+                setScreen(new InventoryScreen(player));
+            }
 #else
             gameServices().menus().openInventory(
                 iPad, std::static_pointer_cast<LocalPlayer>(player));

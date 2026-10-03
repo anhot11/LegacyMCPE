@@ -335,7 +335,7 @@ bool AbstractContainerScreen::isHoveringOver(int x, int y, int w, int h, int xm,
     xm -= xo;
     ym -= yo;
 
-    return xm >= x - 1 && xm < x + w + 1 && ym >= y - 1 && ym < y + h + 1;
+    return xm >= x - 2 && xm < x + w + 2 && ym >= y - 2 && ym < y + h + 2;
 }
 
 bool AbstractContainerScreen::isHovering(Slot* slot, int xm, int ym) {
@@ -351,6 +351,10 @@ void AbstractContainerScreen::buttonClicked(Button* button) {
 
 void AbstractContainerScreen::mouseClicked(int x, int y, int buttonNum) {
     Screen::mouseClicked(x, y, buttonNum);
+    if (minecraft->screen != this) {
+        return;
+    }
+
     if (buttonNum == 0 || buttonNum == 1) {
         Slot* slot = findSlot(x, y);
 
@@ -361,8 +365,11 @@ void AbstractContainerScreen::mouseClicked(int x, int y, int buttonNum) {
 
         if (clickedOutside &&
             minecraft->player->inventory->getCarried() == nullptr) {
-            minecraft->player->closeContainer();
-            minecraft->setScreen(nullptr);
+            // Only close container if tapped intentionally far outside the window margins
+            if (x < xo - 40 || y < yo - 40 || x >= xo + imageWidth + 40 || y >= yo + imageHeight + 40) {
+                minecraft->player->closeContainer();
+                minecraft->setScreen(nullptr);
+            }
             return;
         }
 

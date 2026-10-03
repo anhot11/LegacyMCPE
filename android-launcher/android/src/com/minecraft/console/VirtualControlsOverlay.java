@@ -367,11 +367,8 @@ public class VirtualControlsOverlay extends View {
             float jumpY = h - 28 * d - jumpSize;
             btnJump.bounds.set(jumpX, jumpY, jumpX + jumpSize, jumpY + jumpSize);
 
-            // Sneak / Descend button for styles 0 and 1 (placed to the left of jump, authentic MCPE)
-            float sneakSize = 46 * d * scale;
-            float sneakX = jumpX - 14 * d - sneakSize;
-            float sneakY = jumpY + (jumpSize - sneakSize);
-            btnSneak.bounds.set(sneakX, sneakY, sneakX + sneakSize, sneakY + sneakSize);
+            // Crouch is already in the center of the movement D-pad below forward, so remove the duplicate beside jump
+            btnSneak.bounds.set(0, 0, 0, 0);
 
         } else if (mControlStyle == 2) {
             // Style 2: Floating/Fixed Joystick + Action Buttons
@@ -445,9 +442,8 @@ public class VirtualControlsOverlay extends View {
             drawButtonBitmap(canvas, btnRight, alpha);
             drawButtonBitmap(canvas, btnCenter, alpha);
 
-            // Jump & Sneak
+            // Jump
             drawButtonBitmap(canvas, btnJump, alpha);
-            drawButtonBitmap(canvas, btnSneak, alpha);
 
         } else if (mControlStyle == 2) {
             // Joystick

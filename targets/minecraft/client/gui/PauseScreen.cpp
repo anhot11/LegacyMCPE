@@ -43,26 +43,14 @@ void PauseScreen::init() {
     btnReturnGame->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_diamond)));
     buttons.push_back(btnReturnGame);
 
-    Button* btnAchievements = new Button(5, width / 2 - 100, height / 4 + 24 * 2 + yo, 98, 20,
-                                         I18n::get("gui.achievements"));
-    btnAchievements->setTextureIcon(16, 32, 16);
-    btnAchievements->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::apple_gold)));
-    buttons.push_back(btnAchievements);
-
-    Button* btnStats = new Button(6, width / 2 + 2, height / 4 + 24 * 2 + yo, 98, 20,
-                                  I18n::get("gui.stats"));
-    btnStats->setTextureIcon(32, 32, 16);
-    btnStats->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::book)));
-    buttons.push_back(btnStats);
-
-    Button* btnOptions = new Button(0, width / 2 - 100, height / 4 + 24 * 3 + yo,
+    Button* btnOptions = new Button(0, width / 2 - 100, height / 4 + 24 * 2 + yo + 4,
                                     I18n::get("menu.options"));
     btnOptions->setTextureIcon(48, 16, 16);
     btnOptions->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
     buttons.push_back(btnOptions);
 
     std::string quitMsg = NetworkService.IsHost() ? I18n::get("menu.returnToMenu") : I18n::get("menu.disconnect");
-    Button* btnQuit = new Button(1, width / 2 - 100, height / 4 + 24 * 4 + yo + 4, quitMsg);
+    Button* btnQuit = new Button(1, width / 2 - 100, height / 4 + 24 * 3 + yo + 8, quitMsg);
     btnQuit->setTextureIcon(96, 32, 16);
     btnQuit->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
     buttons.push_back(btnQuit);
@@ -101,16 +89,6 @@ void PauseScreen::buttonClicked(Button* button) {
         MinecraftServer::getInstance()->queueServerAction(
             minecraft::server::PauseServer{false});
         minecraft->setScreen(nullptr);
-        //       minecraft->grabMouse();		// 4J - removed
-    }
-
-    if (button->id == 5) {
-        //        minecraft->setScreen(new AchievementScreen(minecraft->stats));
-        //        // 4J TODO - put back
-    }
-    if (button->id == 6) {
-        //        minecraft->setScreen(new StatsScreen(this, minecraft->stats));
-        //        // 4J TODO - put back
     }
 }
 

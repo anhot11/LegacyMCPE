@@ -1405,7 +1405,7 @@ std::shared_ptr<ItemEntity> Entity::spawnAtLocation(
     }
     std::shared_ptr<ItemEntity> ie = std::shared_ptr<ItemEntity>(
         new ItemEntity(level, x, y + yOffs, z, itemInstance));
-    ie->throwTime = 10;
+    ie->throwTime = 0;
     level->addEntity(ie);
     return ie;
 }

@@ -1131,11 +1131,11 @@ void GameRenderer::render(float a, bool bFirst) {
     if (fbw <= 0) fbw = mc->width;
     if (fbh <= 0) fbh = mc->height;
     glViewport(0, 0, fbw, fbh);
-    ScreenSizeCalculator ssc(mc->options, mc->width, mc->height);
+    ScreenSizeCalculator ssc(mc->options, fbw, fbh);
     int screenWidth = ssc.getWidth();
     int screenHeight = ssc.getHeight();
     int xMouse = PlatformInput.GetMouseX() * screenWidth / fbw;
-    int yMouse = PlatformInput.GetMouseY() * screenHeight / fbh - 1;
+    int yMouse = PlatformInput.GetMouseY() * screenHeight / fbh;
 
     int maxFps = getFpsCap(mc->options->framerateLimit);
 
@@ -1174,9 +1174,12 @@ void GameRenderer::render(float a, bool bFirst) {
     if (mc->screen != nullptr) {
         FRAME_PROFILE_SCOPE(UIHud);
         glClear(GL_DEPTH_BUFFER_BIT);
-        mc->screen->render(xMouse, yMouse, a);
-        if (mc->screen != nullptr && mc->screen->particles != nullptr)
-            mc->screen->particles->render(a);
+        mc->screen->updateEvents();
+        if (mc->screen != nullptr) {
+            mc->screen->render(xMouse, yMouse, a);
+            if (mc->screen != nullptr && mc->screen->particles != nullptr)
+                mc->screen->particles->render(a);
+        }
     }
 }
 

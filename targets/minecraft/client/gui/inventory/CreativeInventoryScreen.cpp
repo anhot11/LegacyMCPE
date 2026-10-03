@@ -231,6 +231,7 @@ void CreativeInventoryScreen::removed() { AbstractContainerScreen::removed(); }
 
 void CreativeInventoryScreen::init() {
     buttons.clear();
+    minecraft->player->containerMenu = menu;
     int xo = (width - imageWidth) / 2;
     int yo = (height - imageHeight) / 2;
     int btnX = (xo >= 26) ? (xo + imageWidth + 4) : (xo + imageWidth - 18);
@@ -287,16 +288,19 @@ void CreativeInventoryScreen::mouseClicked(int x, int y, int buttonNum) {
     if (buttonNum == 0) isLeftMouseDown = true;
 
     Screen::mouseClicked(x, y, buttonNum);
+    if (minecraft->screen != this) {
+        return;
+    }
 
     if (buttonNum == 0 || buttonNum == 1) {
         int mouseX = x - (width - imageWidth) / 2;
         int mouseY = y - (height - imageHeight) / 2;
 
-        // Check for tab clicks first; let mouseReleased handle the actual tab
-        // switch
+        // Check for tab clicks first; switch tab immediately on touch!
         for (int tab = 0;
              tab < IUIScene_CreativeMenu::eCreativeInventoryTab_COUNT; tab++) {
             if (isMouseOverTab(tab, mouseX, mouseY)) {
+                setCurrentCreativeTab(tab);
                 return;
             }
         }
@@ -310,8 +314,11 @@ void CreativeInventoryScreen::mouseClicked(int x, int y, int buttonNum) {
             (x < xo || y < yo || x >= xo + imageWidth || y >= yo + imageHeight);
 
         if (clickedOutside && player->inventory->getCarried() == nullptr) {
-            minecraft->player->closeContainer();
-            minecraft->setScreen(nullptr);
+            // Only close container if tapped intentionally far outside the window margins
+            if (x < xo - 40 || y < yo - 40 || x >= xo + imageWidth + 40 || y >= yo + imageHeight + 40) {
+                minecraft->player->closeContainer();
+                minecraft->setScreen(nullptr);
+            }
             return;
         }
 

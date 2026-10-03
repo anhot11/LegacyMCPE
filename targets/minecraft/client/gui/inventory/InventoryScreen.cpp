@@ -29,7 +29,9 @@ InventoryScreen::InventoryScreen(std::shared_ptr<Player> player)
                       GenericStats::param_noArgs());
 }
 
-void InventoryScreen::init() { buttons.clear(); }
+void InventoryScreen::init() {
+    AbstractContainerScreen::init();
+}
 
 void InventoryScreen::renderLabels() {
     font->draw("Crafting", 84 + 2, 8 * 2, 0x404040);
@@ -94,12 +96,5 @@ void InventoryScreen::renderBg(float a) {
 }
 
 void InventoryScreen::buttonClicked(Button* button) {
-    if (button->id == 0) {
-        minecraft->setScreen(new AchievementScreen(
-            minecraft->stats[minecraft->player->GetXboxPad()]));
-    }
-    if (button->id == 1) {
-        minecraft->setScreen(new StatsScreen(
-            this, minecraft->stats[minecraft->player->GetXboxPad()]));
-    }
+    AbstractContainerScreen::buttonClicked(button);
 }

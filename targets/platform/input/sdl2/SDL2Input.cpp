@@ -81,6 +81,7 @@ static bool s_mouseLeftCurrent = false, s_mouseLeftPrev = false;
 static bool s_mouseRightCurrent = false, s_mouseRightPrev = false;
 static bool s_mouseLeftQueued = false;
 static bool s_mouseRightQueued = false;
+static bool s_fingerDown = false;
 static bool s_menuDisplayed[4] = {};
 static bool s_prevMenuDisplayed = false;
 static bool s_snapTaken = false;
@@ -135,12 +136,12 @@ static inline bool KReleased(int sc) {
                                       : false;
 }
 
-static inline bool MouseLDown() { return s_mouseLeftCurrent; }
+static inline bool MouseLDown() { return s_mouseLeftCurrent || s_fingerDown || s_mouseLeftQueued; }
 static inline bool MouseLPressed() {
-    return s_mouseLeftCurrent && !s_mouseLeftPrev;
+    return (s_mouseLeftCurrent && !s_mouseLeftPrev) || s_mouseLeftQueued;
 }
 static inline bool MouseLReleased() {
-    return !s_mouseLeftCurrent && s_mouseLeftPrev;
+    return !s_mouseLeftCurrent && s_mouseLeftPrev && !s_fingerDown;
 }
 static inline bool MouseRDown() { return s_mouseRightCurrent; }
 static inline bool MouseRPressed() {
@@ -251,10 +252,11 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         }
         if (e->type == SDL_FINGERDOWN) {
             s_mouseLeftQueued = true;
+            s_fingerDown = true;
         }
     } else if (e->type == SDL_FINGERUP) {
+        s_fingerDown = false;
         s_mouseLeftCurrent = false;
-        s_mouseLeftQueued = false;
     } else if (e->type == SDL_MOUSEMOTION) {
         if (!SDL_GetRelativeMouseMode() && (e->motion.x != (int)e->motion.xrel || e->motion.y != (int)e->motion.yrel || (e->motion.xrel == 0 && e->motion.yrel == 0))) {
             s_mouseX = e->motion.x;
@@ -408,7 +410,7 @@ void SDL2Input::Tick() {
         s_mouseX = mx;
         s_mouseY = my;
     }
-    s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) || s_mouseLeftQueued;
+    s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) || s_mouseLeftQueued || s_fingerDown;
     s_mouseLeftQueued = false;
     s_mouseRightCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0) || s_mouseRightQueued;
     s_mouseRightQueued = false;

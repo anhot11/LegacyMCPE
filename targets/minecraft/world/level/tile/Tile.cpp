@@ -2333,7 +2333,7 @@ void Tile::popResource(Level* level, int x, int y, int z,
     double zo = level->random->nextFloat() * s + (1 - s) * 0.5;
     std::shared_ptr<ItemEntity> item = std::shared_ptr<ItemEntity>(
         new ItemEntity(level, x + xo, y + yo, z + zo, itemInstance));
-    item->throwTime = 10;
+    item->throwTime = 0;
     level->addEntity(item);
 }
 

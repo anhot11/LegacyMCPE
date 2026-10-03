@@ -104,6 +104,8 @@ void Screen::updateEvents() {
 #if (defined(ENABLE_JAVA_GUIS))
     int fbw = minecraft->width, fbh = minecraft->height;
     PlatformRenderer.GetFramebufferSize(fbw, fbh);
+    if (fbw <= 0) fbw = minecraft->width;
+    if (fbh <= 0) fbh = minecraft->height;
     glViewport(0, 0, fbw, fbh);
     ScreenSizeCalculator ssc(minecraft->options, fbw, fbh);
     int screenWidth = ssc.getWidth();
@@ -118,15 +120,27 @@ void Screen::updateEvents() {
     bool rightState = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_USE);
 
     if (leftState && !prevLeftState) {
+        prevLeftState = leftState;
+        prevRightState = rightState;
         mouseClicked(xMouse, yMouse, 0);
+        return;
     } else if (!leftState && prevLeftState) {
+        prevLeftState = leftState;
+        prevRightState = rightState;
         mouseReleased(xMouse, yMouse, 0);
+        return;
     }
 
     if (rightState && !prevRightState) {
+        prevLeftState = leftState;
+        prevRightState = rightState;
         mouseClicked(xMouse, yMouse, 1);
+        return;
     } else if (!rightState && prevRightState) {
+        prevLeftState = leftState;
+        prevRightState = rightState;
         mouseReleased(xMouse, yMouse, 1);
+        return;
     }
 
     if (PlatformInput.ButtonPressed(0, ACTION_MENU_CANCEL) ||

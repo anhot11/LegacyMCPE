@@ -901,7 +901,7 @@ void Player::aiStep() {
             // pig/horse
             pickupArea = bb.minmax(riding->bb).grow(1, 0, 1);
         } else {
-            pickupArea = bb.grow(1, .5, 1);
+            pickupArea = bb.grow(1.5, 1.0, 1.5);
         }
 
         std::vector<std::shared_ptr<Entity>>* entities =
