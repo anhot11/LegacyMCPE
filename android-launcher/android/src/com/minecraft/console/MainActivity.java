@@ -927,6 +927,39 @@ public class MainActivity extends Activity {
         } catch (Throwable t) {
             Log.e(TAG, "Failed extracting UI sounds", t);
         }
+        try {
+            File skinsDir = new File(directory, "skins");
+            if (!skinsDir.exists()) skinsDir.mkdirs();
+            File mobDir = new File(directory, "Common/res/mob");
+            if (!mobDir.exists()) mobDir.mkdirs();
+            File mob122Dir = new File(directory, "Common/res/1_2_2/mob");
+            if (!mob122Dir.exists()) mob122Dir.mkdirs();
+
+            String[] skinFiles = getAssets().list("skins");
+            if (skinFiles != null) {
+                byte[] buf = new byte[4096];
+                for (String sk : skinFiles) {
+                    File target1 = new File(skinsDir, sk);
+                    File target2 = new File(mobDir, sk);
+                    File target3 = new File(mob122Dir, sk);
+                    for (File target : new File[]{target1, target2, target3}) {
+                        if (!target.exists() || target.length() == 0) {
+                            InputStream in = getAssets().open("skins/" + sk);
+                            FileOutputStream out = new FileOutputStream(target);
+                            int len;
+                            while ((len = in.read(buf)) > 0) {
+                                out.write(buf, 0, len);
+                            }
+                            out.flush();
+                            out.close();
+                            in.close();
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Log.e(TAG, "Failed extracting bundled skins", t);
+        }
     }
 
     private void launchGame(String directory) {

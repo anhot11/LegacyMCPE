@@ -24,10 +24,10 @@ void ChatScreen::init() {
     int sendW = (width >= 400) ? 65 : 55;
     int inputH = 22;
     int sendX = width - sendW - 4;
-    int sendY = height - inputH - 2;
+    int sendY = 24; // Positioned near top so on-screen keyboard never obscures it
 
     btnSend = new Button(1, sendX, sendY, sendW, inputH, "Enviar");
-    btnClose = new Button(2, width - 26, 4, 22, 20, "X");
+    btnClose = new Button(2, width - 26, 4, 22, 18, "X");
 
     buttons.push_back(btnSend);
     buttons.push_back(btnClose);
@@ -58,15 +58,17 @@ void ChatScreen::tick() {
     std::string typed = PlatformInput.PollTextInput();
     if (!typed.empty()) {
         for (char ch : typed) {
-            if (allowedChars.find(ch) != std::string::npos &&
-                message.length() < SharedConstants::maxChatLength) {
+            if (ch == '\b' || ch == 8) {
+                if (message.length() > 0) message.pop_back();
+            } else if (((unsigned char)ch >= 32 || (unsigned char)ch >= 160 || SharedConstants::isAllowedChatCharacter(ch)) &&
+                       message.length() < SharedConstants::maxChatLength) {
                 message += ch;
             }
         }
     }
 
     if (PlatformInput.PollBackspacePressed() && message.length() > 0) {
-        message = message.substr(0, message.length() - 1);
+        message.pop_back();
     }
 
     if (PlatformInput.PollReturnPressed()) {
@@ -88,32 +90,34 @@ void ChatScreen::keyPressed(char ch, int eventKey) {
         minecraft->setScreen(nullptr);
         return;
     }
-    if (eventKey == Keyboard::KEY_RETURN) {
+    if (eventKey == Keyboard::KEY_RETURN || ch == 13 || ch == 10) {
         sendMessage();
         return;
     }
-    if (eventKey == Keyboard::KEY_BACK && message.length() > 0)
-        message = message.substr(0, message.length() - 1);
-    if (allowedChars.find(ch) != std::string::npos &&
+    if ((eventKey == Keyboard::KEY_BACK || ch == '\b' || ch == 8) && message.length() > 0) {
+        message.pop_back();
+        return;
+    }
+    if (((unsigned char)ch >= 32 || (unsigned char)ch >= 160 || SharedConstants::isAllowedChatCharacter(ch)) &&
         message.length() < SharedConstants::maxChatLength) {
         message += ch;
     }
 }
 
 void ChatScreen::render(int xm, int ym, float a) {
-    // Dimmed upper area
-    fill(0, 0, width, height - 26, 0x40000000);
+    // Dimmed lower and background area
+    fill(0, 0, width, height, 0x40000000);
 
-    // Chat input bar background
+    // Chat input bar background (placed at top: y = 23 to 47)
     int sendW = (width >= 400) ? 65 : 55;
-    fill(2, height - 25, width - sendW - 8, height - 2, 0xc0000000);
-    fill(1, height - 26, width - sendW - 7, height - 1, 0x80555555);
+    fill(2, 23, width - sendW - 6, 47, 0xc0000000);
+    fill(1, 22, width - sendW - 5, 48, 0x80555555);
 
     drawString(font, "> " + message + (frame / 6 % 2 == 0 ? "_" : ""), 6,
-               height - 18, 0xffffff);
+               30, 0xffffff);
 
     // Hint at top
-    drawString(font, "Chat [Toca fondo o 'X' para salir]", 6, 6, 0x888888);
+    drawString(font, "Chat [Toca fondo o 'X' para salir]", 6, 6, 0xaaaaaa);
 
     Screen::render(xm, ym, a);
 }
@@ -128,8 +132,14 @@ void ChatScreen::mouseClicked(int x, int y, int buttonNum) {
             return;
         }
 
-        // Tapping in the upper half of screen dismisses the chat
-        if (y < height - 30) {
+        // Tapping in the input area keeps focus
+        if (y >= 22 && y <= 48 && x >= 2 && x <= width - 60) {
+            PlatformInput.StartTextInput();
+            return;
+        }
+
+        // Tapping anywhere outside input bar dismisses the chat
+        if (y > 52) {
             minecraft->setScreen(nullptr);
             return;
         }

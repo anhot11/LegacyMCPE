@@ -144,7 +144,7 @@ void SkinSelectScreen::init() {
     int gap = 12;
     int startBtnX = width / 2 - btnW - gap / 2;
 
-    btnCustomSkin = new Button(CUSTOM_SKIN_BUTTON_ID, startBtnX, height - 32, btnW, 24, "Cargar Skin (.png)");
+    btnCustomSkin = new Button(CUSTOM_SKIN_BUTTON_ID, startBtnX, height - 32, btnW, 24, "+ Elegir Skin (Celular)");
     btnCustomSkin->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting)));
     buttons.push_back(btnCustomSkin);
 
@@ -431,9 +431,9 @@ void SkinSelectScreen::render(int xm, int ym, float a) {
         int pX = previewCenterX;
         int pY = (int)((float)listY1 - 8.0f - 1.5f * ss);
 
-        // Hint above 3D character - never covers model
+        // Hint text below 3D character preview
         std::string hint = "Arrastra para rotar 360°";
-        drawCenteredString(font, hint, previewCenterX, listY0 + 6, 0xaaaaaa);
+        drawCenteredString(font, hint, previewCenterX, listY1 - 14, 0xaaaaaa);
 
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         glDisable(GL_COLOR_MATERIAL);

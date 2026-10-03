@@ -339,7 +339,7 @@ void LocalPlayer::aiStep() {
         // twice to trigger move between flying / not flying
         if (!wasJumping && input->jumping) {
             if (jumpTriggerTime == 0) {
-                jumpTriggerTime = 10;  // was 7
+                jumpTriggerTime = 16;  // was 7, increased for mobile touch double-tap
                 twoJumpsRegistered = false;
             } else {
                 twoJumpsRegistered = true;
@@ -374,7 +374,7 @@ void LocalPlayer::aiStep() {
         // 4J - note that the 0.42 added for going down is to make it match with
         // what happens when you jump - jumping itself adds 0.42 to yd in
         // Mob::jumpFromGround
-        if (ullButtonsPressed & (1LL << MINECRAFT_ACTION_SNEAK_TOGGLE))
+        if ((ullButtonsPressed & (1LL << MINECRAFT_ACTION_SNEAK_TOGGLE)) || (input != nullptr && input->sneaking))
             yd -=
                 (0.15 + 0.42);  // 4J - for flying mode,
                                 // MINECRAFT_ACTION_SNEAK_TOGGLE isn't a toggle

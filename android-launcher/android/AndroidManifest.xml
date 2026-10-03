@@ -44,6 +44,8 @@
     <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
 
     <application android:label="MCPL-Public"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:extractNativeLibs="true"

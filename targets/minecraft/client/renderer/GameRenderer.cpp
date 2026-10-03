@@ -291,38 +291,47 @@ void GameRenderer::pick(float a) {
     bool split = (mc->options != nullptr) ? mc->options->splitControls : true;
     int mouseX = PlatformInput.GetMouseX();
     int mouseY = PlatformInput.GetMouseY();
-    int screenW = mc->width;
-    int screenH = mc->height;
+    int fbw = mc->width;
+    int fbh = mc->height;
+    PlatformRenderer.GetFramebufferSize(fbw, fbh);
+    int screenW = (fbw > 0) ? fbw : mc->width;
+    int screenH = (fbh > 0) ? fbh : mc->height;
     bool hasTouchRay = false;
     Vec3 rayDir(0.0f, 0.0f, 0.0f);
 
     if (!split && screenW > 0 && screenH > 0 && mouseX > 0 && mouseY > 0 && mouseX < screenW && mouseY < screenH) {
         float u = ((float)mouseX / (float)screenW - 0.5f) * 2.0f;
-        float v = ((float)mouseY / (float)screenH - 0.5f) * 2.0f;
+        float v = (0.5f - (float)mouseY / (float)screenH) * 2.0f;
 
         float fovY = getFov(a, true) * Mth::DEG_TO_RAD;
         float aspect = (float)screenW / (float)screenH;
         float halfTanY = tanf(fovY * 0.5f);
         float halfTanX = halfTanY * aspect;
 
-        Vec3 forward = mc->cameraTargetPlayer->getViewVector(a);
-
         float yRot = mc->cameraTargetPlayer->yRotO + (mc->cameraTargetPlayer->yRot - mc->cameraTargetPlayer->yRotO) * a;
-        float rightYRot = yRot + 90.0f;
-        float rightCos = cosf(-rightYRot * Mth::DEG_TO_RAD - 3.141592653589793f);
-        float rightSin = sinf(-rightYRot * Mth::DEG_TO_RAD - 3.141592653589793f);
-        Vec3 right(rightSin, 0.0f, rightCos);
+        float xRot = mc->cameraTargetPlayer->xRotO + (mc->cameraTargetPlayer->xRot - mc->cameraTargetPlayer->xRotO) * a;
 
-        Vec3 up(
-            right.y * forward.z - right.z * forward.y,
-            right.z * forward.x - right.x * forward.z,
-            right.x * forward.y - right.y * forward.x
-        );
+        float theta = -yRot * Mth::DEG_TO_RAD - std::numbers::pi;
+        float phi = -xRot * Mth::DEG_TO_RAD;
+
+        float sinTheta = sinf(theta);
+        float cosTheta = cosf(theta);
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+
+        // Forward vector (exact view direction)
+        Vec3 forward(sinTheta * (-cosPhi), sinPhi, cosTheta * (-cosPhi));
+
+        // Right vector (horizontal, 90 deg clockwise from yaw)
+        Vec3 right(-cosTheta, 0.0f, sinTheta);
+
+        // Up vector (orthogonal to forward and right, pointing camera-up)
+        Vec3 up(sinTheta * sinPhi, cosPhi, cosTheta * sinPhi);
 
         rayDir = Vec3(
-            forward.x + right.x * (u * halfTanX) - up.x * (v * halfTanY),
-            forward.y + right.y * (u * halfTanX) - up.y * (v * halfTanY),
-            forward.z + right.z * (u * halfTanX) - up.z * (v * halfTanY)
+            forward.x + right.x * (u * halfTanX) + up.x * (v * halfTanY),
+            forward.y + right.y * (u * halfTanX) + up.y * (v * halfTanY),
+            forward.z + right.z * (u * halfTanX) + up.z * (v * halfTanY)
         ).normalize();
 
         Vec3 from = mc->cameraTargetPlayer->getPos(a);

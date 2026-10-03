@@ -280,6 +280,39 @@ public class MainActivity2 extends SDLActivity
         } catch (Throwable t) {
             Log.e("MCPL", "Failed extracting UI sounds", t);
         }
+        try {
+            java.io.File skinsDir = new java.io.File(directory, "skins");
+            if (!skinsDir.exists()) skinsDir.mkdirs();
+            java.io.File mobDir = new java.io.File(directory, "Common/res/mob");
+            if (!mobDir.exists()) mobDir.mkdirs();
+            java.io.File mob122Dir = new java.io.File(directory, "Common/res/1_2_2/mob");
+            if (!mob122Dir.exists()) mob122Dir.mkdirs();
+
+            String[] skinFiles = getAssets().list("skins");
+            if (skinFiles != null) {
+                byte[] buf = new byte[4096];
+                for (String sk : skinFiles) {
+                    java.io.File target1 = new java.io.File(skinsDir, sk);
+                    java.io.File target2 = new java.io.File(mobDir, sk);
+                    java.io.File target3 = new java.io.File(mob122Dir, sk);
+                    for (java.io.File target : new java.io.File[]{target1, target2, target3}) {
+                        if (!target.exists() || target.length() == 0) {
+                            java.io.InputStream in = getAssets().open("skins/" + sk);
+                            java.io.FileOutputStream out = new java.io.FileOutputStream(target);
+                            int len;
+                            while ((len = in.read(buf)) > 0) {
+                                out.write(buf, 0, len);
+                            }
+                            out.flush();
+                            out.close();
+                            in.close();
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Log.e("MCPL", "Failed extracting bundled skins", t);
+        }
     }
 
     @Override protected String getMainFunction() {

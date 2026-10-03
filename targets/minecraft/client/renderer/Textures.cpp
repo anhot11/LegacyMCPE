@@ -28,6 +28,7 @@
 #include "minecraft/world/entity/item/ItemEntity.h"
 #include "minecraft/world/item/ItemInstance.h"
 #include "platform/renderer/renderer.h"
+#include "platform/fs/fs.h"
 #include "platform/stubs.h"
 #include "util/StringHelpers.h"
 
@@ -1216,6 +1217,38 @@ BufferedImage* Textures::readImage(
     TEXTURE_NAME texId, const std::string& name)  // 4J was InputStream *in
 {
     BufferedImage* img = nullptr;
+
+    // Check if name is an absolute/direct path or file on disk FIRST (for custom storage skins)
+    if (name.find('/') != std::string::npos && (name[0] == '/' || PlatformFilesystem.exists(name))) {
+        img = new BufferedImage(name, true, false, "");
+        if (img && img->getWidth() > 1 && img->getHeight() > 1) {
+            return img;
+        }
+        delete img;
+        img = nullptr;
+    }
+
+    // Check storage skins directory for Alex or other skins
+    if (name == "mob/alex.png" || name == "alex.png" || name.find("alex") != std::string::npos) {
+        std::vector<std::string> searchPaths = {
+            "/sdcard/LegacyMCPE/skins/alex.png",
+            "/sdcard/LegacyMCPE/Common/res/mob/alex.png",
+            "/sdcard/LegacyMCPE/Common/res/1_2_2/mob/alex.png",
+            "targets/resources/Common/res/mob/alex.png",
+            "targets/resources/Common/res/1_2_2/mob/alex.png"
+        };
+        for (const auto& sp : searchPaths) {
+            if (PlatformFilesystem.exists(sp)) {
+                img = new BufferedImage(sp, true, false, "");
+                if (img && img->getWidth() > 1 && img->getHeight() > 1) {
+                    return img;
+                }
+                delete img;
+                img = nullptr;
+            }
+        }
+    }
+
     // is this image one of the Title Update ones?
     bool isTu = IsTUImage(texId, name);
     std::string drive = "";

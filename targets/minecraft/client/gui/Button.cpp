@@ -114,17 +114,20 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
 
     renderBg(minecraft, xm, ym);
 
-    int textX = hasIcon() ? (x + w / 2 + 7) : (x + w / 2);
     int textY = y + (h - 8) / 2;
+    int color = !active ? 0xffa0a0a0 : (hovered ? 0xffffa0 : 0xe0e0e0);
 
-    if (!active) {
-        drawCenteredString(font, msg, textX, textY, 0xffa0a0a0);
-    } else {
-        if (hovered) {
-            drawCenteredString(font, msg, textX, textY, 0xffffa0);
+    if (hasIcon()) {
+        int availStart = x + 24;
+        int availW = w - 28;
+        int strW = font->width(msg);
+        if (strW >= availW) {
+            drawString(font, msg, availStart, textY, color);
         } else {
-            drawCenteredString(font, msg, textX, textY, 0xe0e0e0);
+            drawCenteredString(font, msg, availStart + availW / 2, textY, color);
         }
+    } else {
+        drawCenteredString(font, msg, x + w / 2, textY, color);
     }
 #endif
 }

@@ -121,6 +121,15 @@ public class VirtualControlsOverlay extends View {
     private final Handler mTouchHandler = new Handler(Looper.getMainLooper());
     private Runnable mHoldToMineRunnable = null;
 
+    // Creative Flight Double-Tap Jump
+    private long mLastJumpTapTime = 0;
+
+    // MCPE 0.15 Circular Mining Progress Indicator Paints
+    private final Paint mRingBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mRingOuterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mRingProgressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mRingCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     // Visibility state
     private boolean mControlsVisible = false;
     private float mDensity = 1.0f;
@@ -140,6 +149,22 @@ public class VirtualControlsOverlay extends View {
         mFpsPaint.setFakeBoldText(true);
         mFpsPaint.setTextSize(13 * mDensity);
 
+        // Configure authentic MCPE 0.15 mining indicator
+        mRingBgPaint.setStyle(Paint.Style.FILL);
+        mRingBgPaint.setColor(Color.argb(80, 0, 0, 0));
+
+        mRingOuterPaint.setStyle(Paint.Style.STROKE);
+        mRingOuterPaint.setStrokeWidth(2.5f * mDensity);
+        mRingOuterPaint.setColor(Color.argb(160, 255, 255, 255));
+
+        mRingProgressPaint.setStyle(Paint.Style.STROKE);
+        mRingProgressPaint.setStrokeWidth(3.5f * mDensity);
+        mRingProgressPaint.setStrokeCap(Paint.Cap.ROUND);
+        mRingProgressPaint.setColor(Color.argb(230, 255, 255, 255));
+
+        mRingCenterPaint.setStyle(Paint.Style.FILL);
+        mRingCenterPaint.setColor(Color.argb(220, 255, 255, 255));
+
         setFocusable(false);
         setFocusableInTouchMode(false);
 
@@ -158,12 +183,7 @@ public class VirtualControlsOverlay extends View {
                         mControlsVisible = enabled;
                         setVisibility(enabled ? View.VISIBLE : View.GONE);
                         if (!enabled) {
-                            cancelWorldInteraction();
-                            for (VButton btn : allButtons) {
-                                if (btn != btnUp && btn.pressed) {
-                                    releaseButton(btn);
-                                }
-                            }
+                            resetAllInputs();
                         }
                         invalidate();
                     }
@@ -347,8 +367,11 @@ public class VirtualControlsOverlay extends View {
             float jumpY = h - 28 * d - jumpSize;
             btnJump.bounds.set(jumpX, jumpY, jumpX + jumpSize, jumpY + jumpSize);
 
-            // Sneak is handled on btnCenter for styles 0 and 1
-            btnSneak.bounds.set(0, 0, 0, 0);
+            // Sneak / Descend button for styles 0 and 1 (placed to the left of jump, authentic MCPE)
+            float sneakSize = 46 * d * scale;
+            float sneakX = jumpX - 14 * d - sneakSize;
+            float sneakY = jumpY + (jumpSize - sneakSize);
+            btnSneak.bounds.set(sneakX, sneakY, sneakX + sneakSize, sneakY + sneakSize);
 
         } else if (mControlStyle == 2) {
             // Style 2: Floating/Fixed Joystick + Action Buttons
@@ -422,8 +445,9 @@ public class VirtualControlsOverlay extends View {
             drawButtonBitmap(canvas, btnRight, alpha);
             drawButtonBitmap(canvas, btnCenter, alpha);
 
-            // Jump
+            // Jump & Sneak
             drawButtonBitmap(canvas, btnJump, alpha);
+            drawButtonBitmap(canvas, btnSneak, alpha);
 
         } else if (mControlStyle == 2) {
             // Joystick
@@ -442,6 +466,29 @@ public class VirtualControlsOverlay extends View {
 
             drawButtonBitmap(canvas, btnJump, alpha);
             drawButtonBitmap(canvas, btnSneak, alpha);
+        }
+
+        // Draw Authentic MCPE 0.15 Circular Mining Progress Indicator at touched coordinates
+        if (mIsMining && mWorldPointerId != -1) {
+            float cx = mWorldDownX;
+            float cy = mWorldDownY;
+            float rOuter = 28 * mDensity;
+            float rInner = 26 * mDensity;
+
+            // Semi-transparent dark circular backing
+            canvas.drawCircle(cx, cy, rOuter + 3 * mDensity, mRingBgPaint);
+
+            // Outer boundary ring
+            canvas.drawCircle(cx, cy, rOuter, mRingOuterPaint);
+
+            // Center target dot
+            canvas.drawCircle(cx, cy, 3.5f * mDensity, mRingCenterPaint);
+
+            // Progress arc filling clockwise
+            long holdMs = Math.max(0, SystemClock.uptimeMillis() - (mWorldDownTime + 200));
+            float sweep = Math.min(360.0f, (holdMs % 1200) / 1200.0f * 360.0f);
+            RectF arcRect = new RectF(cx - rInner, cy - rInner, cx + rInner, cy + rInner);
+            canvas.drawArc(arcRect, -90, sweep, false, mRingProgressPaint);
         }
 
         postInvalidateDelayed(16);
@@ -465,7 +512,7 @@ public class VirtualControlsOverlay extends View {
     private VButton findButton(float x, float y) {
         for (VButton btn : allButtons) {
             if (btn.bounds.width() > 0) {
-                float pad = (btn == btnInv) ? 16.0f * mDensity : 0.0f;
+                float pad = (btn == btnInv || btn == btnPause || btn == btnPerspective || btn == btnChat) ? 20.0f * mDensity : 0.0f;
                 if (x >= btn.bounds.left - pad && x <= btn.bounds.right + pad &&
                     y >= btn.bounds.top - pad && y <= btn.bounds.bottom + pad) {
                     return btn;
@@ -584,6 +631,30 @@ public class VirtualControlsOverlay extends View {
                         }, 50);
                         return true;
                     }
+
+                    // Top Bar buttons: instant pulse ensures menu/chat/perspective opens without lag or stuck state
+                    if (hit == btnPause || hit == btnPerspective || hit == btnChat) {
+                        hit.pressed = true;
+                        invalidate();
+                        SDLActivity.onNativeKeyDown(hit.keyCode);
+                        final VButton targetHit = hit;
+                        postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                SDLActivity.onNativeKeyUp(targetHit.keyCode);
+                                targetHit.pressed = false;
+                                invalidate();
+                            }
+                        }, 50);
+                        return true;
+                    }
+
+                    // Creative Flight Double-Tap Jump
+                    if (hit == btnJump) {
+                        long nowTap = SystemClock.uptimeMillis();
+                        mLastJumpTapTime = nowTap;
+                    }
+
                     pressButton(hit, pointerId);
                     invalidate();
                     return true;

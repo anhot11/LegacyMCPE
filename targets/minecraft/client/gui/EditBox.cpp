@@ -10,6 +10,8 @@ EditBox::EditBox(Screen* screen, Font* font, int x, int y, int width,
     // 4J - added initialisers
     maxLength = 0;
     frame = 0;
+    inFocus = false;
+    active = true;
     enableBackgroundDrawing =
         true;  // 4jcraft: for toggling the background rendering (from 1.6.4,
                // mainly for RepairScreen)
@@ -39,14 +41,16 @@ void EditBox::tick() {
         std::string typed = PlatformInput.PollTextInput();
         if (!typed.empty()) {
             for (char ch : typed) {
-                if (((ch >= 32 && ch <= 126) || SharedConstants::acceptableLetters.find(ch) != std::string::npos) &&
-                    (value.length() < (size_t)maxLength || maxLength == 0)) {
+                if (ch == '\b' || ch == 8) {
+                    if (value.length() > 0) value.pop_back();
+                } else if (((unsigned char)ch >= 32 || (unsigned char)ch >= 160 || SharedConstants::isAllowedChatCharacter(ch)) &&
+                           (value.length() < (size_t)maxLength || maxLength == 0)) {
                     value += ch;
                 }
             }
         }
         if (PlatformInput.PollBackspacePressed() && value.length() > 0) {
-            value = value.substr(0, value.length() - 1);
+            value.pop_back();
         }
     }
 }
@@ -58,32 +62,22 @@ void EditBox::keyPressed(char ch, int eventKey) {
 
     if (ch == 9) {
         screen->tabPressed();
+        return;
     }
-    /* 4J removed
-        if (ch == 22)
-            {
-            String msg = Screen.getClipboard();
-            if (msg == null) msg = "";
-            int toAdd = 32 - value.length();
-            if (toAdd > msg.length()) toAdd = msg.length();
-            if (toAdd > 0) {
-                value += msg.substring(0, toAdd);
-            }
-        }
-            */
 
-    if (eventKey == Keyboard::KEY_BACK && value.length() > 0) {
-        value = value.substr(0, value.length() - 1);
+    if ((eventKey == Keyboard::KEY_BACK || ch == '\b' || ch == 8) && value.length() > 0) {
+        value.pop_back();
+        return;
     }
-    if (((ch >= 32 && ch <= 126) || SharedConstants::acceptableLetters.find(ch) != std::string::npos) &&
+    if (((unsigned char)ch >= 32 || (unsigned char)ch >= 160 || SharedConstants::isAllowedChatCharacter(ch)) &&
         (value.length() < maxLength || maxLength == 0)) {
         value += ch;
     }
 }
 
 void EditBox::mouseClicked(int mouseX, int mouseY, int buttonNum) {
-    bool newFocus = active && (mouseX >= x && mouseX < (x + width) &&
-                               mouseY >= y && mouseY < (y + height));
+    bool newFocus = active && (mouseX >= x - 4 && mouseX < (x + width + 4) &&
+                               mouseY >= y - 4 && mouseY < (y + height + 4));
     focus(newFocus);
 }
 

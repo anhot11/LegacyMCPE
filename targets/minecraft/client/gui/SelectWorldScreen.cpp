@@ -257,6 +257,7 @@ void SelectWorldScreen::init() {
     Log::info("SelectWorldScreen::init() START\n");
     Language* language = Language::getInstance();
     title = language->getElement("selectWorld.title");
+    currentTab = TAB_WORLDS;
 
     worldLang = language->getElement("selectWorld.world");
     conversionLang = language->getElement("selectWorld.conversion");
@@ -508,14 +509,16 @@ void SelectWorldScreen::updateTabVisibility() {
         tabWorldsButton->y = tabY;
         tabWorldsButton->w = tabW;
         tabWorldsButton->h = tabH;
-        tabWorldsButton->active = !isWorlds;
+        tabWorldsButton->active = true;
+        tabWorldsButton->msg = isWorlds ? "[ Mundos ]" : "Mundos";
     }
     if (tabServersButton) {
         tabServersButton->x = width / 2 + 4;
         tabServersButton->y = tabY;
         tabServersButton->w = tabW;
         tabServersButton->h = tabH;
-        tabServersButton->active = isWorlds;
+        tabServersButton->active = true;
+        tabServersButton->msg = !isWorlds ? "[ Servidores ]" : "Servidores";
     }
 
     // Worlds controls
@@ -582,17 +585,19 @@ void SelectWorldScreen::buttonClicked(Button* button) {
         return;
     }
     if (button->id == BUTTON_CONNECT_SERVER_ID) {
-        if (selectedServer >= 0 && selectedServer < (int)serverList.size()) {
+        if (currentTab == TAB_SERVERS && selectedServer >= 0 && selectedServer < (int)serverList.size()) {
             serverSelected(selectedServer);
         }
         return;
     }
     if (button->id == BUTTON_ADD_SERVER_ID) {
-        minecraft->setScreen(new EditServerScreen(this, -1));
+        if (currentTab == TAB_SERVERS) {
+            minecraft->setScreen(new EditServerScreen(this, -1));
+        }
         return;
     }
     if (button->id == BUTTON_EDIT_SERVER_ID) {
-        if (selectedServer >= 0 && selectedServer < (int)serverList.size()) {
+        if (currentTab == TAB_SERVERS && selectedServer >= 0 && selectedServer < (int)serverList.size()) {
             const ServerData& s = serverList[selectedServer];
             std::string addr = s.port == 25565 ? s.ip : (s.ip + ":" + std::to_string(s.port));
             minecraft->setScreen(new EditServerScreen(this, selectedServer, s.name, addr));
@@ -600,37 +605,45 @@ void SelectWorldScreen::buttonClicked(Button* button) {
         return;
     }
     if (button->id == BUTTON_DELETE_SERVER_ID) {
-        if (selectedServer >= 0 && selectedServer < (int)serverList.size()) {
+        if (currentTab == TAB_SERVERS && selectedServer >= 0 && selectedServer < (int)serverList.size()) {
             deleteServer(selectedServer);
         }
         return;
     }
 
     if (button->id == BUTTON_DELETE_ID) {
-        std::string worldName = getWorldName(selectedWorld);
-        if (worldName != "") {
-            isDeleting = true;
+        if (currentTab == TAB_WORLDS) {
+            std::string worldName = getWorldName(selectedWorld);
+            if (worldName != "") {
+                isDeleting = true;
 
-            Language* language = Language::getInstance();
-            std::string title =
-                language->getElement("selectWorld.deleteQuestion");
-            std::string warning =
-                "'" + worldName + "' " +
-                language->getElement("selectWorld.deleteWarning");
-            std::string yes = language->getElement("selectWorld.deleteButton");
-            std::string no = language->getElement("gui.cancel");
+                Language* language = Language::getInstance();
+                std::string title =
+                    language->getElement("selectWorld.deleteQuestion");
+                std::string warning =
+                    "'" + worldName + "' " +
+                    language->getElement("selectWorld.deleteWarning");
+                std::string yes = language->getElement("selectWorld.deleteButton");
+                std::string no = language->getElement("gui.cancel");
 
-            ConfirmScreen* confirmScreen =
-                new ConfirmScreen(this, title, warning, yes, no, selectedWorld);
-            minecraft->setScreen(confirmScreen);
+                ConfirmScreen* confirmScreen =
+                    new ConfirmScreen(this, title, warning, yes, no, selectedWorld);
+                minecraft->setScreen(confirmScreen);
+            }
         }
     } else if (button->id == BUTTON_SELECT_ID) {
-        worldSelected(selectedWorld);
+        if (currentTab == TAB_WORLDS) {
+            worldSelected(selectedWorld);
+        }
     } else if (button->id == BUTTON_CREATE_ID) {
-        minecraft->setScreen(new CreateWorldScreen(this));
+        if (currentTab == TAB_WORLDS) {
+            minecraft->setScreen(new CreateWorldScreen(this));
+        }
     } else if (button->id == BUTTON_RENAME_ID) {
-        minecraft->setScreen(
-            new RenameWorldScreen(this, getWorldId(selectedWorld)));
+        if (currentTab == TAB_WORLDS) {
+            minecraft->setScreen(
+                new RenameWorldScreen(this, getWorldId(selectedWorld)));
+        }
     } else if (button->id == BUTTON_CANCEL_ID) {
         Log::info(
             "SelectWorldScreen::buttonClicked 'Cancel' "

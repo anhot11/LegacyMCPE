@@ -58,6 +58,7 @@
 #include "minecraft/util/Log.h"
 #include "minecraft/world/entity/Entity.h"
 #include "minecraft/world/entity/ItemFrame.h"
+#include "minecraft/world/level/chunk/storage/RegionFileCache.h"
 #include "minecraft/world/entity/Mob.h"
 #include "minecraft/world/entity/animal/Animal.h"
 #include "minecraft/world/entity/animal/EntityHorse.h"
@@ -543,6 +544,15 @@ void Minecraft::setScreen(Screen* screen) {
     }
 
     if (screen != nullptr) {
+        if (player != nullptr) {
+            player->setSprinting(false);
+            if (player->input != nullptr) {
+                player->input->xa = 0.0f;
+                player->input->ya = 0.0f;
+                player->input->jumping = false;
+                player->input->sneaking = false;
+            }
+        }
         //        releaseMouse();	// 4J - removed
         int fbw = width, fbh = height;
         PlatformRenderer.GetFramebufferSize(fbw, fbh);
@@ -3848,6 +3858,7 @@ void Minecraft::setLevel(MultiPlayerLevel* level, int message /*=-1*/,
         cameraTargetPlayer = nullptr;
         EntityRenderDispatcher::instance->cameraEntity = nullptr;
         TileEntityRenderDispatcher::instance->cameraEntity = nullptr;
+        RegionFileCache::clear();
     }
     this->level = level;
 

@@ -487,14 +487,14 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     // Compute content height and max scroll
     int viewportH = (height - 42) - 60;
     int contentH = 0;
-    if (currentTab == 0) contentH = 3 * 43;
-    else if (currentTab == 1) contentH = 4 * 43;
-    else if (currentTab == 2) contentH = 145;
-    else if (currentTab == 3) contentH = 2 * 43;
-    else if (currentTab == 4) contentH = 145;
-    else if (currentTab == 5) contentH = 3 * 43;
+    if (currentTab == 0) contentH = 3 * 43 + 30;
+    else if (currentTab == 1) contentH = 4 * 43 + 60; // Extra room so Better Grass can be scrolled fully into view
+    else if (currentTab == 2) contentH = 145 + 30;
+    else if (currentTab == 3) contentH = 2 * 43 + 30;
+    else if (currentTab == 4) contentH = 145 + 30;
+    else if (currentTab == 5) contentH = 3 * 43 + 30;
 
-    contentH += 12; // Bottom margin breathing room
+    contentH += 16; // Bottom margin breathing room
     maxScroll = (contentH > viewportH) ? (float)(contentH - viewportH) : 0.0f;
 
     // Touch / drag scroll handling
@@ -663,6 +663,8 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     }
 
     // Top Header Bar (renders OVER scrolled cards)
+    glDisable(GL_DEPTH_TEST);
+    glClear(GL_DEPTH_BUFFER_BIT);
     fill(0, 0, width, 56, 0xdd080b10);
     hLine(0, width, 56, 0xff253042);
 
@@ -698,6 +700,8 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8);
 
     // Bottom Bar (renders OVER scrolled cards)
+    glDisable(GL_DEPTH_TEST);
+    glClear(GL_DEPTH_BUFFER_BIT);
     hLine(0, width, height - 42, 0xff253042);
     fill(0, height - 42, width, height, 0xdd080b10);
     if (doneBtn) doneBtn->render(minecraft, xm, ym);

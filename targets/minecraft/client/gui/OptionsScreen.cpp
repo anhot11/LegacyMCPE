@@ -4,7 +4,6 @@
 
 #include "ControlsScreen.h"
 #include "LanguageSelectScreen.h"
-#include "SkinSelectScreen.h"
 #include "SlideButton.h"
 #include "SmallButton.h"
 #include "VideoSettingsScreen.h"
