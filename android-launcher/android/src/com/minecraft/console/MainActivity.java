@@ -42,7 +42,7 @@ import java.util.zip.ZipInputStream;
 public class MainActivity extends Activity {
     private static final String TAG = "MCPL-Public";
     private static final int PERMISSION_REQ_CODE = 1001;
-    private static final String DATA_URL = "https://github.com/anhot11/LegacyMCPE/releases/download/v1.0.0/MCPL-Data.zip";
+    private static final String DATA_URL = "https://github.com/anhot11/LegacyMCPE/releases/download/v1.0.1/MCPL-Data.zip";
 
     private LinearLayout layoutProgress;
     private LinearLayout layoutDownloadPrompt;

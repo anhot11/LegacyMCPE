@@ -189,7 +189,8 @@ void SoundEngine::play(int iSound, float x, float y, float z, float volume,
         if (szId[i] == '.') szId[i] = '/';
 
     std::string base = PlatformFilesystem.getBasePath().string() + "/";
-    const char* roots[] = {"Sound/Minecraft/", "app/common/Sound/Minecraft/",
+    const char* roots[] = {"Sound/Minecraft/", "res/Sound/Minecraft/",
+                           "app/common/Sound/Minecraft/",
                            "app/common/res/TitleUpdate/res/Sound/Minecraft/"};
     char finalPath[512] = {0};
     bool found = false;
@@ -260,6 +261,8 @@ void SoundEngine::playUI(int iSound, float volume, float pitch) {
     const char* roots[] = {
         "Sound/Minecraft/UI/",
         "Sound/Minecraft/",
+        "res/Sound/Minecraft/UI/",
+        "res/Sound/Minecraft/",
         "app/common/Sound/Minecraft/UI/",
         "app/common/Sound/Minecraft/",
     };

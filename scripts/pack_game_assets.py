@@ -61,6 +61,19 @@ def pack_assets():
                 file_count += 1
                 total_bytes += os.path.getsize(full_path)
 
+        # Add all sound files from DurangoMedia/Sound/Minecraft
+        sound_dir = os.path.join(repo_root, "targets", "resources", "DurangoMedia", "Sound", "Minecraft")
+        if os.path.exists(sound_dir):
+            print(f"  Adding Sound/Minecraft files from {sound_dir}...")
+            for root, dirs, files in os.walk(sound_dir):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, sound_dir)
+                    arc_name = os.path.join("Sound", "Minecraft", rel_path).replace("\\", "/")
+                    zf.write(full_path, arcname=arc_name)
+                    file_count += 1
+                    total_bytes += os.path.getsize(full_path)
+
     zip_size = os.path.getsize(target_zip)
     print(f"Successfully packed {file_count} files ({total_bytes:,} uncompressed bytes) into {target_zip}")
     print(f"Compressed bundle size: {zip_size / (1024*1024):.2f} MB")

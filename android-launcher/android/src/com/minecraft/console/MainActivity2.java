@@ -243,6 +243,13 @@ public class MainActivity2 extends SDLActivity
         return new String[] { "SDL2", "MinecraftClient" };
     }
 
+    @Override
+    public void onBackPressed() {
+        // Send ESCAPE key to SDL to close any open container/GUI screen or pause menu
+        SDLActivity.onNativeKeyDown(android.view.KeyEvent.KEYCODE_ESCAPE);
+        SDLActivity.onNativeKeyUp(android.view.KeyEvent.KEYCODE_ESCAPE);
+    }
+
     @Override protected String getMainFunction() {
         return "main";
     }

@@ -19,6 +19,8 @@ struct LanguageEntry {
 class LanguageSelectScreen : public Screen {
 private:
     static const int DONE_BUTTON_ID = 200;
+    static const int SCROLL_UP_BUTTON_ID = 201;
+    static const int SCROLL_DOWN_BUTTON_ID = 202;
 
     Screen* lastScreen;
     Options* options;
@@ -30,11 +32,14 @@ private:
     float scrollY;
     float maxScroll;
     bool isDragging;
+    bool isDraggingScrollbar;
     int dragStartY;
     float dragStartScroll;
     bool hasMoved;
 
     Button* btnDone;
+    Button* btnScrollUp;
+    Button* btnScrollDown;
 
 public:
     LanguageSelectScreen(Screen* lastScreen, Options* options);

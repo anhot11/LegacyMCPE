@@ -25,10 +25,13 @@ LanguageSelectScreen::LanguageSelectScreen(Screen* lastScreen, Options* options)
     this->scrollY = 0.0f;
     this->maxScroll = 0.0f;
     this->isDragging = false;
+    this->isDraggingScrollbar = false;
     this->dragStartY = 0;
     this->dragStartScroll = 0.0f;
     this->hasMoved = false;
     this->btnDone = nullptr;
+    this->btnScrollUp = nullptr;
+    this->btnScrollDown = nullptr;
 }
 
 void LanguageSelectScreen::init() {
@@ -68,6 +71,13 @@ void LanguageSelectScreen::init() {
     btnDone->setTextureIcon(64, 32, 16);
     btnDone->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
     buttons.push_back(btnDone);
+
+    int slotW = (width >= 450) ? 280 : 240;
+    int barX = width / 2 + slotW / 2 + 6;
+    btnScrollUp = new Button(SCROLL_UP_BUTTON_ID, barX, 32, 22, 20, "^");
+    btnScrollDown = new Button(SCROLL_DOWN_BUTTON_ID, barX, height - 64, 22, 20, "v");
+    buttons.push_back(btnScrollUp);
+    buttons.push_back(btnScrollDown);
 }
 
 void LanguageSelectScreen::selectLanguage(int index) {
@@ -89,6 +99,10 @@ void LanguageSelectScreen::buttonClicked(Button* button) {
     if (button->id == DONE_BUTTON_ID) {
         options->save();
         minecraft->setScreen(lastScreen);
+    } else if (button->id == SCROLL_UP_BUTTON_ID) {
+        scrollY = std::max(0.0f, scrollY - 64.0f);
+    } else if (button->id == SCROLL_DOWN_BUTTON_ID) {
+        scrollY = std::min(maxScroll, scrollY + 64.0f);
     }
 }
 
@@ -116,20 +130,42 @@ void LanguageSelectScreen::render(int xm, int ym, float a) {
     int totalHeight = (int)languages.size() * slotHeight;
     maxScroll = std::max(0.0f, (float)(totalHeight - (listY1 - listY0)));
 
+    int slotW = (width >= 450) ? 280 : 240;
+    int slotX = width / 2 - slotW / 2;
+    int barX = slotX + slotW + 6;
+    int barW = 10;
+    int trackY0 = listY0 + 26;
+    int trackY1 = listY1 - 26;
+    int trackH = trackY1 - trackY0;
+    int thumbH = (trackH > 0 && totalHeight > 0)
+                     ? std::max(24, (int)((float)trackH * (float)trackH / (float)totalHeight))
+                     : 24;
+
     // 1. Draw base dirt background
     renderDirtBackground(0);
 
     // 2. Touch / drag input handling
     bool isDown = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_ACTION);
     if (isDown) {
-        if (!isDragging) {
-            if (ym >= listY0 && ym <= listY1) {
+        if (!isDragging && !isDraggingScrollbar) {
+            // Check if touch started on or near the scrollbar track (generous hit box)
+            if (maxScroll > 0.0f && xm >= barX - 10 && xm <= barX + barW + 16 &&
+                ym >= trackY0 && ym <= trackY1) {
+                isDraggingScrollbar = true;
+            } else if (ym >= listY0 && ym <= listY1 && xm < barX - 8) {
                 isDragging = true;
                 dragStartY = ym;
                 dragStartScroll = scrollY;
                 hasMoved = false;
             }
-        } else {
+        }
+
+        if (isDraggingScrollbar && maxScroll > 0.0f) {
+            float rel = (float)(ym - trackY0 - thumbH / 2) / (float)(trackH - thumbH);
+            scrollY = rel * maxScroll;
+            if (scrollY < 0.0f) scrollY = 0.0f;
+            if (scrollY > maxScroll) scrollY = maxScroll;
+        } else if (isDragging) {
             int dy = ym - dragStartY;
             if (std::abs(dy) > 4) {
                 hasMoved = true;
@@ -149,12 +185,10 @@ void LanguageSelectScreen::render(int xm, int ym, float a) {
             }
             isDragging = false;
         }
+        isDraggingScrollbar = false;
     }
 
     // 3. Render items
-    int slotW = (width >= 450) ? 280 : 240;
-    int slotX = width / 2 - slotW / 2;
-
     for (size_t i = 0; i < languages.size(); i++) {
         int itemY = listY0 + 4 - (int)scrollY + (int)i * slotHeight;
         if (itemY + slotHeight < listY0 || itemY > listY1) continue;
@@ -197,16 +231,17 @@ void LanguageSelectScreen::render(int xm, int ym, float a) {
     fillGradient(0, listY1 - 4, width, listY1, 0x00000000, 0xff000000);
 
     // 6. Draw scrollbar
-    if (maxScroll > 0.0f) {
-        int barX = slotX + slotW + 6;
-        int trackH = listY1 - listY0;
-        int thumbH = std::max(20, (int)((float)trackH * (float)trackH / (float)totalHeight));
-        int thumbY = listY0 + (int)(scrollY * (float)(trackH - thumbH) / maxScroll);
-        fill(barX, listY0, barX + 5, listY1, 0x80000000);
-        fill(barX, thumbY, barX + 5, thumbY + thumbH, 0xff888888);
+    if (maxScroll > 0.0f && trackH > thumbH) {
+        int thumbY = trackY0 + (int)(scrollY * (float)(trackH - thumbH) / maxScroll);
+        // Track background
+        fill(barX, trackY0, barX + barW, trackY1, 0x80000000);
+        // Thumb border
+        fill(barX, thumbY, barX + barW, thumbY + thumbH, 0xff666666);
+        // Thumb body
+        fill(barX + 1, thumbY + 1, barX + barW - 1, thumbY + thumbH - 1, 0xffcccccc);
     }
 
-    // 7. Title & Screen elements (Done button)
+    // 7. Title & Screen elements (Done & Scroll buttons)
     drawCenteredString(font, title, width / 2, 12, 0xffffff);
     Screen::render(xm, ym, a);
 }

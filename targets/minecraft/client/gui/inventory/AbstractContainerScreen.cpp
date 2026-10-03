@@ -11,6 +11,7 @@
 #include "minecraft/client/Options.h"
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/Screen.h"
+#include "minecraft/client/gui/Button.h"
 #include "minecraft/client/multiplayer/MultiPlayerGameMode.h"
 #include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
 #include "minecraft/client/renderer/entity/ItemRenderer.h"
@@ -34,8 +35,13 @@ AbstractContainerScreen::AbstractContainerScreen(AbstractContainerMenu* menu) {
 void AbstractContainerScreen::init() {
     Screen::init();
     minecraft->player->containerMenu = menu;
-    // 	leftPos = (width - imageWidth) / 2;
-    // 	topPos = (height - imageHeight) / 2;
+    int xo = (width - imageWidth) / 2;
+    int yo = (height - imageHeight) / 2;
+    int btnX = (xo >= 26) ? (xo + imageWidth + 4) : (xo + imageWidth - 18);
+    int btnY = (xo >= 26) ? yo : (yo + 4);
+    int btnSize = (xo >= 26) ? 20 : 14;
+    btnClose = new Button(CLOSE_BUTTON_ID, btnX, btnY, btnSize, btnSize, "X");
+    buttons.push_back(btnClose);
 }
 
 void AbstractContainerScreen::render(int xm, int ym, float a) {
@@ -336,6 +342,13 @@ bool AbstractContainerScreen::isHovering(Slot* slot, int xm, int ym) {
     return isHoveringOver(slot->x, slot->y, 16, 16, xm, ym);
 }
 
+void AbstractContainerScreen::buttonClicked(Button* button) {
+    if (button->id == CLOSE_BUTTON_ID) {
+        minecraft->player->closeContainer();
+        minecraft->setScreen(nullptr);
+    }
+}
+
 void AbstractContainerScreen::mouseClicked(int x, int y, int buttonNum) {
     Screen::mouseClicked(x, y, buttonNum);
     if (buttonNum == 0 || buttonNum == 1) {
@@ -345,6 +358,13 @@ void AbstractContainerScreen::mouseClicked(int x, int y, int buttonNum) {
         int yo = (height - imageHeight) / 2;
         bool clickedOutside =
             (x < xo || y < yo || x >= xo + imageWidth || y >= yo + imageHeight);
+
+        if (clickedOutside &&
+            minecraft->player->inventory->getCarried() == nullptr) {
+            minecraft->player->closeContainer();
+            minecraft->setScreen(nullptr);
+            return;
+        }
 
         int slotId = -1;
         if (slot != nullptr) slotId = slot->index;
@@ -374,6 +394,7 @@ void AbstractContainerScreen::keyPressed(char eventCharacter, int eventKey) {
     if (eventKey == Keyboard::KEY_ESCAPE ||
         eventKey == minecraft->options->keyBuild->key) {
         minecraft->player->closeContainer();
+        minecraft->setScreen(nullptr);
     }
 }
 

@@ -46,7 +46,7 @@ public:
     void renderFakeCB(IntBuffer* cb);  // 4J added
 
 private:
-    void renderCharacter(char c);  // 4J added
+    void renderCharacter(int c);  // 4J added
 
 public:
     void drawShadow(const std::string& str, int x, int y, int color);
@@ -65,8 +65,8 @@ private:
 
     void draw(const std::string& str, bool dropShadow);
     void draw(const std::string& str, int x, int y, int color, bool dropShadow);
-    int MapCharacter(char c);      // 4J added
-    bool CharacterExists(char c);  // 4J added
+    int MapCharacter(int codepoint);      // 4J added
+    bool CharacterExists(int codepoint);  // 4J added
 
 public:
     int width(const std::string& str);

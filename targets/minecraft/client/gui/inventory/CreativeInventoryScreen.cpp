@@ -10,6 +10,7 @@
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/Screen.h"
+#include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/inventory/AbstractContainerScreen.h"
 #include "minecraft/client/multiplayer/MultiPlayerGameMode.h"
 #include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
@@ -230,6 +231,13 @@ void CreativeInventoryScreen::removed() { AbstractContainerScreen::removed(); }
 
 void CreativeInventoryScreen::init() {
     buttons.clear();
+    int xo = (width - imageWidth) / 2;
+    int yo = (height - imageHeight) / 2;
+    int btnX = (xo >= 26) ? (xo + imageWidth + 4) : (xo + imageWidth - 18);
+    int btnY = (xo >= 26) ? yo : (yo + 4);
+    int btnSize = (xo >= 26) ? 20 : 14;
+    btnClose = new Button(CLOSE_BUTTON_ID, btnX, btnY, btnSize, btnSize, "X");
+    buttons.push_back(btnClose);
 
     int i = selectedTabIndex;
     selectedTabIndex = -1;
@@ -300,6 +308,12 @@ void CreativeInventoryScreen::mouseClicked(int x, int y, int buttonNum) {
         int yo = (height - imageHeight) / 2;
         bool clickedOutside =
             (x < xo || y < yo || x >= xo + imageWidth || y >= yo + imageHeight);
+
+        if (clickedOutside && player->inventory->getCarried() == nullptr) {
+            minecraft->player->closeContainer();
+            minecraft->setScreen(nullptr);
+            return;
+        }
 
         int slotId = -1;
         if (slot != nullptr) slotId = slot->index;

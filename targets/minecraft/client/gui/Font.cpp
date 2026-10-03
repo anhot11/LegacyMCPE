@@ -84,7 +84,8 @@ Font::Font(Options* options, const std::string& name, Textures* textures,
             }
         }
 
-        if (i == ' ') x = 4 - 2;
+        bool isSpace = (charMap != nullptr) ? (charMap[i] == ' ') : (i == ' ');
+        if (isSpace) x = 4 - 2;
         charWidths[i] = x + 2;
     }
 
@@ -124,9 +125,42 @@ Font::Font(Options* options, const std::string& name, Textures* textures,
 // take it out for now. Can go back when we have got rid of XUI
 Font::~Font() { delete[] charWidths; }
 
-void Font::renderCharacter(char c) {
-    float xOff = c % m_cols * m_charWidth;
-    float yOff = c / m_cols * m_charWidth;
+static int nextUtf8Codepoint(const std::string& str, size_t& i) {
+    if (i >= str.length()) return 0;
+    unsigned char c = (unsigned char)str[i];
+    if (c < 0x80) {
+        i++;
+        return c;
+    } else if ((c & 0xE0) == 0xC0) {
+        if (i + 1 < str.length()) {
+            int cp = ((c & 0x1F) << 6) | ((unsigned char)str[i + 1] & 0x3F);
+            i += 2;
+            return cp;
+        }
+    } else if ((c & 0xF0) == 0xE0) {
+        if (i + 2 < str.length()) {
+            int cp = ((c & 0x0F) << 12) | (((unsigned char)str[i + 1] & 0x3F) << 6) |
+                     ((unsigned char)str[i + 2] & 0x3F);
+            i += 3;
+            return cp;
+        }
+    } else if ((c & 0xF8) == 0xF0) {
+        if (i + 3 < str.length()) {
+            int cp = ((c & 0x07) << 18) | (((unsigned char)str[i + 1] & 0x3F) << 12) |
+                     (((unsigned char)str[i + 2] & 0x3F) << 6) |
+                     ((unsigned char)str[i + 3] & 0x3F);
+            i += 4;
+            return cp;
+        }
+    }
+    i++;
+    return c;
+}
+
+void Font::renderCharacter(int c) {
+    if (c < 0 || c >= m_cols * m_rows) return;
+    float xOff = (c % m_cols) * m_charWidth;
+    float yOff = (c / m_cols) * m_charHeight;
 
     float width = charWidths[c] - .01f;
     float height = m_charHeight - .01f;
@@ -175,23 +209,24 @@ std::string Font::reorderBidi(const std::string& str) {
 }
 
 void Font::draw(const std::string& str, bool dropShadow) {
+    if (str.empty()) return;
+
     // Bind the texture
     textures->bindTexture(m_textureLocation);
 
     bool noise = false;
-    std::string cleanStr = sanitize(str);
+    size_t i = 0;
 
-    for (int i = 0; i < (int)cleanStr.length(); ++i) {
-        // Map character
-        unsigned char c = cleanStr.at(i);
+    while (i < str.length()) {
+        unsigned char byte0 = (unsigned char)str[i];
 
         // Check for § formatting code (supports UTF-8 0xC2 0xA7 or single byte 0xA7)
-        bool isUtf8Sec = (i + 2 < (int)cleanStr.length() && c == 0xC2u &&
-                          (unsigned char)cleanStr[i + 1] == 0xA7u);
-        bool isSingleSec = (i + 1 < (int)cleanStr.length() && c == 0xA7u);
+        bool isUtf8Sec = (i + 2 < str.length() && byte0 == 0xC2u &&
+                          (unsigned char)str[i + 1] == 0xA7u);
+        bool isSingleSec = (i + 1 < str.length() && byte0 == 0xA7u);
 
         if (isUtf8Sec || isSingleSec) {
-            char ca = isUtf8Sec ? cleanStr[i + 2] : cleanStr[i + 1];
+            char ca = isUtf8Sec ? str[i + 2] : str[i + 1];
             int colorN = -1;
             bool isNoise = false;
 
@@ -219,21 +254,23 @@ void Font::draw(const std::string& str, bool dropShadow) {
                           (color & 255) / 255.0F);
             }
 
-            i += isUtf8Sec ? 2 : 1;
+            i += isUtf8Sec ? 3 : 2;
             continue;
         }
 
+        int codepoint = nextUtf8Codepoint(str, i);
+
         // "noise" for crazy splash screen message
         if (noise) {
-            int newc;
-            do {
-                newc = random->nextInt(
-                    SharedConstants::acceptableLetters.length());
-            } while (charWidths[c + 32] != charWidths[newc + 32]);
-            c = newc;
+            int maxLetters = SharedConstants::acceptableLetters.length();
+            if (maxLetters > 0) {
+                int newc = random->nextInt(maxLetters);
+                codepoint = (unsigned char)SharedConstants::acceptableLetters[newc];
+            }
         }
 
-        renderCharacter(c);
+        int glyph = MapCharacter(codepoint);
+        renderCharacter(glyph);
     }
 }
 
@@ -258,22 +295,27 @@ void Font::draw(const std::string& str, int x, int y, int color,
 }
 
 int Font::width(const std::string& str) {
-    std::string cleanStr = sanitize(str);
-
-    if (cleanStr == "") return 0;  // 4J - was nullptr comparison
+    if (str.empty()) return 0;
     int len = 0;
+    size_t i = 0;
 
-    for (int i = 0; i < (int)cleanStr.length(); ++i) {
-        unsigned char c = cleanStr.at(i);
+    while (i < str.length()) {
+        unsigned char byte0 = (unsigned char)str[i];
 
         // skip § (used for color codes)
-        if (i + 2 < (int)cleanStr.length() && c == 0xC2 &&
-            (unsigned char)cleanStr[i + 1] == 0xA7) {
-            i += 2;
-        } else if (i + 1 < (int)cleanStr.length() && c == 0xA7) {
-            i += 1;
-        } else {
-            len += charWidths[c];
+        bool isUtf8Sec = (i + 2 < str.length() && byte0 == 0xC2u &&
+                          (unsigned char)str[i + 1] == 0xA7u);
+        bool isSingleSec = (i + 1 < str.length() && byte0 == 0xA7u);
+
+        if (isUtf8Sec || isSingleSec) {
+            i += isUtf8Sec ? 3 : 2;
+            continue;
+        }
+
+        int codepoint = nextUtf8Codepoint(str, i);
+        int glyph = MapCharacter(codepoint);
+        if (glyph >= 0 && glyph < m_cols * m_rows) {
+            len += charWidths[glyph];
         }
     }
 
@@ -281,46 +323,26 @@ int Font::width(const std::string& str) {
 }
 
 std::string Font::sanitize(const std::string& str) {
-    std::string sb = str;
-
-    for (unsigned int i = 0; i < sb.length(); i++) {
-        // Skip UTF-8 section sign § (0xC2 0xA7) and following formatting character
-        if (i + 2 < sb.length() && (unsigned char)sb[i] == 0xC2 &&
-            (unsigned char)sb[i + 1] == 0xA7) {
-            i += 2;
-            continue;
-        }
-        // Skip 1-byte section sign 0xA7 and following formatting character
-        if (i + 1 < sb.length() && (unsigned char)sb[i] == 0xA7) {
-            i += 1;
-            continue;
-        }
-
-        if (CharacterExists(sb[i])) {
-            sb[i] = MapCharacter(sb[i]);
-        } else {
-            // If this character isn't supported, just show the first character
-            // (empty square box character)
-            sb[i] = 0;
-        }
-    }
-    return sb;
+    return str;
 }
 
-int Font::MapCharacter(char c) {
+int Font::MapCharacter(int codepoint) {
     if (!m_charMap.empty()) {
-        // Don't map space character
-        return c == ' ' ? c : m_charMap[c];
+        auto it = m_charMap.find(codepoint);
+        if (it != m_charMap.end()) {
+            return it->second;
+        }
+        return 0;
     } else {
-        return c;
+        return (codepoint >= 0 && codepoint < m_cols * m_rows) ? codepoint : 0;
     }
 }
 
-bool Font::CharacterExists(char c) {
+bool Font::CharacterExists(int codepoint) {
     if (!m_charMap.empty()) {
-        return m_charMap.find(c) != m_charMap.end();
+        return m_charMap.find(codepoint) != m_charMap.end();
     } else {
-        return c >= 0 && c <= m_rows * m_cols;
+        return codepoint >= 0 && codepoint < m_rows * m_cols;
     }
 }
 

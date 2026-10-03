@@ -129,6 +129,11 @@ void Screen::updateEvents() {
         mouseReleased(xMouse, yMouse, 1);
     }
 
+    if (PlatformInput.ButtonPressed(0, ACTION_MENU_CANCEL) ||
+        PlatformInput.ButtonPressed(0, ACTION_MENU_B)) {
+        keyPressed(0, Keyboard::KEY_ESCAPE);
+    }
+
     prevLeftState = leftState;
     prevRightState = rightState;
 #else

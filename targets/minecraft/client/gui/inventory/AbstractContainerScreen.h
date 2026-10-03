@@ -54,6 +54,10 @@ protected:
     virtual void mouseClicked(int x, int y, int buttonNum) override;
     virtual void mouseReleased(int x, int y, int buttonNum) override;
     virtual void keyPressed(char eventCharacter, int eventKey) override;
+    virtual void buttonClicked(Button* button) override;
+
+    static const int CLOSE_BUTTON_ID = 1000;
+    Button* btnClose;
 
 public:
     virtual void removed() override;
