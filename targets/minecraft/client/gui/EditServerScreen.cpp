@@ -39,14 +39,14 @@ void EditServerScreen::init() {
     Keyboard::enableRepeatEvents(true);
 
     int boxW = 220;
-    int boxH = 22;
+    int boxH = 20;
     int startX = width / 2 - boxW / 2;
-    int startY = height / 2 - 50;
+    int startY = 22;
 
     nameEdit = new EditBox(this, font, startX, startY + 12, boxW, boxH, initialName);
     nameEdit->setMaxLength(64);
 
-    ipEdit = new EditBox(this, font, startX, startY + 58, boxW, boxH, initialIp);
+    ipEdit = new EditBox(this, font, startX, startY + 54, boxW, boxH, initialIp);
     ipEdit->setMaxLength(128);
 
     // Default focus to IP input and trigger virtual keyboard
@@ -56,7 +56,7 @@ void EditServerScreen::init() {
     int btnH = 22;
     int gap = 10;
     int btnStartX = width / 2 - (btnW * 2 + gap) / 2;
-    int btnY = startY + 95;
+    int btnY = startY + 84;
 
     buttons.push_back(saveButton = new Button(0, btnStartX, btnY, btnW, btnH, "Guardar"));
     buttons.push_back(cancelButton = new Button(1, btnStartX + btnW + gap, btnY, btnW, btnH, "Cancelar"));
@@ -149,22 +149,38 @@ void EditServerScreen::keyPressed(char ch, int eventKey) {
 
 void EditServerScreen::mouseClicked(int x, int y, int buttonNum) {
     Screen::mouseClicked(x, y, buttonNum);
-    if (nameEdit != nullptr) nameEdit->mouseClicked(x, y, buttonNum);
-    if (ipEdit != nullptr) ipEdit->mouseClicked(x, y, buttonNum);
+    bool hitName = (nameEdit != nullptr && x >= nameEdit->x && x < nameEdit->x + nameEdit->width &&
+                    y >= nameEdit->y && y < nameEdit->y + nameEdit->height);
+    bool hitIp = (ipEdit != nullptr && x >= ipEdit->x && x < ipEdit->x + ipEdit->width &&
+                  y >= ipEdit->y && y < ipEdit->y + ipEdit->height);
+
+    if (hitName) {
+        if (ipEdit != nullptr) ipEdit->inFocus = false;
+        if (nameEdit != nullptr) {
+            nameEdit->inFocus = false;
+            nameEdit->focus(true);
+        }
+    } else if (hitIp) {
+        if (nameEdit != nullptr) nameEdit->inFocus = false;
+        if (ipEdit != nullptr) {
+            ipEdit->inFocus = false;
+            ipEdit->focus(true);
+        }
+    }
 }
 
 void EditServerScreen::render(int xm, int ym, float a) {
     renderDirtBackground(0);
 
-    drawCenteredString(font, editIndex < 0 ? "Agregar Servidor" : "Editar Servidor", width / 2, height / 2 - 75, 0xffffff);
+    drawCenteredString(font, editIndex < 0 ? "Agregar Servidor" : "Editar Servidor", width / 2, 8, 0xffffff);
 
     int startX = width / 2 - 110;
-    int startY = height / 2 - 50;
+    int startY = 22;
 
     drawString(font, "Nombre del Servidor:", startX, startY, 0xa0a0a0);
     if (nameEdit != nullptr) nameEdit->render();
 
-    drawString(font, "Direccion IP / Host:Puerto:", startX, startY + 46, 0xa0a0a0);
+    drawString(font, "Direccion IP / Host:Puerto:", startX, startY + 42, 0xa0a0a0);
     if (ipEdit != nullptr) ipEdit->render();
 
     Screen::render(xm, ym, a);

@@ -13,12 +13,18 @@
 #include "minecraft/world/level/tile/Tile.h"
 #include "minecraft/world/level/tile/GrassTile.h"
 #include "platform/renderer/renderer.h"
+#include "platform/input/input.h"
 
 ItemRenderer* LunarModsScreen::itemRenderer = nullptr;
 
 LunarModsScreen::LunarModsScreen(Screen* lastScreen)
     : lastScreen(lastScreen),
       currentTab(0),
+      scrollY(0.0f),
+      maxScroll(0.0f),
+      isDragging(false),
+      dragStartY(0),
+      dragStartScroll(0.0f),
       tabSodiumBtn(nullptr),
       tabOptifineBtn(nullptr),
       tabFullbrightBtn(nullptr),
@@ -162,6 +168,97 @@ void LunarModsScreen::init() {
     updateButtonVisibility();
 }
 
+void LunarModsScreen::updateButtonPositions() {
+    int cardW = (width >= 560) ? 480 : (width - 30);
+    int cardX = width / 2 - cardW / 2;
+    int startY = 60 - (int)scrollY;
+    int spacing = 43;
+
+    int btnW = 125;
+    int btnH = 26;
+    int btnX = cardX + cardW - btnW - 6;
+
+    // Tab 0: Sodium
+    if (sodiumChunkEngineBtn) {
+        sodiumChunkEngineBtn->x = btnX;
+        sodiumChunkEngineBtn->y = startY + 6;
+    }
+    if (sodiumEntityCullingBtn) {
+        sodiumEntityCullingBtn->x = btnX;
+        sodiumEntityCullingBtn->y = startY + spacing + 6;
+    }
+    if (sodiumFogOcclusionBtn) {
+        sodiumFogOcclusionBtn->x = btnX;
+        sodiumFogOcclusionBtn->y = startY + spacing * 2 + 6;
+    }
+
+    // Tab 1: OptiFine
+    if (optifineDynamicLightsBtn) {
+        optifineDynamicLightsBtn->x = btnX;
+        optifineDynamicLightsBtn->y = startY + 6;
+    }
+    if (optifineFastMathBtn) {
+        optifineFastMathBtn->x = btnX;
+        optifineFastMathBtn->y = startY + spacing + 6;
+    }
+    if (optifineClearWaterBtn) {
+        optifineClearWaterBtn->x = btnX;
+        optifineClearWaterBtn->y = startY + spacing * 2 + 6;
+    }
+    if (optifineBetterGrassBtn) {
+        optifineBetterGrassBtn->x = btnX;
+        optifineBetterGrassBtn->y = startY + spacing * 3 + 6;
+    }
+
+    // Tab 2: Fullbright
+    int fbBtnW = (cardW > 300) ? 260 : (cardW - 20);
+    if (fullbrightToggleBtn) {
+        fullbrightToggleBtn->x = width / 2 - fbBtnW / 2;
+        fullbrightToggleBtn->y = startY + 95;
+    }
+
+    // Tab 3: Shaders
+    if (shaderPresetBtn) {
+        shaderPresetBtn->x = btnX;
+        shaderPresetBtn->y = startY + 6;
+    }
+    if (texturePackBtn) {
+        texturePackBtn->x = btnX;
+        texturePackBtn->y = startY + spacing + 6;
+    }
+
+    // Tab 4: Thermal
+    int thBtnW = (cardW > 300) ? 270 : (cardW - 20);
+    if (thermalProtectionBtn) {
+        thermalProtectionBtn->x = width / 2 - thBtnW / 2;
+        thermalProtectionBtn->y = startY + 95;
+    }
+
+    // Tab 5: Controls
+    if (controlStyleBtn) {
+        controlStyleBtn->x = btnX;
+        controlStyleBtn->y = startY + 6;
+    }
+    if (controlScaleBtn) {
+        controlScaleBtn->x = btnX;
+        controlScaleBtn->y = startY + spacing + 6;
+    }
+    if (controlOpacityBtn) {
+        controlOpacityBtn->x = btnX;
+        controlOpacityBtn->y = startY + spacing * 2 + 6;
+    }
+
+    // Deactivate buttons scrolled out of the visible vertical viewport
+    int topClip = 56;
+    int botClip = height - 42;
+    for (Button* btn : buttons) {
+        if (!btn || btn == doneBtn || (btn->id >= 10 && btn->id <= 15)) continue;
+        if (btn->visible) {
+            btn->active = (btn->y >= topClip - 4 && btn->y + btn->h <= botClip + 4);
+        }
+    }
+}
+
 void LunarModsScreen::updateButtonVisibility() {
     sodiumChunkEngineBtn->visible = (currentTab == 0);
     sodiumEntityCullingBtn->visible = (currentTab == 0);
@@ -182,6 +279,8 @@ void LunarModsScreen::updateButtonVisibility() {
     controlStyleBtn->visible = (currentTab == 5);
     controlScaleBtn->visible = (currentTab == 5);
     controlOpacityBtn->visible = (currentTab == 5);
+
+    updateButtonPositions();
 }
 
 void LunarModsScreen::updateButtonLabels() {
@@ -272,6 +371,7 @@ void LunarModsScreen::buttonClicked(Button* button) {
     // Tab buttons
     if (button->id >= 10 && button->id <= 15) {
         currentTab = button->id - 10;
+        scrollY = 0.0f;
         updateButtonVisibility();
         return;
     }
@@ -384,39 +484,62 @@ void LunarModsScreen::renderCard(int x, int y, int w, int h, std::shared_ptr<Ite
 void LunarModsScreen::render(int xm, int ym, float a) {
     fillGradient(0, 0, width, height, 0xf00b0e14, 0xf8111622);
 
-    // Top Header Bar
-    fill(0, 0, width, 56, 0xdd080b10);
-    hLine(0, width, 56, 0xff253042);
+    // Compute content height and max scroll
+    int viewportH = (height - 42) - 60;
+    int contentH = 0;
+    if (currentTab == 0) contentH = 3 * 43;
+    else if (currentTab == 1) contentH = 4 * 43;
+    else if (currentTab == 2) contentH = 145;
+    else if (currentTab == 3) contentH = 2 * 43;
+    else if (currentTab == 4) contentH = 145;
+    else if (currentTab == 5) contentH = 3 * 43;
 
-    // Header Star Icon
-    if (iconLunarStar && itemRenderer) {
-        glEnable(GL_RESCALE_NORMAL);
-        glEnable(GL_COLOR_MATERIAL);
-        Lighting::turnOnGui();
-        int starX = width / 2 - 145;
-        if (width < 450) starX = width / 2 - 120;
-        itemRenderer->renderGuiItem(font, minecraft->textures, iconLunarStar, (float)starX, 5.0f, 1.3f, 1.0f);
-        Lighting::turnOff();
-        glDisable(GL_RESCALE_NORMAL);
-        glDisable(GL_COLOR_MATERIAL);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    contentH += 12; // Bottom margin breathing room
+    maxScroll = (contentH > viewportH) ? (float)(contentH - viewportH) : 0.0f;
+
+    // Touch / drag scroll handling
+    bool isDown = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_ACTION);
+    if (isDown) {
+        if (!isDragging) {
+            if (ym >= 56 && ym <= height - 42) {
+                isDragging = true;
+                dragStartY = ym;
+                dragStartScroll = scrollY;
+            }
+        } else if (maxScroll > 0.0f) {
+            int dy = ym - dragStartY;
+            scrollY = dragStartScroll - (float)dy;
+            if (scrollY < 0.0f) scrollY = 0.0f;
+            if (scrollY > maxScroll) scrollY = maxScroll;
+        }
+    } else {
+        isDragging = false;
     }
 
-    drawCenteredString(font, "LUNAR CLIENT | MODS & OPTIMIZACIONES", width / 2 + 6, 8, 0xffffff);
-    drawCenteredString(font, "Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
+    if (scrollY > maxScroll) scrollY = maxScroll;
+    if (scrollY < 0.0f) scrollY = 0.0f;
 
-    // Active tab indicator
-    int tabW = 66;
-    if (width < 450) tabW = 54;
-    int startTabX = width / 2 - (tabW * 6 + 20) / 2;
-    int curTabX = startTabX + currentTab * (tabW + 4);
-    fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8); // Lunar Sky-Blue accent line
+    updateButtonPositions();
 
     int cardW = (width >= 560) ? 480 : (width - 30);
     int cardH = 38;
     int cardX = width / 2 - cardW / 2;
-    int startY = 60;
+    int startY = 60 - (int)scrollY;
     int spacing = 43;
+
+    // Viewport Scissor Clipping between header and bottom bar
+    int fbw = minecraft->width, fbh = minecraft->height;
+    PlatformRenderer.GetFramebufferSize(fbw, fbh);
+
+    int y0 = 56;
+    int y1 = height - 42;
+
+    glEnable(GL_SCISSOR_TEST);
+    int scX = 0;
+    int scW = fbw;
+    int scY = (height - y1) * fbh / height;
+    int scH = (y1 - y0) * fbh / height;
+    glScissor(scX, scY < 0 ? 0 : scY, scW, scH < 0 ? 0 : scH);
 
     if (currentTab == 0) {
         // Tab 0: Sodium Cards with large icons
@@ -515,9 +638,67 @@ void LunarModsScreen::render(int xm, int ym, float a) {
                    "Transparencia / Opacidad", "Nivel de visibilidad de los controles tactiles");
     }
 
-    // Bottom bar divider
+    // Render active tab buttons inside scissor test
+    for (Button* btn : buttons) {
+        if (!btn || btn == doneBtn || (btn->id >= 10 && btn->id <= 15)) continue;
+        if (btn->visible) {
+            btn->render(minecraft, xm, ym);
+        }
+    }
+
+    glDisable(GL_SCISSOR_TEST);
+
+    // Slim scrollbar indicator
+    if (maxScroll > 0.0f) {
+        int trackX = cardX + cardW + 4;
+        if (trackX + 5 > width) trackX = width - 5;
+        int trackY0 = 60;
+        int trackY1 = height - 46;
+        int trackH = trackY1 - trackY0;
+        int thumbH = std::max(20, (int)((float)trackH * (float)viewportH / (float)contentH));
+        int thumbY = trackY0 + (int)(scrollY * (float)(trackH - thumbH) / maxScroll);
+
+        fill(trackX, trackY0, trackX + 3, trackY1, 0x40000000);
+        fill(trackX, thumbY, trackX + 3, thumbY + thumbH, 0xaa38bdf8);
+    }
+
+    // Top Header Bar (renders OVER scrolled cards)
+    fill(0, 0, width, 56, 0xdd080b10);
+    hLine(0, width, 56, 0xff253042);
+
+    if (iconLunarStar && itemRenderer) {
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_COLOR_MATERIAL);
+        Lighting::turnOnGui();
+        int starX = width / 2 - 145;
+        if (width < 450) starX = width / 2 - 120;
+        itemRenderer->renderGuiItem(font, minecraft->textures, iconLunarStar, (float)starX, 5.0f, 1.3f, 1.0f);
+        Lighting::turnOff();
+        glDisable(GL_RESCALE_NORMAL);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+
+    drawCenteredString(font, "LUNAR CLIENT | MODS & OPTIMIZACIONES", width / 2 + 6, 8, 0xffffff);
+    drawCenteredString(font, "Motor Sodium & OptiFine Nativo para Minecraft PE", width / 2, 20, 0x999999);
+
+    // Render tab buttons
+    if (tabSodiumBtn) tabSodiumBtn->render(minecraft, xm, ym);
+    if (tabOptifineBtn) tabOptifineBtn->render(minecraft, xm, ym);
+    if (tabFullbrightBtn) tabFullbrightBtn->render(minecraft, xm, ym);
+    if (tabShadersBtn) tabShadersBtn->render(minecraft, xm, ym);
+    if (tabThermalBtn) tabThermalBtn->render(minecraft, xm, ym);
+    if (tabControlsBtn) tabControlsBtn->render(minecraft, xm, ym);
+
+    // Active tab indicator
+    int tabW = 66;
+    if (width < 450) tabW = 54;
+    int startTabX = width / 2 - (tabW * 6 + 20) / 2;
+    int curTabX = startTabX + currentTab * (tabW + 4);
+    fill(curTabX, 52, curTabX + tabW, 55, 0xff38bdf8);
+
+    // Bottom Bar (renders OVER scrolled cards)
     hLine(0, width, height - 42, 0xff253042);
     fill(0, height - 42, width, height, 0xdd080b10);
-
-    Screen::render(xm, ym, a);
+    if (doneBtn) doneBtn->render(minecraft, xm, ym);
 }

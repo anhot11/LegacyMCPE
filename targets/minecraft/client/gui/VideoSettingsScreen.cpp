@@ -12,6 +12,7 @@
 #include "minecraft/locale/Language.h"
 #include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ItemInstance.h"
+#include "minecraft/world/level/tile/Tile.h"
 
 // 4jcraft
 #define ITEM_COUNT 10
@@ -48,14 +49,40 @@ void VideoSettingsScreen::init() {
         int xPos = width / 2 - (btnW + 5) + (i % 2 * (btnW + 10));
         int yPos = startY + rowSpacing * (i / 2);
 
+        Button* btn = nullptr;
         if (!item->isProgress()) {
-            buttons.push_back(new SmallButton(item->getId(), xPos, yPos, btnW, btnH, item,
-                                              options->getMessage(item)));
+            btn = new SmallButton(item->getId(), xPos, yPos, btnW, btnH, item,
+                                  options->getMessage(item));
         } else {
-            buttons.push_back(new SlideButton(item->getId(), xPos, yPos, btnW, btnH, item,
-                                              options->getMessage(item),
-                                              options->getProgressValue(item)));
+            btn = new SlideButton(item->getId(), xPos, yPos, btnW, btnH, item,
+                                  options->getMessage(item),
+                                  options->getProgressValue(item));
         }
+
+        // Distinctive Minecraft icons for each video setting
+        if (item == Options::Option::GRAPHICS) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::leaves)));
+        } else if (item == Options::Option::RENDER_DISTANCE) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder)));
+        } else if (item == Options::Option::AMBIENT_OCCLUSION) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::lightGem)));
+        } else if (item == Options::Option::FRAMERATE_LIMIT) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::clock)));
+        } else if (item == Options::Option::RENDER_CLOUDS) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::feather)));
+        } else if (item == Options::Option::VIEW_BOBBING) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::boots_iron)));
+        } else if (item == Options::Option::GUI_SCALE) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting)));
+        } else if (item == Options::Option::ADVANCED_OPENGL) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
+        } else if (item == Options::Option::GAMMA) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::torch)));
+        } else if (item == Options::Option::FOV) {
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::bow)));
+        }
+
+        buttons.push_back(btn);
     }
 
     // Profile button (Row 5): Quick preset selector for performance vs high-end

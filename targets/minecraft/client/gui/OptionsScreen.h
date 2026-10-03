@@ -10,7 +10,6 @@ private:
     static const int CONTROLS_BUTTON_ID = 100;
     static const int VIDEO_BUTTON_ID = 101;
     static const int LANGUAGE_BUTTON_ID = 102;
-    static const int SKINS_BUTTON_ID = 103;
     Screen* lastScreen;
 
 protected:

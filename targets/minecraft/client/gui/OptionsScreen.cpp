@@ -93,21 +93,12 @@ void OptionsScreen::init() {
     btnVideo->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder)));
     buttons.push_back(btnVideo);
 
-    int col0X = width / 2 - btnW - 5;
-    int col1X = width / 2 + 5;
-    Button* btnControls = new Button(CONTROLS_BUTTON_ID, col0X,
-                                 startY + rowSpacing * 4 + 2, btnW, btnH,
+    Button* btnControls = new Button(CONTROLS_BUTTON_ID, width / 2 - botW / 2,
+                                 startY + rowSpacing * 4 + 2, botW, btnH,
                                  language->getElement("options.controls"));
     btnControls->setTextureIcon(100, 48, 20);
     btnControls->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::paper)));
     buttons.push_back(btnControls);
-
-    Button* btnSkins = new Button(SKINS_BUTTON_ID, col1X,
-                                 startY + rowSpacing * 4 + 2, btnW, btnH,
-                                 "Aspectos (Skins)...");
-    btnSkins->setTextureIcon(48, 32, 16);
-    btnSkins->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::chestplate_leather)));
-    buttons.push_back(btnSkins);
 
     Button* btnDone = new Button(200, width / 2 - botW / 2, startY + rowSpacing * 5 + 6,
                                  botW, btnH, language->getElement("gui.done"));
@@ -133,10 +124,6 @@ void OptionsScreen::buttonClicked(Button* button) {
     if (button->id == LANGUAGE_BUTTON_ID) {
         minecraft->options->save();
         minecraft->setScreen(new LanguageSelectScreen(this, options));
-    }
-    if (button->id == SKINS_BUTTON_ID) {
-        minecraft->options->save();
-        minecraft->setScreen(new SkinSelectScreen(this));
     }
     if (button->id == 200) {
         minecraft->options->save();

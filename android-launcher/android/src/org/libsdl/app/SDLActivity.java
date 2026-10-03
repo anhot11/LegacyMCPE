@@ -50,6 +50,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Locale;
 
@@ -60,6 +63,57 @@ import org.libsdl.app.SDLControllerManager;
 */
 public class SDLActivity extends Activity implements View.OnSystemUiVisibilityChangeListener {
     private static final String TAG = "SDL";
+    public static final int SKIN_PICKER_REQUEST_CODE = 7788;
+
+    public static void openFilePickerForSkin() {
+        if (mSingleton == null) return;
+        mSingleton.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                    intent.setType("image/png");
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    mSingleton.startActivityForResult(Intent.createChooser(intent, "Selecciona una Skin (.png)"), SKIN_PICKER_REQUEST_CODE);
+                } catch (Exception e) {
+                    Log.e("SDL", "Error launching skin file picker: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SKIN_PICKER_REQUEST_CODE && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            final Uri uri = data.getData();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        InputStream in = getContentResolver().openInputStream(uri);
+                        if (in != null) {
+                            File dir = new File("/sdcard/LegacyMCPE/skins");
+                            if (!dir.exists()) dir.mkdirs();
+                            File dest = new File(dir, "skin_" + System.currentTimeMillis() + ".png");
+                            FileOutputStream out = new FileOutputStream(dest);
+                            byte[] buf = new byte[8192];
+                            int len;
+                            while ((len = in.read(buf)) > 0) {
+                                out.write(buf, 0, len);
+                            }
+                            in.close();
+                            out.close();
+                            Log.i("SDL", "Custom skin successfully copied to: " + dest.getAbsolutePath());
+                        }
+                    } catch (Exception e) {
+                        Log.e("SDL", "Error saving picked skin: " + e.getMessage());
+                    }
+                }
+            }).start();
+        }
+    }
+
     private static final int SDL_MAJOR_VERSION = 2;
     private static final int SDL_MINOR_VERSION = 32;
     private static final int SDL_MICRO_VERSION = 8;

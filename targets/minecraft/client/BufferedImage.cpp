@@ -57,6 +57,21 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
             if (hr == 0) {
                 width = ImageInfo.Width;
                 height = ImageInfo.Height;
+                if (width == 64 && height == 64) {
+                    int* px32 = new int[64 * 32];
+                    memcpy(px32, data[0], 64 * 32 * sizeof(int));
+                    for (int y = 32; y < 48; y++) {
+                        for (int x = 0; x < 64; x++) {
+                            int p = data[0][y * 64 + x];
+                            if (((p >> 24) & 0xFF) > 20) {
+                                px32[(y - 16) * 64 + x] = p;
+                            }
+                        }
+                    }
+                    delete[] data[0];
+                    data[0] = px32;
+                    height = 32;
+                }
                 return;
             }
         }
@@ -139,6 +154,21 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
             if (l == 0) {
                 width = ImageInfo.Width;
                 height = ImageInfo.Height;
+                if (width == 64 && height == 64 && (fileName.find("mob/") != std::string::npos || fileName.find("skin") != std::string::npos || fileName.find("alex") != std::string::npos || fileName.find("char") != std::string::npos)) {
+                    int* px32 = new int[64 * 32];
+                    memcpy(px32, data[0], 64 * 32 * sizeof(int));
+                    for (int y = 32; y < 48; y++) {
+                        for (int x = 0; x < 64; x++) {
+                            int p = data[0][y * 64 + x];
+                            if (((p >> 24) & 0xFF) > 20) {
+                                px32[(y - 16) * 64 + x] = p;
+                            }
+                        }
+                    }
+                    delete[] data[0];
+                    data[0] = px32;
+                    height = 32;
+                }
             }
         } else {
             if (l == 0) {

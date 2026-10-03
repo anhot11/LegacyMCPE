@@ -74,6 +74,14 @@ private:
 
     float getDeviceTemperature();
 
+    // Scroll state for cards
+    float scrollY;
+    float maxScroll;
+    bool isDragging;
+    int dragStartY;
+    float dragStartScroll;
+
+    void updateButtonPositions();
     void updateButtonVisibility();
     void updateButtonLabels();
     void renderCard(int x, int y, int w, int h, std::shared_ptr<ItemInstance> icon,

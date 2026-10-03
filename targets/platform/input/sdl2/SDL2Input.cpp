@@ -763,6 +763,7 @@ bool SDL2Input::PollReturnPressed() {
 }
 
 void SDL2Input::StartTextInput() {
+    SDL_StopTextInput();
     SDL_StartTextInput();
 }
 

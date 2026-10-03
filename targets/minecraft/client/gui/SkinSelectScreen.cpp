@@ -26,9 +26,15 @@
 #include "platform/renderer/renderer.h"
 #include "platform/stubs.h"
 
+#if defined(__ANDROID__)
+#include <jni.h>
+#include "SDL_system.h"
+#endif
+
 #define DONE_BUTTON_ID 200
 #define SCROLL_UP_BUTTON_ID 201
 #define SCROLL_DOWN_BUTTON_ID 202
+#define CUSTOM_SKIN_BUTTON_ID 203
 
 static bool fileExists(const std::string& path) {
     std::ifstream f(path.c_str());
@@ -40,6 +46,7 @@ SkinSelectScreen::SkinSelectScreen(Screen* lastScreen)
       previewModel(nullptr),
       selectedIndex(0),
       btnDone(nullptr),
+      btnCustomSkin(nullptr),
       btnScrollUp(nullptr),
       btnScrollDown(nullptr),
       scrollY(0.0f),
@@ -70,19 +77,28 @@ SkinSelectScreen::SkinSelectScreen(Screen* lastScreen)
     skins.push_back({"Cyclist", "Cyclist Steve", "Ciclista", TN_MOB_CHAR6, ""});
     skins.push_back({"Boxer", "Boxer Steve", "Boxeo", TN_MOB_CHAR7, ""});
 
-    // Check for custom skin files on external storage and download folders
+    scanStorageSkins();
+}
+
+void SkinSelectScreen::scanStorageSkins() {
     std::vector<std::string> scanDirs = {
+        "/sdcard/LegacyMCPE/skins",
         "/sdcard/Download",
         "/sdcard/LegacyMCPE",
         "/sdcard/Pictures",
+        "/sdcard/DCIM",
+        "/sdcard/Documents",
         "/sdcard"
     };
 
+    std::error_code ec;
+    std::filesystem::create_directories("/sdcard/LegacyMCPE/skins", ec);
+
     for (const auto& dirPath : scanDirs) {
         try {
-            if (std::filesystem::exists(dirPath) && std::filesystem::is_directory(dirPath)) {
-                for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
-                    if (entry.is_regular_file()) {
+            if (std::filesystem::exists(dirPath, ec) && std::filesystem::is_directory(dirPath, ec)) {
+                for (const auto& entry : std::filesystem::directory_iterator(dirPath, ec)) {
+                    if (entry.is_regular_file(ec)) {
                         std::string ext = entry.path().extension().string();
                         for (auto& c : ext) c = (char)tolower((unsigned char)c);
                         if (ext == ".png") {
@@ -102,9 +118,7 @@ SkinSelectScreen::SkinSelectScreen(Screen* lastScreen)
                     }
                 }
             }
-        } catch (...) {
-            // Ignore filesystem scan errors
-        }
+        } catch (...) {}
     }
 }
 
@@ -127,8 +141,15 @@ void SkinSelectScreen::init() {
         }
     }
 
-    int botW = (width >= 450) ? 220 : 180;
-    btnDone = new Button(DONE_BUTTON_ID, width / 2 - botW / 2, height - 32, botW, 24, "Aceptar");
+    int btnW = (width >= 450) ? 170 : 135;
+    int gap = 12;
+    int startBtnX = width / 2 - btnW - gap / 2;
+
+    btnCustomSkin = new Button(CUSTOM_SKIN_BUTTON_ID, startBtnX, height - 32, btnW, 24, "Cargar Skin (.png)");
+    btnCustomSkin->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting)));
+    buttons.push_back(btnCustomSkin);
+
+    btnDone = new Button(DONE_BUTTON_ID, startBtnX + btnW + gap, height - 32, btnW, 24, "Aceptar");
     btnDone->setTextureIcon(64, 32, 16);
     btnDone->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
     buttons.push_back(btnDone);
@@ -143,6 +164,14 @@ void SkinSelectScreen::init() {
 
 void SkinSelectScreen::tick() {
     vo += 1.0f;
+    static int scanTimer = 0;
+    if (++scanTimer % 45 == 0) {
+        size_t prevCount = skins.size();
+        scanStorageSkins();
+        if (skins.size() > prevCount) {
+            selectSkin((int)skins.size() - 1);
+        }
+    }
 }
 
 int SkinSelectScreen::bindSkinTexture(const SkinEntry& entry) {
@@ -232,6 +261,25 @@ void SkinSelectScreen::buttonClicked(Button* button) {
     if (button->id == DONE_BUTTON_ID) {
         minecraft->options->save();
         minecraft->setScreen(lastScreen);
+    } else if (button->id == CUSTOM_SKIN_BUTTON_ID) {
+#if defined(__ANDROID__)
+        JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+        if (env) {
+            jclass clazz = env->FindClass("org/libsdl/app/SDLActivity");
+            if (clazz) {
+                jmethodID mid = env->GetStaticMethodID(clazz, "openFilePickerForSkin", "()V");
+                if (mid) {
+                    env->CallStaticVoidMethod(clazz, mid);
+                }
+                env->DeleteLocalRef(clazz);
+            }
+        }
+#endif
+        size_t prevCount = skins.size();
+        scanStorageSkins();
+        if (skins.size() > prevCount) {
+            selectSkin((int)skins.size() - 1);
+        }
     } else if (button->id == SCROLL_UP_BUTTON_ID) {
         scrollY = std::max(0.0f, scrollY - 60.0f);
     } else if (button->id == SCROLL_DOWN_BUTTON_ID) {

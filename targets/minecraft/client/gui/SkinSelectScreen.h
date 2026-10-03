@@ -25,8 +25,11 @@ private:
     int selectedIndex;
 
     Button* btnDone;
+    Button* btnCustomSkin;
     Button* btnScrollUp;
     Button* btnScrollDown;
+
+    void scanStorageSkins();
 
     float scrollY;
     float maxScroll;
