@@ -16,10 +16,12 @@
 #include "minecraft/locale/Language.h"
 #include "minecraft/world/entity/player/Player.h"
 #include "minecraft/world/entity/player/SkinTypes.h"
+#include "app/common/Audio/SoundTypes.h"
 #include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ItemInstance.h"
-#include "platform/input/Input.h"
+#include "platform/input/input.h"
 #include "platform/renderer/renderer.h"
+#include "platform/stubs.h"
 
 #define DONE_BUTTON_ID 200
 #define SCROLL_UP_BUTTON_ID 201
