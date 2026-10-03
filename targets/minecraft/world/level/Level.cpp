@@ -2240,10 +2240,9 @@ void Level::addAllPendingTileEntities(
 void Level::tick(std::shared_ptr<Entity> e) { tick(e, true); }
 
 void Level::tick(std::shared_ptr<Entity> e, bool actual) {
-    int xc = Mth::floor(e->x);
-    int zc = Mth::floor(e->z);
-    int r = 32;
-    if (actual && !hasChunksAt(xc - r, 0, zc - r, xc + r, 0, zc + r)) {
+    int xc = Mth::floor(e->x) >> 4;
+    int zc = Mth::floor(e->z) >> 4;
+    if (actual && !hasChunk(xc, zc)) {
         return;
     }
 

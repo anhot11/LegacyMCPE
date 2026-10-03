@@ -9,6 +9,8 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -26,10 +28,13 @@ import java.util.Map;
  * Authentic Minecraft Bedrock / Pocket Edition Native Touch Controls Overlay.
  * 
  * - COMPLETELY INVISIBLE (View.GONE) in menus, inventory, pause, and title screens.
- * - ZERO emulator buttons or overlays in menus. Direct native touch interaction.
- * - Automatically fades in / appears ONLY during active 3D gameplay (relative mouse mode).
- * - Renders official Minecraft Bedrock and Classic PE textures with real pressed states (_active.png).
- * - Smooth camera look and multi-touch support.
+ * - Native in-world touch interaction:
+ *     * TAP (< 250ms): Place block / Interact (doors, chests, furnaces) / Attack mobs.
+ *     * HOLD (> 220ms steady): Continuous mining/breaking of block with crack animation.
+ *     * DRAG / SWIPE: Ultra-smooth 3D camera rotation with deadzone and clamped deltas.
+ * - Dedicated D-Pad / Joystick for movement (multi-touch with camera and interaction).
+ * - Dedicated Jump button and Inventory ("...") button next to hotbar.
+ * - ZERO clunky keyboard buttons on screen.
  */
 public class VirtualControlsOverlay extends View {
 
@@ -39,12 +44,9 @@ public class VirtualControlsOverlay extends View {
     private final RectF mFpsBox = new RectF();
 
     // Settings (loaded dynamically from options.txt)
-    // touchControlStyle: 0: Modern Bedrock, 1: Classic PE D-Pad, 2: Joystick + Action
-    private int mControlStyle = 0;
-    // touchControlScale: 0: 80%, 1: 100%, 2: 125%, 3: 150%
-    private int mControlScale = 1;
-    // touchControlOpacity: 0: 35%, 1: 65%, 2: 90%, 3: 100%
-    private int mControlOpacity = 1;
+    private int mControlStyle = 0;   // 0: Modern Bedrock, 1: Classic PE D-Pad, 2: Joystick
+    private int mControlScale = 1;   // 0: 80%, 1: 100%, 2: 125%, 3: 150%
+    private int mControlOpacity = 1; // 0: 35%, 1: 65%, 2: 90%, 3: 100%
 
     private long mLastOptionsCheck = 0;
     private long mLastOptionsMtime = 0;
@@ -55,42 +57,38 @@ public class VirtualControlsOverlay extends View {
     public static class VButton {
         String name;
         int keyCode;
-        int mouseButton; // 1: Attack/Mine, 2: Interact/Use, 0: Key
         RectF bounds = new RectF();
         boolean pressed = false;
         int pointerId = -1;
         Bitmap bmpNormal = null;
         Bitmap bmpActive = null;
 
-        VButton(String name, int keyCode, int mouseButton) {
+        VButton(String name, int keyCode) {
             this.name = name;
             this.keyCode = keyCode;
-            this.mouseButton = mouseButton;
         }
     }
 
     // Directional buttons
-    private final VButton btnUp = new VButton("dpad_up", KeyEvent.KEYCODE_W, 0);
-    private final VButton btnDown = new VButton("dpad_down", KeyEvent.KEYCODE_S, 0);
-    private final VButton btnLeft = new VButton("dpad_left", KeyEvent.KEYCODE_A, 0);
-    private final VButton btnRight = new VButton("dpad_right", KeyEvent.KEYCODE_D, 0);
-    private final VButton btnCenter = new VButton("sneak", KeyEvent.KEYCODE_SHIFT_LEFT, 0);
+    private final VButton btnUp = new VButton("dpad_up", KeyEvent.KEYCODE_W);
+    private final VButton btnDown = new VButton("dpad_down", KeyEvent.KEYCODE_S);
+    private final VButton btnLeft = new VButton("dpad_left", KeyEvent.KEYCODE_A);
+    private final VButton btnRight = new VButton("dpad_right", KeyEvent.KEYCODE_D);
+    private final VButton btnCenter = new VButton("sneak", KeyEvent.KEYCODE_SHIFT_LEFT);
 
-    // Action buttons
-    private final VButton btnJump = new VButton("jump", KeyEvent.KEYCODE_SPACE, 0);
-    private final VButton btnMine = new VButton("attack", KeyEvent.KEYCODE_ENTER, 0);
-    private final VButton btnUse = new VButton("interact", KeyEvent.KEYCODE_F, 0);
-    private final VButton btnInv = new VButton("inventory", KeyEvent.KEYCODE_E, 0);
-    private final VButton btnSneak = new VButton("sneak", KeyEvent.KEYCODE_SHIFT_LEFT, 0);
+    // Action buttons (Jump, Sneak, Inventory)
+    private final VButton btnJump = new VButton("jump", KeyEvent.KEYCODE_SPACE);
+    private final VButton btnSneak = new VButton("sneak", KeyEvent.KEYCODE_SHIFT_LEFT);
+    private final VButton btnInv = new VButton("inventory", KeyEvent.KEYCODE_E);
 
     // Top Bar in-game buttons
-    private final VButton btnPause = new VButton("pause", KeyEvent.KEYCODE_ESCAPE, 0);
-    private final VButton btnPerspective = new VButton("perspective", KeyEvent.KEYCODE_F5, 0);
-    private final VButton btnChat = new VButton("chat", KeyEvent.KEYCODE_T, 0);
+    private final VButton btnPause = new VButton("pause", KeyEvent.KEYCODE_ESCAPE);
+    private final VButton btnPerspective = new VButton("perspective", KeyEvent.KEYCODE_F5);
+    private final VButton btnChat = new VButton("chat", KeyEvent.KEYCODE_T);
 
     private final VButton[] allButtons = new VButton[] {
         btnUp, btnDown, btnLeft, btnRight, btnCenter,
-        btnJump, btnMine, btnUse, btnInv, btnSneak,
+        btnJump, btnSneak, btnInv,
         btnPause, btnPerspective, btnChat
     };
 
@@ -110,12 +108,20 @@ public class VirtualControlsOverlay extends View {
     private boolean mJoyLeftPressed = false;
     private boolean mJoyRightPressed = false;
 
-    // Camera Look tracking
-    private int mCameraPointerId = -1;
-    private float mLastCameraX = 0;
-    private float mLastCameraY = 0;
+    // Native World Touch Interaction (Hold to Mine, Tap to Place/Attack, Drag to Look)
+    private int mWorldPointerId = -1;
+    private float mWorldDownX = 0;
+    private float mWorldDownY = 0;
+    private float mLastWorldX = 0;
+    private float mLastWorldY = 0;
+    private long mWorldDownTime = 0;
+    private boolean mIsPanning = false;
+    private boolean mIsMining = false;
 
-    // Visibility state: MUST be false in menus!
+    private final Handler mTouchHandler = new Handler(Looper.getMainLooper());
+    private Runnable mHoldToMineRunnable = null;
+
+    // Visibility state
     private boolean mControlsVisible = false;
     private float mDensity = 1.0f;
 
@@ -137,16 +143,12 @@ public class VirtualControlsOverlay extends View {
         setFocusable(false);
         setFocusableInTouchMode(false);
 
-        // By default on startup, we are in the TitleScreen / Launcher -> COMPLETELY HIDDEN
         mControlsVisible = false;
         setVisibility(View.GONE);
 
         checkAndReloadOptions();
         loadThemeBitmaps();
 
-        // Listen to SDL relative mouse mode changes
-        // When in-game (relative mouse mode enabled), show controls
-        // When in menus / pause / inventories (relative mouse mode disabled), hide controls completely!
         SDLActivity.mRelativeMouseCallback = new SDLActivity.RelativeMouseCallback() {
             @Override
             public void onRelativeMouseChanged(final boolean enabled) {
@@ -250,7 +252,7 @@ public class VirtualControlsOverlay extends View {
             int scale = mControlScale;
             int opacity = mControlOpacity;
 
-            for (String line : content.split("\n")) {
+            for (String line : content.split("\\r?\\n")) {
                 line = line.trim();
                 if (line.startsWith("touchControlStyle:")) {
                     try { style = Integer.parseInt(line.substring("touchControlStyle:".length()).trim()); } catch (Exception ignored) {}
@@ -261,99 +263,90 @@ public class VirtualControlsOverlay extends View {
                 }
             }
 
-            if (style != mControlStyle || scale != mControlScale || opacity != mControlOpacity) {
-                mControlStyle = style;
-                mControlScale = scale;
-                mControlOpacity = opacity;
-                post(new Runnable() {
-                    @Override
-                    public void run() {
-                        loadThemeBitmaps();
-                        layoutButtons(getWidth(), getHeight());
-                        invalidate();
-                    }
-                });
+            boolean styleChanged = (style != mControlStyle);
+            mControlStyle = style;
+            mControlScale = scale;
+            mControlOpacity = opacity;
+
+            if (styleChanged) {
+                mBitmapCache.clear();
+                loadThemeBitmaps();
             }
-        } catch (Throwable ignored) {
-        }
+            updateButtonPositions();
+        } catch (Throwable ignored) {}
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        layoutButtons(w, h);
+        updateButtonPositions();
     }
 
-    private void layoutButtons(int w, int h) {
+    private void updateButtonPositions() {
+        float w = getWidth();
+        float h = getHeight();
         if (w <= 0 || h <= 0) return;
+
         float d = mDensity;
         float scale = getScaleFactor();
 
-        // Top bar buttons (In-game only): Pause, F5, Chat
-        float topY = 10 * d;
-        float topSize = 34 * d;
+        // 1. FPS Box (top left)
+        mFpsBox.set(10 * d, 10 * d, 68 * d, 30 * d);
 
-        float pauseX = w * 0.5f - topSize * 0.5f;
-        btnPause.bounds.set(pauseX, topY, pauseX + topSize, topY + topSize);
+        // 2. Top bar buttons (Pause, Perspective, Chat)
+        float topBtnSize = 28 * d * scale;
+        float topY = 8 * d;
 
-        float f5X = pauseX - topSize - 14 * d;
-        btnPerspective.bounds.set(f5X, topY, f5X + topSize, topY + topSize);
+        // Pause button (top right corner)
+        float pauseX = w - 12 * d - topBtnSize;
+        btnPause.bounds.set(pauseX, topY, pauseX + topBtnSize, topY + topBtnSize);
 
-        float chatX = pauseX + topSize + 14 * d;
-        btnChat.bounds.set(chatX, topY, chatX + topSize, topY + topSize);
+        // Chat button (next to pause)
+        float chatX = pauseX - 8 * d - topBtnSize;
+        btnChat.bounds.set(chatX, topY, chatX + topBtnSize, topY + topBtnSize);
 
-        mFpsBox.set(12 * d, topY, 12 * d + 72 * d, topY + topSize);
+        // Perspective button (center-top)
+        float perspX = (w - topBtnSize) / 2.0f;
+        btnPerspective.bounds.set(perspX, topY, perspX + topBtnSize, topY + topBtnSize);
+
+        // 3. Hotbar calculation for Inventory button placement
+        float barHeight = Math.max(48.0f * d, h * 0.15f);
+        float barWidth = Math.min(w * 0.65f, 9.0f * 42.0f * d);
+        float hotbarRight = (w + barWidth) / 2.0f;
+        float hotbarTop = h - barHeight;
+
+        // Inventory "..." button right next to the hotbar (MCPE style)
+        float invSize = 34 * d * scale;
+        float invX = hotbarRight + 8 * d;
+        float invY = hotbarTop + (barHeight - invSize) / 2.0f;
+        btnInv.bounds.set(invX, invY, invX + invSize, invY + invSize);
 
         if (mControlStyle == 0 || mControlStyle == 1) {
-            // Style 0 (Modern Bedrock - Separated) & Style 1 (Classic PE - Connected Cross)
-            float padSize = (mControlStyle == 0 ? 56 : 52) * d * scale;
-            float padLeft = 24 * d;
-            float padBottom = h - 24 * d;
-            float dpadCenterX = padLeft + padSize * 1.5f;
-            float dpadCenterY = padBottom - padSize * 1.5f;
+            // Style 0 (Modern Bedrock) & Style 1 (Classic PE D-Pad)
+            float dpadBtn = 56 * d * scale;
+            float leftMargin = 20 * d;
+            float bottomMargin = 20 * d;
 
-            float gap = (mControlStyle == 0) ? (3 * d * scale) : 0;
+            float cx = leftMargin + dpadBtn * 1.5f;
+            float cy = h - bottomMargin - dpadBtn * 1.5f;
 
-            btnCenter.bounds.set(dpadCenterX - padSize * 0.5f, dpadCenterY - padSize * 0.5f,
-                                 dpadCenterX + padSize * 0.5f, dpadCenterY + padSize * 0.5f);
+            btnUp.bounds.set(cx - dpadBtn / 2, cy - dpadBtn * 1.5f, cx + dpadBtn / 2, cy - dpadBtn * 0.5f);
+            btnDown.bounds.set(cx - dpadBtn / 2, cy + dpadBtn * 0.5f, cx + dpadBtn / 2, cy + dpadBtn * 1.5f);
+            btnLeft.bounds.set(cx - dpadBtn * 1.5f, cy - dpadBtn / 2, cx - dpadBtn * 0.5f, cy + dpadBtn / 2);
+            btnRight.bounds.set(cx + dpadBtn * 0.5f, cy - dpadBtn / 2, cx + dpadBtn * 1.5f, cy + dpadBtn / 2);
+            btnCenter.bounds.set(cx - dpadBtn / 2, cy - dpadBtn / 2, cx + dpadBtn / 2, cy + dpadBtn / 2);
 
-            btnUp.bounds.set(dpadCenterX - padSize * 0.5f, dpadCenterY - padSize * 1.5f - gap,
-                             dpadCenterX + padSize * 0.5f, dpadCenterY - padSize * 0.5f - gap);
-            btnDown.bounds.set(dpadCenterX - padSize * 0.5f, dpadCenterY + padSize * 0.5f + gap,
-                               dpadCenterX + padSize * 0.5f, dpadCenterY + padSize * 1.5f + gap);
-            btnLeft.bounds.set(dpadCenterX - padSize * 1.5f - gap, dpadCenterY - padSize * 0.5f,
-                              dpadCenterX - padSize * 0.5f - gap, dpadCenterY + padSize * 0.5f);
-            btnRight.bounds.set(dpadCenterX + padSize * 0.5f + gap, dpadCenterY - padSize * 0.5f,
-                               dpadCenterX + padSize * 1.5f + gap, dpadCenterY + padSize * 0.5f);
+            // Right Action: Circular Jump Button
+            float jumpSize = 58 * d * scale;
+            float jumpX = w - 24 * d - jumpSize;
+            float jumpY = h - 28 * d - jumpSize;
+            btnJump.bounds.set(jumpX, jumpY, jumpX + jumpSize, jumpY + jumpSize);
 
-            // Right side Action buttons
-            float rightMargin = w - 24 * d;
-            float btnSize = 58 * d * scale;
-
-            // Jump button (large)
-            float jumpX = rightMargin - btnSize * 1.35f;
-            float jumpY = h - 28 * d - btnSize * 1.35f;
-            btnJump.bounds.set(jumpX, jumpY, jumpX + btnSize * 1.35f, jumpY + btnSize * 1.35f);
-
-            // Attack (Mine / Sword) button
-            float mineX = jumpX - btnSize * 1.15f;
-            float mineY = jumpY - btnSize * 0.45f;
-            btnMine.bounds.set(mineX, mineY, mineX + btnSize, mineY + btnSize);
-
-            // Use (Interact / Hand) button
-            float useX = jumpX;
-            float useY = jumpY - btnSize * 1.15f;
-            btnUse.bounds.set(useX, useY, useX + btnSize, useY + btnSize);
-
-            // Inventory button
-            float invX = mineX - btnSize * 0.90f;
-            float invY = jumpY + btnSize * 0.35f;
-            btnInv.bounds.set(invX, invY, invX + btnSize * 0.85f, invY + btnSize * 0.85f);
-
-            btnSneak.bounds.set(0, 0, 0, 0); // Sneak is on btnCenter in styles 0 and 1
+            // Sneak is handled on btnCenter for styles 0 and 1
+            btnSneak.bounds.set(0, 0, 0, 0);
 
         } else if (mControlStyle == 2) {
-            // Style 2: Joystick + Action Buttons
+            // Style 2: Floating/Fixed Joystick + Action Buttons
             mJoyBaseRadius = 62 * d * scale;
             mJoyKnobRadius = 28 * d * scale;
             mJoyCenterX = 28 * d + mJoyBaseRadius;
@@ -363,36 +356,21 @@ public class VirtualControlsOverlay extends View {
                 mJoyKnobY = mJoyCenterY;
             }
 
-            // Hide directional D-Pad bounds
             btnUp.bounds.set(0, 0, 0, 0);
             btnDown.bounds.set(0, 0, 0, 0);
             btnLeft.bounds.set(0, 0, 0, 0);
             btnRight.bounds.set(0, 0, 0, 0);
             btnCenter.bounds.set(0, 0, 0, 0);
 
-            // Right action cluster: Jump, Sneak, Sword, Hand, Inventory
-            float rightMargin = w - 24 * d;
-            float btnSize = 54 * d * scale;
+            float jumpSize = 56 * d * scale;
+            float jumpX = w - 24 * d - jumpSize;
+            float jumpY = h - 28 * d - jumpSize;
+            btnJump.bounds.set(jumpX, jumpY, jumpX + jumpSize, jumpY + jumpSize);
 
-            float jumpX = rightMargin - btnSize;
-            float jumpY = h - 30 * d - btnSize * 2.15f;
-            btnJump.bounds.set(jumpX, jumpY, jumpX + btnSize, jumpY + btnSize);
-
-            float sneakX = jumpX;
-            float sneakY = jumpY + btnSize * 1.20f;
-            btnSneak.bounds.set(sneakX, sneakY, sneakX + btnSize, sneakY + btnSize);
-
-            float swordX = jumpX - btnSize * 1.20f;
-            float swordY = jumpY;
-            btnMine.bounds.set(swordX, swordY, swordX + btnSize, swordY + btnSize);
-
-            float handX = swordX;
-            float handY = sneakY;
-            btnUse.bounds.set(handX, handY, handX + btnSize, handY + btnSize);
-
-            float invX = swordX - btnSize * 1.05f;
-            float invY = handY;
-            btnInv.bounds.set(invX, invY, invX + btnSize * 0.85f, invY + btnSize * 0.85f);
+            float sneakSize = 46 * d * scale;
+            float sneakX = jumpX + (jumpSize - sneakSize) / 2.0f;
+            float sneakY = jumpY - sneakSize * 1.25f;
+            btnSneak.bounds.set(sneakX, sneakY, sneakX + sneakSize, sneakY + sneakSize);
         }
     }
 
@@ -400,7 +378,6 @@ public class VirtualControlsOverlay extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // CRITICAL: In menus or pause, draw NOTHING. 100% clean native Minecraft look!
         if (!mControlsVisible) {
             return;
         }
@@ -429,6 +406,9 @@ public class VirtualControlsOverlay extends View {
         drawButtonBitmap(canvas, btnPerspective, alpha);
         drawButtonBitmap(canvas, btnChat, alpha);
 
+        // Inventory button
+        drawButtonBitmap(canvas, btnInv, alpha);
+
         if (mControlStyle == 0 || mControlStyle == 1) {
             // Directional controls
             drawButtonBitmap(canvas, btnUp, alpha);
@@ -437,14 +417,11 @@ public class VirtualControlsOverlay extends View {
             drawButtonBitmap(canvas, btnRight, alpha);
             drawButtonBitmap(canvas, btnCenter, alpha);
 
-            // Action controls
+            // Jump
             drawButtonBitmap(canvas, btnJump, alpha);
-            drawButtonBitmap(canvas, btnMine, alpha);
-            drawButtonBitmap(canvas, btnUse, alpha);
-            drawButtonBitmap(canvas, btnInv, alpha);
 
         } else if (mControlStyle == 2) {
-            // Draw Joystick Base & Knob
+            // Joystick
             if (mBmpJoyPad != null) {
                 mBitmapPaint.setAlpha(alpha);
                 RectF padRect = new RectF(mJoyCenterX - mJoyBaseRadius, mJoyCenterY - mJoyBaseRadius,
@@ -458,12 +435,8 @@ public class VirtualControlsOverlay extends View {
                 canvas.drawBitmap(mBmpJoyStick, null, stickRect, mBitmapPaint);
             }
 
-            // Action controls
             drawButtonBitmap(canvas, btnJump, alpha);
             drawButtonBitmap(canvas, btnSneak, alpha);
-            drawButtonBitmap(canvas, btnMine, alpha);
-            drawButtonBitmap(canvas, btnUse, alpha);
-            drawButtonBitmap(canvas, btnInv, alpha);
         }
 
         postInvalidateDelayed(16);
@@ -475,7 +448,6 @@ public class VirtualControlsOverlay extends View {
         Bitmap b = btn.pressed ? btn.bmpActive : btn.bmpNormal;
         if (b != null) {
             mBitmapPaint.setAlpha(alpha);
-            // Apply slight tint highlight when pressed if active bitmap is identical
             if (btn.pressed && btn.bmpActive == btn.bmpNormal) {
                 mBitmapPaint.setColorFilter(new PorterDuffColorFilter(Color.argb(80, 0, 180, 255), PorterDuff.Mode.SRC_ATOP));
             } else {
@@ -487,7 +459,7 @@ public class VirtualControlsOverlay extends View {
 
     private VButton findButton(float x, float y) {
         for (VButton btn : allButtons) {
-            if (btn.bounds.contains(x, y)) {
+            if (btn.bounds.width() > 0 && btn.bounds.contains(x, y)) {
                 return btn;
             }
         }
@@ -498,7 +470,7 @@ public class VirtualControlsOverlay extends View {
         float w = getWidth();
         float h = getHeight();
         if (w <= 0 || h <= 0) return false;
-        // In Minecraft, the hotbar is horizontally centered at the bottom of the screen with 9 slots
+
         float barHeight = Math.max(48.0f * mDensity, h * 0.15f);
         float barWidth = Math.min(w * 0.65f, 9.0f * 42.0f * mDensity);
         float left = (w - barWidth) / 2.0f;
@@ -523,10 +495,6 @@ public class VirtualControlsOverlay extends View {
         btn.pointerId = pointerId;
         if (btn.keyCode != 0) {
             SDLActivity.onNativeKeyDown(btn.keyCode);
-        } else if (btn.mouseButton == 1) {
-            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, false);
-        } else if (btn.mouseButton == 2) {
-            SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, false);
         }
     }
 
@@ -535,8 +503,6 @@ public class VirtualControlsOverlay extends View {
         btn.pointerId = -1;
         if (btn.keyCode != 0) {
             SDLActivity.onNativeKeyUp(btn.keyCode);
-        } else if (btn.mouseButton == 1 || btn.mouseButton == 2) {
-            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
         }
     }
 
@@ -549,12 +515,24 @@ public class VirtualControlsOverlay extends View {
         if (mJoyActive) {
             resetJoystick();
         }
-        mCameraPointerId = -1;
+        cancelWorldInteraction();
+    }
+
+    private void cancelWorldInteraction() {
+        if (mHoldToMineRunnable != null) {
+            mTouchHandler.removeCallbacks(mHoldToMineRunnable);
+            mHoldToMineRunnable = null;
+        }
+        if (mIsMining) {
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+            mIsMining = false;
+        }
+        mWorldPointerId = -1;
+        mIsPanning = false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // If not in game, do NOT touch or intercept anything!
         if (!mControlsVisible) {
             return false;
         }
@@ -580,7 +558,7 @@ public class VirtualControlsOverlay extends View {
                     }
                 }
 
-                // Check Button hits
+                // Check Button hits (D-Pad, Jump, Sneak, Inv, Top Bar)
                 VButton hit = findButton(x, y);
                 if (hit != null) {
                     pressButton(hit, pointerId);
@@ -593,18 +571,36 @@ public class VirtualControlsOverlay extends View {
                     return true;
                 }
 
-                // Camera Look Touch (Right side of screen outside buttons)
-                if (x > getWidth() * 0.35f && mCameraPointerId == -1) {
-                    mCameraPointerId = pointerId;
-                    mLastCameraX = x;
-                    mLastCameraY = y;
+                // Native In-World Touch Interaction (Hold to Mine, Tap to Place/Attack, Drag to Look)
+                if (mWorldPointerId == -1) {
+                    mWorldPointerId = pointerId;
+                    mWorldDownX = x;
+                    mWorldDownY = y;
+                    mLastWorldX = x;
+                    mLastWorldY = y;
+                    mWorldDownTime = SystemClock.uptimeMillis();
+                    mIsPanning = false;
+                    mIsMining = false;
+
+                    // Schedule Hold to Mine after 220ms steady hold
+                    mHoldToMineRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mWorldPointerId != -1 && !mIsPanning) {
+                                mIsMining = true;
+                                // Start continuous block mining (Button 1 down)
+                                SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, false);
+                            }
+                        }
+                    };
+                    mTouchHandler.postDelayed(mHoldToMineRunnable, 220);
                     return true;
                 }
                 break;
             }
 
             case MotionEvent.ACTION_MOVE: {
-                // Update Joystick
+                // 1. Update Joystick
                 if (mControlStyle == 2 && mJoyActive) {
                     for (int i = 0; i < event.getPointerCount(); i++) {
                         if (event.getPointerId(i) == mJoyPointerId) {
@@ -614,7 +610,7 @@ public class VirtualControlsOverlay extends View {
                     }
                 }
 
-                // Update Buttons
+                // 2. Update Virtual Buttons
                 for (int i = 0; i < event.getPointerCount(); i++) {
                     int pId = event.getPointerId(i);
                     float curX = event.getX(i);
@@ -630,18 +626,39 @@ public class VirtualControlsOverlay extends View {
                     }
                 }
 
-                // Update Camera Look
-                if (mCameraPointerId != -1) {
+                // 3. Update In-World Touch Interaction (Pan Look vs Hold Mine)
+                if (mWorldPointerId != -1) {
                     for (int i = 0; i < event.getPointerCount(); i++) {
-                        if (event.getPointerId(i) == mCameraPointerId) {
+                        if (event.getPointerId(i) == mWorldPointerId) {
                             float curX = event.getX(i);
                             float curY = event.getY(i);
-                            float dx = curX - mLastCameraX;
-                            float dy = curY - mLastCameraY;
-                            mLastCameraX = curX;
-                            mLastCameraY = curY;
-                            // Relative mouse delta for 3D camera
-                            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_MOVE, dx, dy, true);
+
+                            float distFromDown = (float) Math.hypot(curX - mWorldDownX, curY - mWorldDownY);
+
+                            if (distFromDown > 16.0f * mDensity) {
+                                // Finger moved past deadzone -> Camera Pan!
+                                if (mHoldToMineRunnable != null) {
+                                    mTouchHandler.removeCallbacks(mHoldToMineRunnable);
+                                    mHoldToMineRunnable = null;
+                                }
+                                if (mIsMining) {
+                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+                                    mIsMining = false;
+                                }
+                                mIsPanning = true;
+
+                                float dx = curX - mLastWorldX;
+                                float dy = curY - mLastWorldY;
+                                mLastWorldX = curX;
+                                mLastWorldY = curY;
+
+                                // Clamp per-move delta to prevent camera jumping to sky
+                                float maxDelta = 35.0f * mDensity;
+                                dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
+                                dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
+
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_MOVE, dx, dy, true);
+                            }
                             break;
                         }
                     }
@@ -658,11 +675,6 @@ public class VirtualControlsOverlay extends View {
                     return true;
                 }
 
-                if (pointerId == mCameraPointerId) {
-                    mCameraPointerId = -1;
-                    return true;
-                }
-
                 boolean buttonHit = false;
                 for (VButton btn : allButtons) {
                     if (btn.pointerId == pointerId) {
@@ -672,6 +684,33 @@ public class VirtualControlsOverlay extends View {
                     }
                 }
                 if (buttonHit) {
+                    return true;
+                }
+
+                if (pointerId == mWorldPointerId) {
+                    if (mHoldToMineRunnable != null) {
+                        mTouchHandler.removeCallbacks(mHoldToMineRunnable);
+                        mHoldToMineRunnable = null;
+                    }
+
+                    if (mIsMining) {
+                        // Finished mining
+                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+                        mIsMining = false;
+                    } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 250) {
+                        // TAP DETECTED: Place block / Interact / Attack targeted entity!
+                        // Send Right-Click / Use (button 2) down then up
+                        SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, false);
+                        postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+                            }
+                        }, 35);
+                    }
+
+                    mWorldPointerId = -1;
+                    mIsPanning = false;
                     return true;
                 }
                 break;

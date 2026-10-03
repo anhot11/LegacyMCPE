@@ -55,7 +55,7 @@ IPlatformInput& PlatformInput_get() {
 static const int KEY_COUNT = SDL_NUM_SCANCODES;
 static const int BTN_COUNT = SDL_CONTROLLER_BUTTON_MAX;
 static const int AXS_COUNT = SDL_CONTROLLER_AXIS_MAX;
-static const float MOUSE_SCALE = 0.015f;
+static const float MOUSE_SCALE = 0.008f;
 // Vars
 static bool s_sdlInitialized = false;
 static bool s_keysCurrent[KEY_COUNT] = {};
@@ -86,6 +86,11 @@ static bool s_keyboardActive = false;
 static std::string s_textInputBuf;
 static std::function<int(bool)> s_keyboardCallback;
 
+// Text input queue for screens / EditBox
+static std::string s_screenTextInputBuf;
+static bool s_screenBackspacePressed = false;
+static bool s_screenReturnPressed = false;
+
 // We set all the watched keys
 // I don't know if I'll need to change this if we add chat support soon.
 static const int s_watchedKeys[] = {
@@ -93,7 +98,7 @@ static const int s_watchedKeys[] = {
     SDL_SCANCODE_D,      SDL_SCANCODE_SPACE,  SDL_SCANCODE_LSHIFT,
     SDL_SCANCODE_RSHIFT, SDL_SCANCODE_E,      SDL_SCANCODE_Q,
     SDL_SCANCODE_F,      SDL_SCANCODE_C,      SDL_SCANCODE_ESCAPE,
-    SDL_SCANCODE_RETURN, SDL_SCANCODE_F3,     SDL_SCANCODE_F5,
+    SDL_SCANCODE_RETURN, SDL_SCANCODE_BACKSPACE, SDL_SCANCODE_F3, SDL_SCANCODE_F5,
     SDL_SCANCODE_UP,     SDL_SCANCODE_DOWN,   SDL_SCANCODE_LEFT,
     SDL_SCANCODE_RIGHT,  SDL_SCANCODE_PAGEUP, SDL_SCANCODE_PAGEDOWN,
     SDL_SCANCODE_TAB,    SDL_SCANCODE_LCTRL,  SDL_SCANCODE_RCTRL,
@@ -241,8 +246,18 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         s_hasTouchPos = true;
         s_accumRelX += (float)e->motion.xrel;
         s_accumRelY += (float)e->motion.yrel;
-    } else if (e->type == SDL_TEXTINPUT && s_keyboardActive) {
-        s_textInputBuf += e->text.text;
+    } else if (e->type == SDL_TEXTINPUT) {
+        if (s_keyboardActive) {
+            s_textInputBuf += e->text.text;
+        }
+        s_screenTextInputBuf += e->text.text;
+    } else if (e->type == SDL_KEYDOWN) {
+        if (e->key.keysym.scancode == SDL_SCANCODE_BACKSPACE) {
+            s_screenBackspacePressed = true;
+        } else if (e->key.keysym.scancode == SDL_SCANCODE_RETURN ||
+                   e->key.keysym.scancode == SDL_SCANCODE_KP_ENTER) {
+            s_screenReturnPressed = true;
+        }
     } else if (e->type == SDL_CONTROLLERDEVICEADDED) {  // Will search for
                                                         // controller if none
         for (int i = 0; i < SDL_NumJoysticks(); i++) {
@@ -642,11 +657,13 @@ float SDL2Input::GetJoypadStick_LY(int, bool) {
     return (KDown(SDL_SCANCODE_W) ? 1.f : 0.f) -
            (KDown(SDL_SCANCODE_S) ? 1.f : 0.f);
 }
-// We use mouse movement and convert it into a Right Stick output using
-// logarithmic scaling This is the most important mouse part. Yet it's so small.
+// Convert mouse delta into right stick output with strict clamping to prevent camera snapping to sky
 static float MouseAxis(float raw) {
-    if (fabsf(raw) < 0.0001f) return 0.f;  // from 4j previous code
-    return (raw >= 0.f ? 1.f : -1.f) * sqrtf(fabsf(raw));
+    if (fabsf(raw) < 0.0001f) return 0.f;
+    float sign = (raw >= 0.f ? 1.f : -1.f);
+    float mag = fabsf(raw);
+    if (mag > 1.0f) mag = 1.0f;
+    return sign * mag;
 }
 // We apply the Stick movement on the R(Right) X(2D Position)
 float SDL2Input::GetJoypadStick_RX(int, bool) {
@@ -726,6 +743,24 @@ bool SDL2Input::GetMenuDisplayed(int iPad) {
     return false;
 }
 const char* SDL2Input::GetText() { return s_textInputBuf.c_str(); }
+
+std::string SDL2Input::PollTextInput() {
+    std::string res = s_screenTextInputBuf;
+    s_screenTextInputBuf.clear();
+    return res;
+}
+
+bool SDL2Input::PollBackspacePressed() {
+    bool res = s_screenBackspacePressed || KPressed(SDL_SCANCODE_BACKSPACE);
+    s_screenBackspacePressed = false;
+    return res;
+}
+
+bool SDL2Input::PollReturnPressed() {
+    bool res = s_screenReturnPressed || KPressed(SDL_SCANCODE_RETURN) || KPressed(SDL_SCANCODE_KP_ENTER);
+    s_screenReturnPressed = false;
+    return res;
+}
 bool SDL2Input::VerifyStrings(char**, int,
                               std::function<int(STRING_VERIFY_RESPONSE*)>) {
     return true;

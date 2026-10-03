@@ -125,7 +125,7 @@ MinecraftServer::MinecraftServer() {
     m_isServerPaused = false;
     m_serverPausedEvent = new C4JThread::Event;
 
-    m_saveOnExit = false;
+    m_saveOnExit = true;
     m_suspending = false;
 
     m_ugcPlayersVersion = 0;
@@ -1312,6 +1312,17 @@ void MinecraftServer::tick() {
     connection->tick();
 
     players->tick();
+
+    // Periodic autosave every 1200 ticks (~60 seconds)
+    if (tickCount % 1200 == 0 && didInit && !PlatformStorage.GetSaveDisabled()) {
+        saveAllChunks();
+        if (players != nullptr) {
+            players->saveAll(Minecraft::GetInstance()->progressRenderer, false);
+        }
+        if (!levels.empty() && levels[0] != nullptr) {
+            levels[0]->saveToDisc(Minecraft::GetInstance()->progressRenderer, false);
+        }
+    }
 
     // 4J - removed
 

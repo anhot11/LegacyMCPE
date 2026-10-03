@@ -84,6 +84,9 @@ public:
                                             std::function<int(bool)> callback,
                                             EKeyboardMode eMode) = 0;
     [[nodiscard]] virtual const char* GetText() = 0;
+    virtual std::string PollTextInput() { return ""; }
+    virtual bool PollBackspacePressed() { return false; }
+    virtual bool PollReturnPressed() { return false; }
 
     // String verification (TCR 92)
     virtual bool VerifyStrings(

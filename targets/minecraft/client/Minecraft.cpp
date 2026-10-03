@@ -481,7 +481,10 @@ File Minecraft::getWorkingDirectory(const std::string& applicationName) {
 #endif
 
 #ifdef __ANDROID__
-    if (homedir == nullptr || strlen(homedir) == 0) {
+    const char* mcPath = getenv("MC_PATH");
+    if (mcPath != nullptr && strlen(mcPath) > 0) {
+        homedir = mcPath;
+    } else if (homedir == nullptr || strlen(homedir) == 0) {
         homedir = "/sdcard/LegacyMCPE";
     }
 #endif

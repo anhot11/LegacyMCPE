@@ -1527,6 +1527,12 @@ bool LocalPlayer::handleMouseClick(int button) {
                     minecraft->localplayers[GetXboxPad()],
                     minecraft->hitResult->entity)) {
                 mayUse = false;
+            } else {
+                // If the entity cannot be interacted with, attack it on tap!
+                minecraft->gameMode->attack(
+                    minecraft->localplayers[GetXboxPad()],
+                    minecraft->hitResult->entity);
+                mayUse = false;
             }
         }
     } else if (minecraft->hitResult->type == HitResult::TILE) {

@@ -137,6 +137,18 @@ void Screen::updateEvents() {
         keyPressed('e', Keyboard::KEY_E);
     }
 
+    // Process typed characters from Android soft keyboard (IME) and physical keyboard
+    std::string text = PlatformInput.PollTextInput();
+    for (char c : text) {
+        keyPressed(c, 0);
+    }
+    if (PlatformInput.PollBackspacePressed()) {
+        keyPressed(0, Keyboard::KEY_BACK);
+    }
+    if (PlatformInput.PollReturnPressed()) {
+        keyPressed(13, Keyboard::KEY_RETURN);
+    }
+
     prevLeftState = leftState;
     prevRightState = rightState;
 #else

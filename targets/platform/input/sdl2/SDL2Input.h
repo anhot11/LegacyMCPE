@@ -54,6 +54,9 @@ public:
                                     SDL2Input::EKeyboardMode eMode);
     bool GetMenuDisplayed(int);
     const char* GetText();
+    std::string PollTextInput() override;
+    bool PollBackspacePressed() override;
+    bool PollReturnPressed() override;
 
     // Online check strings against offensive list - TCR 92
     // 	TCR # 092  CMTV Player Text String Verification

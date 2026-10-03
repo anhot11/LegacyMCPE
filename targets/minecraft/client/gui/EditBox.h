@@ -28,6 +28,7 @@ private:
 public:
     EditBox(Screen* screen, Font* font, int x, int y, int width, int height,
             const std::string& value);
+    virtual ~EditBox();
     void setValue(const std::string& value);
     std::string getValue();
     void tick();
