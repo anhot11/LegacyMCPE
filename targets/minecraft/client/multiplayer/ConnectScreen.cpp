@@ -22,7 +22,7 @@ ConnectScreen::ConnectScreen(Minecraft* minecraft, const std::string& ip,
     // actually need here
     connection = new ClientConnection(minecraft, ip, port);
     if (aborted) return;
-    if (connection != nullptr && connection->createdOk && connection->connection != nullptr) {
+    if (connection != nullptr && connection->isConnected()) {
         connection->send(std::shared_ptr<PreLoginPacket>(
             new PreLoginPacket(minecraft->user->name)));
     }
@@ -30,7 +30,7 @@ ConnectScreen::ConnectScreen(Minecraft* minecraft, const std::string& ip,
 
 void ConnectScreen::tick() {
     if (connection != nullptr) {
-        if (!connection->createdOk || connection->connection == nullptr) {
+        if (!connection->isConnected()) {
             Language* language = Language::getInstance();
             std::string title = language->getElement("connect.failed");
             if (title.empty() || title == "connect.failed") title = "Desconectado";
