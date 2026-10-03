@@ -415,7 +415,7 @@ void RandomLevelSource::buildSurfaces(int xOffs, int zOffs,
             }
 
             for (int y = Level::genDepthMinusOne; y >= 0; y--) {
-                int offs = (z * 16 + x) * Level::genDepth + y;
+                int offs = (x * 16 + z) * Level::genDepth + y;
 
                 if (y <= 1 + random->nextInt(
                                  2))  // 4J - changed to make the bedrock not

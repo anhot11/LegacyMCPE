@@ -57,7 +57,7 @@ void HellFlatLevelSource::buildSurfaces(int xOffs, int zOffs,
     for (int x = 0; x < 16; x++) {
         for (int z = 0; z < 16; z++) {
             for (int y = Level::genDepthMinusOne; y >= 0; y--) {
-                int offs = (z * 16 + x) * Level::genDepth + y;
+                int offs = (x * 16 + z) * Level::genDepth + y;
 
                 // 4J Build walls around the level
                 bool blockSet = false;

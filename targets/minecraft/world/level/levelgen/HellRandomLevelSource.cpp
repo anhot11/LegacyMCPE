@@ -192,7 +192,7 @@ void HellRandomLevelSource::buildSurfaces(int xOffs, int zOffs,
             uint8_t material = (uint8_t)Tile::netherRack_Id;
 
             for (int y = Level::genDepthMinusOne; y >= 0; y--) {
-                int offs = (z * 16 + x) * Level::genDepth + y;
+                int offs = (x * 16 + z) * Level::genDepth + y;
 
                 // 4J Build walls around the level
                 bool blockSet = false;
@@ -270,7 +270,7 @@ void HellRandomLevelSource::buildSurfaces(int xOffs, int zOffs,
                                         y = std::min(y, genDepthMinusOne);
                                         runDepth += 1;
                                         offs =
-                                            (z * 16 + x) * Level::genDepth + y;
+                                            (x * 16 + z) * Level::genDepth + y;
                                     } else {
                                         top = (uint8_t)Tile::soulsand_Id;
                                     }

@@ -221,6 +221,7 @@ void LocalPlayer::aiStep() {
         }
     }
     if (sprintTriggerTime > 0) sprintTriggerTime--;
+    if (jumpTriggerTime > 0) jumpTriggerTime--;
     if (minecraft->gameMode->isCutScene()) {
         x = z = 0.5;
         x = 0;

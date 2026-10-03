@@ -143,7 +143,7 @@ void TheEndLevelRandomLevelSource::buildSurfaces(int xOffs, int zOffs,
             uint8_t material = (uint8_t)Tile::endStone_Id;
 
             for (int y = Level::genDepthMinusOne; y >= 0; y--) {
-                int offs = (z * 16 + x) * Level::genDepth + y;
+                int offs = (x * 16 + z) * Level::genDepth + y;
 
                 int old = blocks[offs];
 

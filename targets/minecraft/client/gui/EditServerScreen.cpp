@@ -159,17 +159,11 @@ void EditServerScreen::mouseClicked(int x, int y, int buttonNum) {
                   y >= startY + 44 && y < startY + 74);
 
     if (hitName) {
-        if (ipEdit != nullptr) ipEdit->inFocus = false;
-        if (nameEdit != nullptr) {
-            nameEdit->inFocus = false;
-            nameEdit->focus(true);
-        }
+        if (ipEdit != nullptr) ipEdit->focus(false);
+        if (nameEdit != nullptr) nameEdit->focus(true);
     } else if (hitIp) {
-        if (nameEdit != nullptr) nameEdit->inFocus = false;
-        if (ipEdit != nullptr) {
-            ipEdit->inFocus = false;
-            ipEdit->focus(true);
-        }
+        if (nameEdit != nullptr) nameEdit->focus(false);
+        if (ipEdit != nullptr) ipEdit->focus(true);
     }
 }
 

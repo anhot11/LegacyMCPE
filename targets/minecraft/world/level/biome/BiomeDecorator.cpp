@@ -103,7 +103,7 @@ void BiomeDecorator::decorate() {
     for (int i = 0; i < gravelCount; i++) {
         int x = xo + random->nextInt(16) + 8;
         int z = zo + random->nextInt(16) + 8;
-        sandFeature->place(level, random, x, level->getTopSolidBlock(x, z), z);
+        gravelFeature->place(level, random, x, level->getTopSolidBlock(x, z), z);
     }
 
     int forests = treeCount;
