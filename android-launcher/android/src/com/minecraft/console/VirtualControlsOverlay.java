@@ -78,8 +78,8 @@ public class VirtualControlsOverlay extends View {
 
     // Action buttons
     private final VButton btnJump = new VButton("jump", KeyEvent.KEYCODE_SPACE, 0);
-    private final VButton btnMine = new VButton("attack", 0, 1);
-    private final VButton btnUse = new VButton("interact", 0, 2);
+    private final VButton btnMine = new VButton("attack", KeyEvent.KEYCODE_ENTER, 0);
+    private final VButton btnUse = new VButton("interact", KeyEvent.KEYCODE_F, 0);
     private final VButton btnInv = new VButton("inventory", KeyEvent.KEYCODE_E, 0);
     private final VButton btnSneak = new VButton("sneak", KeyEvent.KEYCODE_SHIFT_LEFT, 0);
 
@@ -494,25 +494,49 @@ public class VirtualControlsOverlay extends View {
         return null;
     }
 
+    private boolean checkHotbarTap(float x, float y) {
+        float w = getWidth();
+        float h = getHeight();
+        if (w <= 0 || h <= 0) return false;
+        // In Minecraft, the hotbar is horizontally centered at the bottom of the screen with 9 slots
+        float barHeight = Math.max(48.0f * mDensity, h * 0.15f);
+        float barWidth = Math.min(w * 0.65f, 9.0f * 42.0f * mDensity);
+        float left = (w - barWidth) / 2.0f;
+        float right = (w + barWidth) / 2.0f;
+        float top = h - barHeight;
+
+        if (y >= top && y <= h && x >= left && x <= right) {
+            float slotWidth = barWidth / 9.0f;
+            int slot = (int) ((x - left) / slotWidth);
+            if (slot >= 0 && slot < 9) {
+                int key = KeyEvent.KEYCODE_1 + slot;
+                SDLActivity.onNativeKeyDown(key);
+                SDLActivity.onNativeKeyUp(key);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void pressButton(VButton btn, int pointerId) {
         btn.pressed = true;
         btn.pointerId = pointerId;
-        if (btn.mouseButton == 1) {
+        if (btn.keyCode != 0) {
+            SDLActivity.onNativeKeyDown(btn.keyCode);
+        } else if (btn.mouseButton == 1) {
             SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, false);
         } else if (btn.mouseButton == 2) {
             SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, false);
-        } else if (btn.keyCode != 0) {
-            SDLActivity.onNativeKeyDown(btn.keyCode);
         }
     }
 
     private void releaseButton(VButton btn) {
         btn.pressed = false;
         btn.pointerId = -1;
-        if (btn.mouseButton == 1 || btn.mouseButton == 2) {
-            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
-        } else if (btn.keyCode != 0) {
+        if (btn.keyCode != 0) {
             SDLActivity.onNativeKeyUp(btn.keyCode);
+        } else if (btn.mouseButton == 1 || btn.mouseButton == 2) {
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
         }
     }
 
@@ -561,6 +585,11 @@ public class VirtualControlsOverlay extends View {
                 if (hit != null) {
                     pressButton(hit, pointerId);
                     invalidate();
+                    return true;
+                }
+
+                // Check in-game hotbar slot tap
+                if (checkHotbarTap(x, y)) {
                     return true;
                 }
 

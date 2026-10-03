@@ -115,6 +115,7 @@
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/Gui.h"
 #include "minecraft/client/gui/InBedChatScreen.h"
+#include "minecraft/client/gui/ChatScreen.h"
 #include "minecraft/client/gui/ScreenSizeCalculator.h"
 #include "minecraft/client/gui/achievement/AchievementPopup.h"
 #include "minecraft/client/multiplayer/ClientConnection.h"
@@ -540,7 +541,9 @@ void Minecraft::setScreen(Screen* screen) {
 
     if (screen != nullptr) {
         //        releaseMouse();	// 4J - removed
-        ScreenSizeCalculator ssc(options, width, height);
+        int fbw = width, fbh = height;
+        PlatformRenderer.GetFramebufferSize(fbw, fbh);
+        ScreenSizeCalculator ssc(options, fbw, fbh);
         int screenWidth = ssc.getWidth();
         int screenHeight = ssc.getHeight();
         screen->init(this, screenWidth, screenHeight);
@@ -1227,6 +1230,10 @@ void Minecraft::run_middle() {
                                 i, MINECRAFT_ACTION_INVENTORY))
                             localplayers[i]->ullButtonsPressed |=
                                 1LL << MINECRAFT_ACTION_INVENTORY;
+                        if (PlatformInput.ButtonPressed(
+                                i, MINECRAFT_ACTION_CHAT))
+                            localplayers[i]->ullButtonsPressed |=
+                                1LL << MINECRAFT_ACTION_CHAT;
                         if (PlatformInput.ButtonPressed(
                                 i, MINECRAFT_ACTION_ACTION))
                             localplayers[i]->ullButtonsPressed |=
@@ -1967,9 +1974,9 @@ void Minecraft::resize(int width, int height) {
     this->height = height;
 
     if (screen != nullptr) {
-        // 4jcraft: use adjusted logical width instead of raw width for correct
-        // screen size calculation.
-        ScreenSizeCalculator ssc(options, this->width, height);
+        int fbw = width, fbh = height;
+        PlatformRenderer.GetFramebufferSize(fbw, fbh);
+        ScreenSizeCalculator ssc(options, fbw, fbh);
         int screenWidth = ssc.getWidth();
         int screenHeight = ssc.getHeight();
         screen->init(
@@ -3445,6 +3452,11 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
             gameServices().menus().openInventory(
                 iPad, std::static_pointer_cast<LocalPlayer>(player));
 #endif
+        }
+
+        if ((player->ullButtonsPressed & (1LL << MINECRAFT_ACTION_CHAT))) {
+            ui.PlayUISFX(eSFX_Press);
+            setScreen(new ChatScreen());
         }
 
         if ((player->ullButtonsPressed & (1LL << MINECRAFT_ACTION_CRAFTING)) &&

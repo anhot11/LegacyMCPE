@@ -35,6 +35,13 @@ private:
     ResourceLocation* m_textureLocation;  // Texture
     std::map<int, int> m_charMap;
 
+    unsigned char m_unicodeWidth[65536];
+    int m_unicodeTexID[256];
+    int m_lastBoundUnicodeTex;
+    void loadUnicodeSizes();
+    void loadUnicodePage(int page);
+    void renderUnicodeCharacter(int c, bool dropShadow);
+
 public:
     Font(Options* options, const std::string& name, Textures* textures,
          bool enforceUnicode, ResourceLocation* textureLocation, int cols,

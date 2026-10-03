@@ -84,6 +84,7 @@ public class MainActivity2 extends SDLActivity
                 
                 Log.d( "ENVTEST", "MC_PATH=" + Os.getenv("MC_PATH") );
                 Log.d( "ENVTEST", "HOME=" + Os.getenv("HOME") );
+                ensureUiSoundsInstalled(directory);
             }
         }
         catch (ErrnoException e)
@@ -248,6 +249,37 @@ public class MainActivity2 extends SDLActivity
         // Send ESCAPE key to SDL to close any open container/GUI screen or pause menu
         SDLActivity.onNativeKeyDown(android.view.KeyEvent.KEYCODE_ESCAPE);
         SDLActivity.onNativeKeyUp(android.view.KeyEvent.KEYCODE_ESCAPE);
+    }
+
+    private void ensureUiSoundsInstalled(String directory) {
+        if (directory == null || directory.isEmpty()) return;
+        try {
+            java.io.File uiSoundDir = new java.io.File(directory, "Sound/Minecraft/UI");
+            if (!uiSoundDir.exists()) {
+                uiSoundDir.mkdirs();
+            }
+            String[] soundFiles = getAssets().list("sounds/ui");
+            if (soundFiles != null) {
+                byte[] buf = new byte[4096];
+                for (String sf : soundFiles) {
+                    java.io.File targetSound = new java.io.File(uiSoundDir, sf);
+                    if (!targetSound.exists() || targetSound.length() == 0) {
+                        java.io.InputStream in = getAssets().open("sounds/ui/" + sf);
+                        java.io.FileOutputStream out = new java.io.FileOutputStream(targetSound);
+                        int len;
+                        while ((len = in.read(buf)) > 0) {
+                            out.write(buf, 0, len);
+                        }
+                        out.flush();
+                        out.close();
+                        in.close();
+                        Log.d("MCPL", "Extracted UI sound: " + sf);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Log.e("MCPL", "Failed extracting UI sounds", t);
+        }
     }
 
     @Override protected String getMainFunction() {

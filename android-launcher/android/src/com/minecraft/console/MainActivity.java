@@ -500,7 +500,39 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    private void ensureUiSoundsInstalled(String directory) {
+        if (directory == null || directory.isEmpty()) return;
+        try {
+            File uiSoundDir = new File(directory, "Sound/Minecraft/UI");
+            if (!uiSoundDir.exists()) {
+                uiSoundDir.mkdirs();
+            }
+            String[] soundFiles = getAssets().list("sounds/ui");
+            if (soundFiles != null) {
+                byte[] buf = new byte[4096];
+                for (String sf : soundFiles) {
+                    File targetSound = new File(uiSoundDir, sf);
+                    if (!targetSound.exists() || targetSound.length() == 0) {
+                        InputStream in = getAssets().open("sounds/ui/" + sf);
+                        FileOutputStream out = new FileOutputStream(targetSound);
+                        int len;
+                        while ((len = in.read(buf)) > 0) {
+                            out.write(buf, 0, len);
+                        }
+                        out.flush();
+                        out.close();
+                        in.close();
+                        Log.d(TAG, "Extracted UI sound: " + sf);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Log.e(TAG, "Failed extracting UI sounds", t);
+        }
+    }
+
     private void launchGame(String directory) {
+        ensureUiSoundsInstalled(directory);
         SharedPreferences prefs = getSharedPreferences("dirPrefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("dir_path", directory);

@@ -101,7 +101,7 @@ static const int s_watchedKeys[] = {
     SDL_SCANCODE_4,      SDL_SCANCODE_5,      SDL_SCANCODE_6,
     SDL_SCANCODE_7,      SDL_SCANCODE_8,      SDL_SCANCODE_9,
     SDL_SCANCODE_Z,      SDL_SCANCODE_X,      SDL_SCANCODE_C,
-    SDL_SCANCODE_V,      SDL_SCANCODE_AC_BACK};
+    SDL_SCANCODE_V,      SDL_SCANCODE_AC_BACK, SDL_SCANCODE_T};
 static const int s_watchedKeyCount =
     (int)(sizeof(s_watchedKeys) / sizeof(s_watchedKeys[0]));
 
@@ -232,6 +232,9 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         if (e->type == SDL_FINGERDOWN) {
             s_mouseLeftQueued = true;
         }
+    } else if (e->type == SDL_FINGERUP) {
+        s_mouseLeftCurrent = false;
+        s_mouseLeftQueued = false;
     } else if (e->type == SDL_MOUSEMOTION) {
         s_mouseX = e->motion.x;
         s_mouseY = e->motion.y;
@@ -519,6 +522,8 @@ int SDL2Input::GetHotbarSlotPressed(int iPad) {
         return KFN(SDL_SCANCODE_UP) || CFN(SDL_CONTROLLER_BUTTON_DPAD_UP);     \
     case MINECRAFT_ACTION_DPAD_DOWN:                                           \
         return KFN(SDL_SCANCODE_DOWN) || CFN(SDL_CONTROLLER_BUTTON_DPAD_DOWN); \
+    case MINECRAFT_ACTION_CHAT:                                                \
+        return KFN(SDL_SCANCODE_T);                                            \
     default:                                                                   \
         return false;
 

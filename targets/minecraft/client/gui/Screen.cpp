@@ -101,15 +101,14 @@ void Screen::init() {}
 void Screen::updateEvents() {
 // TODO: update for SDL if we ever get around to that
 #if (defined(ENABLE_JAVA_GUIS))
-    int fbw, fbh;
+    int fbw = minecraft->width, fbh = minecraft->height;
     PlatformRenderer.GetFramebufferSize(fbw, fbh);
     glViewport(0, 0, fbw, fbh);
-    ScreenSizeCalculator ssc(minecraft->options, minecraft->width,
-                             minecraft->height);
+    ScreenSizeCalculator ssc(minecraft->options, fbw, fbh);
     int screenWidth = ssc.getWidth();
     int screenHeight = ssc.getHeight();
     int xMouse = PlatformInput.GetMouseX() * screenWidth / fbw;
-    int yMouse = PlatformInput.GetMouseY() * screenHeight / fbh - 1;
+    int yMouse = PlatformInput.GetMouseY() * screenHeight / fbh;
 
     static bool prevLeftState = false;
     static bool prevRightState = false;
@@ -132,6 +131,10 @@ void Screen::updateEvents() {
     if (PlatformInput.ButtonPressed(0, ACTION_MENU_CANCEL) ||
         PlatformInput.ButtonPressed(0, ACTION_MENU_B)) {
         keyPressed(0, Keyboard::KEY_ESCAPE);
+    }
+
+    if (PlatformInput.ButtonPressed(0, MINECRAFT_ACTION_INVENTORY)) {
+        keyPressed('e', Keyboard::KEY_E);
     }
 
     prevLeftState = leftState;
