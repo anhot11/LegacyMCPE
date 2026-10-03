@@ -67,7 +67,7 @@ void VideoSettingsScreen::init() {
         } else if (item == Options::Option::RENDER_DISTANCE) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder)));
         } else if (item == Options::Option::AMBIENT_OCCLUSION) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::lightGem)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::glowstone)));
         } else if (item == Options::Option::FRAMERATE_LIMIT) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::clock)));
         } else if (item == Options::Option::RENDER_CLOUDS) {
