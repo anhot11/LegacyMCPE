@@ -372,10 +372,10 @@
     } while (0)
 
 #undef glRotatef
-#define glRotatef(a, x, y, z)                                                  \
-    do {                                                                       \
-        PlatformRenderer.MatrixRotate((a) * (3.14159265358979f / 180.f), x, y, \
-                                      z);                                      \
+#define glRotatef(a, x, y, z)                  \
+    do {                                       \
+        PlatformRenderer.MatrixRotate(a, x, y, \
+                                      z);      \
     } while (0)
 
 #undef glScalef

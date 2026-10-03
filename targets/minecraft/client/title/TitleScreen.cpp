@@ -491,8 +491,8 @@ void TitleScreen::render(int xm, int ym, float a) {
         if (bodyRot > 60.0f) bodyRot = 60.0f;
         if (bodyRot < -20.0f) bodyRot = -20.0f;
 
-        // Rotate Steve to face forward towards the user (front)
-        glRotatef(-bodyRot, 0.0f, 1.0f, 0.0f);
+        // Rotate Steve 180 deg to face forward towards the camera
+        glRotatef(180.0f - bodyRot, 0.0f, 1.0f, 0.0f);
 
         // Head tracking
         float targetYaw = -(float)atan2(dx, 90.0f) * 57.29578f;
