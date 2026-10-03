@@ -18,6 +18,7 @@
 #include "minecraft/world/entity/player/Player.h"
 #include "minecraft/world/entity/player/SkinTypes.h"
 #include "app/common/Audio/SoundTypes.h"
+#include "app/common/Audio/ConsoleSoundEngine.h"
 #include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ItemInstance.h"
 #include "platform/input/input.h"

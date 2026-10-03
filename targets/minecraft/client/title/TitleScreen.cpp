@@ -33,6 +33,7 @@
 #include "minecraft/util/Log.h"
 #include "minecraft/client/renderer/entity/ItemRenderer.h"
 #include "minecraft/world/item/ArmorItem.h"
+#include "app/common/Audio/ConsoleSoundEngine.h"
 #include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ItemInstance.h"
 #include "minecraft/world/level/tile/Tile.h"
