@@ -13,7 +13,7 @@
 #include "java/File.h"
 #include "java/JavaMath.h"
 #include "minecraft/util/ProgressListener.h"
-#include "minecraft/world/level/GameType.h"
+#include "minecraft/world/level/LevelSettings.h"
 #include "minecraft/world/level/storage/DirectoryLevelStorageSource.h"
 #include "platform/fs/fs.h"
 
