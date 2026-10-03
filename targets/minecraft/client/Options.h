@@ -71,6 +71,7 @@ public:
     bool ambientOcclusion;
     bool renderClouds;
     std::string skin;
+    std::string language;
 
     KeyMapping* keyUp;
     KeyMapping* keyLeft;

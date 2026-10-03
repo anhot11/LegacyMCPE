@@ -44,7 +44,7 @@ void Input::tick(LocalPlayer* player) {
             MINECRAFT_ACTION_FORWARD) ||
         pMinecraft->localgameModes[iPad]->isInputAllowed(
             MINECRAFT_ACTION_BACKWARD))
-        ya = PlatformInput.GetJoypadStick_LY(iPad);
+        ya = -PlatformInput.GetJoypadStick_LY(iPad);
     else
         ya = 0.0f;
 

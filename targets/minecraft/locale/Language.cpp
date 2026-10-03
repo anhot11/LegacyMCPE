@@ -16,58 +16,63 @@
 
 Language* Language::singleton = nullptr;
 
-Language::Language() {
-    // TODO: move the language loading out of the init to better match 1.3.x
-    // see StringTranslate.java in MCP 7.x for more context
-    File langFile("Common/res/lang/en_US.lang");
-    if (langFile.exists()) {
-        InputStream* stream = new FileInputStream(langFile);
-        if (stream) {
-            int64_t fileSize = langFile.length();
-            if (fileSize > 0) {
-                // 4jcraft: we would've used BufferedReader like the JE
-                // equivalent here, but the lang file starts with a newline,
-                // causing readLine() in this BufferedReader impl to just return
-                // an empty string
-                //
-                // InputStreamReader reader(stream);
-                // BufferedReader bufferedReader(&reader);
-                // std::string line;
-                std::vector<uint8_t> buffer((unsigned int)fileSize);
-                int bytesRead = stream->read(buffer, 0, (unsigned int)fileSize);
-                if (bytesRead > 0) {
-                    std::string content(reinterpret_cast<char*>(buffer.data()),
-                                        bytesRead);
-                    std::istringstream iss(content);
-                    std::string line;
+void Language::parseLangFile(const std::string& path) {
+    File langFile(path);
+    if (!langFile.exists()) return;
+    InputStream* stream = new FileInputStream(langFile);
+    if (!stream) return;
+    int64_t fileSize = langFile.length();
+    if (fileSize > 0) {
+        std::vector<uint8_t> buffer((unsigned int)fileSize);
+        int bytesRead = stream->read(buffer, 0, (unsigned int)fileSize);
+        if (bytesRead > 0) {
+            std::string content(reinterpret_cast<char*>(buffer.data()), bytesRead);
+            std::istringstream iss(content);
+            std::string line;
+            while (std::getline(iss, line)) {
+                size_t start = line.find_first_not_of(" \t\r\n");
+                if (start == std::string::npos) continue;
+                size_t end = line.find_last_not_of(" \t\r\n");
+                std::string trimmed = line.substr(start, end - start + 1);
+                if (trimmed.empty() || trimmed[0] == '#') continue;
+                size_t equalsPos = trimmed.find('=');
+                if (equalsPos != std::string::npos) {
+                    std::string key = trimmed.substr(0, equalsPos);
+                    std::string value = trimmed.substr(equalsPos + 1);
 
-                    // while (!(line = bufferedReader.readLine()).empty()) {
-                    while (std::getline(iss, line)) {
-                        size_t start = line.find_first_not_of(" \t\r\n");
-                        if (start == std::string::npos) continue;
-
-                        size_t end = line.find_last_not_of(" \t\r\n");
-                        std::string trimmed =
-                            line.substr(start, end - start + 1);
-
-                        if (trimmed.empty() || trimmed[0] == '#') continue;
-
-                        size_t equalsPos = trimmed.find('=');
-                        if (equalsPos != std::string::npos) {
-                            std::string key = trimmed.substr(0, equalsPos);
-                            std::string value = trimmed.substr(equalsPos + 1);
-
-                            std::string wkey(key.begin(), key.end());
-                            std::string wvalue(value.begin(), value.end());
-
-                            translateTable[wkey] = wvalue;
-                        }
+                    size_t tabHash = value.find("\t#");
+                    if (tabHash != std::string::npos) {
+                        value = value.substr(0, tabHash);
                     }
+
+                    size_t kstart = key.find_first_not_of(" \t\r\n");
+                    size_t kend = key.find_last_not_of(" \t\r\n");
+                    if (kstart != std::string::npos) key = key.substr(kstart, kend - kstart + 1);
+
+                    size_t vstart = value.find_first_not_of(" \t\r\n");
+                    size_t vend = value.find_last_not_of(" \t\r\n");
+                    if (vstart != std::string::npos) value = value.substr(vstart, vend - vstart + 1);
+                    else value = "";
+
+                    translateTable[key] = value;
                 }
             }
-            delete stream;
         }
     }
+    delete stream;
+}
+
+void Language::loadLanguage(const std::string& langCode) {
+    translateTable.clear();
+    parseLangFile("Common/res/lang/en_US.lang");
+    if (!langCode.empty() && langCode != "en_US") {
+        parseLangFile("Common/res/lang/" + langCode + ".lang");
+    }
+    currentLanguage = langCode.empty() ? "en_US" : langCode;
+}
+
+Language::Language() {
+    loadLanguage("en_US");
 }
 
 Language* Language::getInstance() {

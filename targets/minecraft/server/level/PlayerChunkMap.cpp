@@ -635,7 +635,11 @@ void PlayerChunkMap::add(std::shared_ptr<ServerPlayer> player) {
     // take a long time. Instead use the getChunkAndAddPlayer for anything but
     // the central region of chunks, which adds them to a queue of chunks which
     // are added one per tick per player.
+#if defined(__ANDROID__) || defined(ANDROID)
+    const int maxLegSizeToAddNow = 4;
+#else
     const int maxLegSizeToAddNow = 14;
+#endif
 
     // All but the last leg
     for (int legSize = 1; legSize <= size * 2; legSize++) {

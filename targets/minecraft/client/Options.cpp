@@ -127,6 +127,7 @@ void Options::init() {
     ambientOcclusion = true;
     renderClouds = true;
     skin = "Default";
+    language = "en_US";
 
     keyUp = new KeyMapping("key.forward", Keyboard::KEY_W);
     keyLeft = new KeyMapping("key.left", Keyboard::KEY_A);
@@ -441,6 +442,10 @@ void Options::load() {
         if (cmds[0] == "ao") ambientOcclusion = cmds[1] == "true";
         if (cmds[0] == "clouds") renderClouds = cmds[1] == "true";
         if (cmds[0] == "skin") skin = cmds[1];
+        if (cmds[0] == "lang" || cmds[0] == "language") {
+            language = cmds[1];
+            Language::getInstance()->loadLanguage(language);
+        }
         if (cmds[0] == "lastServer") lastMpIp = cmds[1];
 
         // Lunar Client & Mod options
@@ -513,6 +518,7 @@ void Options::save() {
     dos.writeChars("ao:" + std::string(ambientOcclusion ? "true" : "false") + "\n");
     dos.writeChars("clouds:" + toWString<bool>(renderClouds) + "\n");
     dos.writeChars("skin:" + skin + "\n");
+    dos.writeChars("lang:" + language + "\n");
     dos.writeChars("lastServer:" + lastMpIp + "\n");
 
     // Lunar Client & Mod options

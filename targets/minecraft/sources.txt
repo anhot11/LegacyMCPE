@@ -31,6 +31,7 @@ client/gui/Gui.cpp
 client/gui/GuiComponent.cpp
 client/gui/InBedChatScreen.cpp
 client/gui/JoinMultiplayerScreen.cpp
+client/gui/LanguageSelectScreen.cpp
 client/gui/LunarModsScreen.cpp
 client/gui/MessageScreen.cpp
 client/gui/Minimap.cpp

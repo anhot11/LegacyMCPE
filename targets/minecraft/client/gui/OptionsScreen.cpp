@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "ControlsScreen.h"
+#include "LanguageSelectScreen.h"
 #include "SlideButton.h"
 #include "SmallButton.h"
 #include "VideoSettingsScreen.h"
@@ -75,6 +76,13 @@ void OptionsScreen::init() {
         position++;
     }
 
+    int langX = width / 2 - (btnW + 5) + (position % 2 * (btnW + 10));
+    int langY = startY + rowSpacing * (position >> 1);
+    Button* btnLanguage = new Button(LANGUAGE_BUTTON_ID, langX, langY, btnW, btnH,
+                                     language->getElement("options.language"));
+    btnLanguage->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::book)));
+    buttons.push_back(btnLanguage);
+
     int botW = (width >= 450) ? 230 : 190;
     Button* btnVideo = new Button(VIDEO_BUTTON_ID, width / 2 - botW / 2,
                                  startY + rowSpacing * 3 + 2, botW, btnH,
@@ -110,6 +118,10 @@ void OptionsScreen::buttonClicked(Button* button) {
     if (button->id == CONTROLS_BUTTON_ID) {
         minecraft->options->save();
         minecraft->setScreen(new ControlsScreen(this, options));
+    }
+    if (button->id == LANGUAGE_BUTTON_ID) {
+        minecraft->options->save();
+        minecraft->setScreen(new LanguageSelectScreen(this, options));
     }
     if (button->id == 200) {
         minecraft->options->save();

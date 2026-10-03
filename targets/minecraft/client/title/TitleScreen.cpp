@@ -143,7 +143,11 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
         btnX = 45;
     }
 
-    int topPos = height / 2 - (spacing * 4) / 2 + 10;
+    int numButtons = 4;
+#if defined(__ANDROID__) || defined(ANDROID)
+    numButtons = 3;
+#endif
+    int topPos = height / 2 - (spacing * numButtons) / 2 + 10;
     if (topPos < 38) topPos = 38;
 
     std::string playText = language->getElement("menu.play");
@@ -166,10 +170,12 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
     btnOptions->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
     buttons.push_back(btnOptions);
 
+#if !defined(__ANDROID__) && !defined(ANDROID)
     Button* btnQuit = new Button(4, btnX, topPos + spacing * 3, btnWidth, btnHeight, language->getElement("menu.quit"));
     btnQuit->setTextureIcon(64, 16, 16);
     btnQuit->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
     buttons.push_back(btnQuit);
+#endif
 }
 
 void TitleScreen::buttonClicked(Button* button) {
