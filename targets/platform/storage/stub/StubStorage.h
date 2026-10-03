@@ -232,5 +232,17 @@ public:
 
     void ContinueIncompleteOperation();
 
+    struct SubfileData {
+        unsigned int regionIndex = 0;
+        std::vector<uint8_t> data;
+    };
+    std::string m_currentSaveTitle;
+    std::vector<uint8_t> m_saveData;
+    std::vector<SubfileData> m_subfiles;
+    uint8_t* m_allocatedBuffer = nullptr;
+    unsigned int m_allocatedBufferSize = 0;
+
+    void LoadFromDisk(const std::string& title);
+
     C4JStringTable* m_pStringTable;
 };

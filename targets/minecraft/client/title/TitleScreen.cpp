@@ -186,7 +186,7 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
         playerX = width - 80;
     }
     int skinsBtnW = (width >= 600) ? 96 : 84;
-    int skinsBtnY = height - 26;
+    int skinsBtnY = height - 52;
     Button* btnSkins = new Button(6, playerX - skinsBtnW / 2, skinsBtnY, skinsBtnW, 20, "Aspectos");
     btnSkins->setTextureIcon(48, 32, 16);
     btnSkins->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::chestplate_leather)));
@@ -227,7 +227,8 @@ void TitleScreen::mouseClicked(int xm, int ym, int buttonNum) {
     if (width < 450) {
         playerX = width - 80;
     }
-    int playerY = (int)((float)height - 18.0f - 1.5f * ss);
+    int skinsBtnY = height - 52;
+    int playerY = (int)((float)skinsBtnY - 6.0f - 1.5f * ss);
     int hitLeft = playerX - (int)(0.55f * ss);
     int hitRight = playerX + (int)(0.55f * ss);
     int hitTop = playerY - (int)(0.4f * ss);
@@ -493,7 +494,8 @@ void TitleScreen::render(int xm, int ym, float a) {
         // HumanoidModel origin is at neck/shoulders.
         // Feet are at +1.5 * ss below origin.
         // We position feet grounded above the bottom copyright bar.
-        int playerY = (int)((float)height - 18.0f - 1.5f * ss);
+        int skinsBtnY = height - 52;
+        int playerY = (int)((float)skinsBtnY - 6.0f - 1.5f * ss);
 
         // Reset OpenGL color so yellow splash text or previous GUI draw doesn't tint the skin
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);

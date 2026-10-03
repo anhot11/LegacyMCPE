@@ -15,6 +15,7 @@
 #include "minecraft/client/MemoryTracker.h"
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/gui/Minimap.h"
+#include "minecraft/client/gui/SkinSelectScreen.h"
 #include "minecraft/client/multiplayer/MultiPlayerLevel.h"
 #include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
 #include "minecraft/client/player/LocalPlayer.h"
@@ -516,14 +517,13 @@ void ItemInHandRenderer::render(float a) {
         glEnable(GL_RESCALE_NORMAL);
 
         {
-            // 4J-PB - if we've got a player texture, use that
-            // glBindTexture(GL_TEXTURE_2D,
-            // minecraft->textures->loadHttpTexture(minecraft->player->customTextureUrl,
-            // minecraft->player->getTexture()));
-            glBindTexture(GL_TEXTURE_2D,
-                          minecraft->textures->loadMemTexture(
-                              minecraft->player->customTextureUrl,
-                              minecraft->player->getTexture()));
+            int handTex = SkinSelectScreen::getActiveSkinTexture(minecraft);
+            if (handTex <= 0) {
+                handTex = minecraft->textures->loadMemTexture(
+                    minecraft->player->customTextureUrl,
+                    minecraft->player->getTexture());
+            }
+            glBindTexture(GL_TEXTURE_2D, handTex);
             minecraft->textures->clearLastBoundId();
             for (int i = 0; i < 2; i++) {
                 int flip = i * 2 - 1;
@@ -741,12 +741,13 @@ void ItemInHandRenderer::render(float a) {
         // 4J-PB - if we've got a player texture, use that
 
         // glBindTexture(GL_TEXTURE_2D,
-        // minecraft->textures->loadHttpTexture(minecraft->player->customTextureUrl,
-        // minecraft->player->getTexture()));
-
-        glBindTexture(GL_TEXTURE_2D, minecraft->textures->loadMemTexture(
-                                         minecraft->player->customTextureUrl,
-                                         minecraft->player->getTexture()));
+        int handTex2 = SkinSelectScreen::getActiveSkinTexture(minecraft);
+        if (handTex2 <= 0) {
+            handTex2 = minecraft->textures->loadMemTexture(
+                minecraft->player->customTextureUrl,
+                minecraft->player->getTexture());
+        }
+        glBindTexture(GL_TEXTURE_2D, handTex2);
         minecraft->textures->clearLastBoundId();
         glTranslatef(-1.0f, +3.6f, +3.5f);
         glRotatef(120, 0, 0, 1);

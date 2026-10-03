@@ -11,9 +11,25 @@ class Button;
 class EditBox;
 class Tesselator;
 
+struct ServerData {
+    std::string name;
+    std::string ip;
+    int port;
+
+    // Ping info
+    std::string motd;
+    std::string version;
+    int pingMs;         // -1 = pending or offline
+    int players;
+    int maxPlayers;
+    bool isOnline;
+    bool pingDone;
+};
+
 class SelectWorldScreen : public Screen {
 public:
     class WorldSelectionList;
+    class ServerSelectionList;
 
     enum Tab {
         TAB_WORLDS = 0,
@@ -31,6 +47,9 @@ protected:
     static const int BUTTON_TAB_WORLDS_ID = 10;
     static const int BUTTON_TAB_SERVERS_ID = 11;
     static const int BUTTON_CONNECT_SERVER_ID = 12;
+    static const int BUTTON_ADD_SERVER_ID = 13;
+    static const int BUTTON_DELETE_SERVER_ID = 14;
+    static const int BUTTON_EDIT_SERVER_ID = 15;
 
 protected:
     Screen* lastScreen;
@@ -54,11 +73,18 @@ private:
     Button* tabWorldsButton;
     Button* tabServersButton;
 
-    EditBox* serverIpEdit;
+    // Server tab controls
+    ServerSelectionList* serverSelectionList;
+    std::vector<ServerData> serverList;
+    int selectedServer;
     Button* connectServerButton;
+    Button* addServerButton;
+    Button* deleteServerButton;
+    Button* editServerButton;
 
 public:
     SelectWorldScreen(Screen* lastScreen);
+    virtual ~SelectWorldScreen();
     virtual void init() override;
     virtual void tick() override;
     virtual void removed() override;
@@ -66,6 +92,15 @@ public:
 private:
     void loadLevelList();
     void updateTabVisibility();
+
+public:
+    void loadServers();
+    void saveServers();
+    void refreshServerPings();
+    void addServer(const std::string& name, const std::string& ip, int port);
+    void updateServer(int index, const std::string& name, const std::string& ip, int port);
+    void deleteServer(int index);
+    void serverSelected(int id);
 
 protected:
     std::string getWorldId(int id);
@@ -87,9 +122,21 @@ public:
     class WorldSelectionList : public ScrolledSelectionList {
     public:
         SelectWorldScreen* parent;
-        // 4J - had to add input parameters to ctor, original is a java subclass
-        // of the screen and can access its members
         WorldSelectionList(SelectWorldScreen* sws);
+
+    protected:
+        virtual int getNumberOfItems();
+        virtual void selectItem(int item, bool doubleClick);
+        virtual bool isSelectedItem(int item);
+        virtual int getMaxPosition();
+        virtual void renderBackground();
+        virtual void renderItem(int i, int x, int y, int h, Tesselator* t);
+    };
+
+    class ServerSelectionList : public ScrolledSelectionList {
+    public:
+        SelectWorldScreen* parent;
+        ServerSelectionList(SelectWorldScreen* sws);
 
     protected:
         virtual int getNumberOfItems();

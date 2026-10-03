@@ -44,6 +44,24 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
     }
     for (int l = 0; l < 10; l++) data[l] = nullptr;
 
+    // Check if filePath is an absolute or direct path on disk
+    if (filePath.find('/') != std::string::npos && (filePath[0] == '/' || filePath.find(':') != std::string::npos)) {
+        std::string directPath = filePath;
+        if (!PlatformFilesystem.exists(directPath) && directPath.size() > 4 && directPath.substr(directPath.size() - 4) != ".png") {
+            directPath += ".png";
+        }
+        if (PlatformFilesystem.exists(directPath)) {
+            D3DXIMAGE_INFO ImageInfo;
+            memset(&ImageInfo, 0, sizeof(D3DXIMAGE_INFO));
+            hr = PlatformRenderer.LoadTextureData(directPath.c_str(), &ImageInfo, &data[0]);
+            if (hr == 0) {
+                width = ImageInfo.Width;
+                height = ImageInfo.Height;
+                return;
+            }
+        }
+    }
+
     std::string baseName = filePath;
     if (!filenameHasExtension) {
         if (baseName.size() > 4 &&
@@ -73,6 +91,14 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
             exeDir + "/Common/res/font/" + fileName,
             exeDir + "/Common/Media/" + fileName};
 
+        if (fileName.find("1_2_2/") == 0) {
+            std::string no122 = fileName.substr(6);
+            searchPaths.push_back(exeDir + "/Common/res/TitleUpdate/res/" + no122);
+            searchPaths.push_back(exeDir + "/Common/res/" + no122);
+            searchPaths.push_back(exeDir + "/Common/Media/Graphics/" + no122);
+            searchPaths.push_back(exeDir + "/Common/Media/" + no122);
+        }
+
         for (auto& attempt : searchPaths) {
             size_t p;
             while ((p = attempt.find("//")) != std::string::npos)
@@ -98,6 +124,14 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
                     gameServices().getArchiveFile(archiveKey);
                 hr = PlatformRenderer.LoadTextureData(ba.data(), ba.size(),
                                                       &ImageInfo, &data[l]);
+            } else if (fileName.find("1_2_2/") == 0) {
+                std::string altKey = "res/" + fileName.substr(6);
+                if (gameServices().hasArchiveFile(altKey)) {
+                    std::vector<uint8_t> ba =
+                        gameServices().getArchiveFile(altKey);
+                    hr = PlatformRenderer.LoadTextureData(ba.data(), ba.size(),
+                                                          &ImageInfo, &data[l]);
+                }
             }
         }
 

@@ -25,6 +25,7 @@ client/gui/ControlsScreen.cpp
 client/gui/CreateWorldScreen.cpp
 client/gui/DeathScreen.cpp
 client/gui/EditBox.cpp
+client/gui/EditServerScreen.cpp
 client/gui/ErrorScreen.cpp
 client/gui/Font.cpp
 client/gui/Gui.cpp

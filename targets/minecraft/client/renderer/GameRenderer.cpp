@@ -286,7 +286,51 @@ void GameRenderer::pick(float a) {
 
     double range = mc->gameMode->getPickRange();
     delete mc->hitResult;
-    mc->hitResult = mc->cameraTargetPlayer->pick(range, a);
+
+    bool split = (mc->options != nullptr) ? mc->options->splitControls : true;
+    int mouseX = PlatformInput.GetMouseX();
+    int mouseY = PlatformInput.GetMouseY();
+    int screenW = mc->width;
+    int screenH = mc->height;
+    bool hasTouchRay = false;
+    Vec3 rayDir(0.0f, 0.0f, 0.0f);
+
+    if (!split && screenW > 0 && screenH > 0 && mouseX > 0 && mouseY > 0 && mouseX < screenW && mouseY < screenH) {
+        float u = ((float)mouseX / (float)screenW - 0.5f) * 2.0f;
+        float v = ((float)mouseY / (float)screenH - 0.5f) * 2.0f;
+
+        float fovY = getFov(a, true) * Mth::DEG_TO_RAD;
+        float aspect = (float)screenW / (float)screenH;
+        float halfTanY = tanf(fovY * 0.5f);
+        float halfTanX = halfTanY * aspect;
+
+        Vec3 forward = mc->cameraTargetPlayer->getViewVector(a);
+
+        float yRot = mc->cameraTargetPlayer->yRotO + (mc->cameraTargetPlayer->yRot - mc->cameraTargetPlayer->yRotO) * a;
+        float rightYRot = yRot + 90.0f;
+        float rightCos = cosf(-rightYRot * Mth::DEG_TO_RAD - std::numbers::pi);
+        float rightSin = sinf(-rightYRot * Mth::DEG_TO_RAD - std::numbers::pi);
+        Vec3 right(rightSin, 0.0f, rightCos);
+
+        Vec3 up(
+            right.y * forward.z - right.z * forward.y,
+            right.z * forward.x - right.x * forward.z,
+            right.x * forward.y - right.y * forward.x
+        );
+
+        rayDir = Vec3(
+            forward.x + right.x * (u * halfTanX) - up.x * (v * halfTanY),
+            forward.y + right.y * (u * halfTanX) - up.y * (v * halfTanY),
+            forward.z + right.z * (u * halfTanX) - up.z * (v * halfTanY)
+        ).normalize();
+
+        Vec3 from = mc->cameraTargetPlayer->getPos(a);
+        Vec3 to(from.x + rayDir.x * range, from.y + rayDir.y * range, from.z + rayDir.z * range);
+        mc->hitResult = mc->level->clip(&from, &to);
+        hasTouchRay = true;
+    } else {
+        mc->hitResult = mc->cameraTargetPlayer->pick(range, a);
+    }
 
     // 4J - added - stop blocks right at the edge of the world from being
     // pickable so we shouldn't be able to directly destroy or create anything
@@ -327,7 +371,7 @@ void GameRenderer::pick(float a) {
         dist = mc->hitResult->pos.distanceTo(from);
     }
 
-    Vec3 b = mc->cameraTargetPlayer->getViewVector(a);
+    Vec3 b = hasTouchRay ? rayDir : mc->cameraTargetPlayer->getViewVector(a);
     Vec3 to(b.x * range, b.y * range, b.z * range);
     to = to.add(from.x, from.y, from.z);
     hovered = nullptr;

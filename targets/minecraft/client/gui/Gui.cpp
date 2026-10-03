@@ -414,11 +414,13 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse) {
             // glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
             //  4J Stu - We don't want to adjust the cursor by the safezone, we
             //  want it centred
-            if (bTwoPlayerSplitscreen) {
-                blit(iWidthOffset + screenWidth / 2 - 7,
-                     (iHeightOffset + screenHeight) / 2 - 7, 0, 0, 16, 16);
-            } else {
-                blit(screenWidth / 2 - 7, screenHeight / 2 - 7, 0, 0, 16, 16);
+            if (minecraft->options && minecraft->options->splitControls) {
+                if (bTwoPlayerSplitscreen) {
+                    blit(iWidthOffset + screenWidth / 2 - 7,
+                         (iHeightOffset + screenHeight) / 2 - 7, 0, 0, 16, 16);
+                } else {
+                    blit(screenWidth / 2 - 7, screenHeight / 2 - 7, 0, 0, 16, 16);
+                }
             }
             glDisable(GL_BLEND);
 

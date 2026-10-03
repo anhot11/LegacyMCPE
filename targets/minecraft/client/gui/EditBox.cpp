@@ -33,7 +33,23 @@ void EditBox::setValue(const std::string& value) { this->value = value; }
 
 std::string EditBox::getValue() { return value; }
 
-void EditBox::tick() { frame++; }
+void EditBox::tick() {
+    frame++;
+    if (inFocus && active) {
+        std::string typed = PlatformInput.PollTextInput();
+        if (!typed.empty()) {
+            for (char ch : typed) {
+                if (((ch >= 32 && ch <= 126) || SharedConstants::acceptableLetters.find(ch) != std::string::npos) &&
+                    (value.length() < (size_t)maxLength || maxLength == 0)) {
+                    value += ch;
+                }
+            }
+        }
+        if (PlatformInput.PollBackspacePressed() && value.length() > 0) {
+            value = value.substr(0, value.length() - 1);
+        }
+    }
+}
 
 void EditBox::keyPressed(char ch, int eventKey) {
     if (!active || !inFocus) {
@@ -59,7 +75,7 @@ void EditBox::keyPressed(char ch, int eventKey) {
     if (eventKey == Keyboard::KEY_BACK && value.length() > 0) {
         value = value.substr(0, value.length() - 1);
     }
-    if (SharedConstants::acceptableLetters.find(ch) != std::string::npos &&
+    if (((ch >= 32 && ch <= 126) || SharedConstants::acceptableLetters.find(ch) != std::string::npos) &&
         (value.length() < maxLength || maxLength == 0)) {
         value += ch;
     }
@@ -72,11 +88,11 @@ void EditBox::mouseClicked(int mouseX, int mouseY, int buttonNum) {
 }
 
 void EditBox::focus(bool newFocus) {
-    if (newFocus && !inFocus) {
+    if (newFocus) {
         // reset the underscore counter to give quicker selection feedback
         frame = 0;
         PlatformInput.StartTextInput();
-    } else if (!newFocus && inFocus) {
+    } else if (inFocus) {
         PlatformInput.StopTextInput();
     }
     inFocus = newFocus;

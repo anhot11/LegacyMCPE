@@ -10,6 +10,9 @@ protected:
 private:
     int frame;
 
+    Button* btnSend;
+    Button* btnClose;
+
 public:
     ChatScreen();  // 4J added
     virtual void init() override;
@@ -18,9 +21,11 @@ public:
 
 private:
     static const std::string allowedChars;
+    void sendMessage();
 
 protected:
     void keyPressed(char ch, int eventKey) override;
+    void buttonClicked(Button* button) override;
 
 public:
     void render(int xm, int ym, float a) override;

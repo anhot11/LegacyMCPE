@@ -126,7 +126,7 @@ void StubProfile::Initialise(std::uint32_t, std::uint32_t, unsigned short,
 
 int StubProfile::GetLockedProfile() { return s_lockedProfile; }
 void StubProfile::SetLockedProfile(int iProf) { s_lockedProfile = iProf; }
-bool StubProfile::IsSignedIn(int iQuadrant) { return iQuadrant == 0; }
+bool StubProfile::IsSignedIn(int iQuadrant) { return true; }
 bool StubProfile::IsSignedInLive(int iProf) { return IsSignedIn(iProf); }
 bool StubProfile::IsGuest(int) { return false; }
 bool StubProfile::QuerySigninStatus() { return true; }

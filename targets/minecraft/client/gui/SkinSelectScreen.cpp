@@ -1,6 +1,7 @@
 #include "SkinSelectScreen.h"
 
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -69,18 +70,40 @@ SkinSelectScreen::SkinSelectScreen(Screen* lastScreen)
     skins.push_back({"Cyclist", "Cyclist Steve", "Ciclista", TN_MOB_CHAR6, ""});
     skins.push_back({"Boxer", "Boxer Steve", "Boxeo", TN_MOB_CHAR7, ""});
 
-    // Check for custom skin files on external storage
-    std::vector<std::string> customPaths = {
-        "/sdcard/custom_skin.png",
-        "/sdcard/Download/skin.png",
-        "/sdcard/Download/custom_skin.png",
-        "/sdcard/LegacyMCPE/skin.png"
+    // Check for custom skin files on external storage and download folders
+    std::vector<std::string> scanDirs = {
+        "/sdcard/Download",
+        "/sdcard/LegacyMCPE",
+        "/sdcard/Pictures",
+        "/sdcard"
     };
 
-    for (const auto& cp : customPaths) {
-        if (fileExists(cp)) {
-            skins.push_back({"Custom", "Skin Personalizada", cp, TN_COUNT, cp});
-            break;
+    for (const auto& dirPath : scanDirs) {
+        try {
+            if (std::filesystem::exists(dirPath) && std::filesystem::is_directory(dirPath)) {
+                for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
+                    if (entry.is_regular_file()) {
+                        std::string ext = entry.path().extension().string();
+                        for (auto& c : ext) c = (char)tolower((unsigned char)c);
+                        if (ext == ".png") {
+                            std::string filename = entry.path().filename().string();
+                            std::string fullPath = entry.path().string();
+                            bool alreadyAdded = false;
+                            for (const auto& s : skins) {
+                                if (s.texturePath == fullPath) {
+                                    alreadyAdded = true;
+                                    break;
+                                }
+                            }
+                            if (!alreadyAdded) {
+                                skins.push_back({fullPath, filename, "Almacenamiento", TN_COUNT, fullPath});
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (...) {
+            // Ignore filesystem scan errors
         }
     }
 }
@@ -98,7 +121,7 @@ void SkinSelectScreen::init() {
     Options* options = minecraft->options;
     selectedIndex = 0;
     for (size_t i = 0; i < skins.size(); i++) {
-        if (skins[i].id == options->skin) {
+        if (skins[i].id == options->skin || (!skins[i].texturePath.empty() && skins[i].texturePath == options->skin)) {
             selectedIndex = (int)i;
             break;
         }
@@ -161,7 +184,7 @@ int SkinSelectScreen::getActiveSkinTexture(Minecraft* mc) {
     if (skin == "Boxer" || skin == "Boxer Steve" || skin == "Skin7") {
         return mc->textures->loadTexture(TN_MOB_CHAR7);
     }
-    if (skin == "Custom" || skin.find(".png") != std::string::npos) {
+    if (skin == "Custom" || skin.find(".png") != std::string::npos || skin.find('/') != std::string::npos) {
         int tid = mc->textures->loadTexture(TN_COUNT, skin);
         if (tid > 0) return tid;
     }
@@ -171,11 +194,17 @@ int SkinSelectScreen::getActiveSkinTexture(Minecraft* mc) {
 void SkinSelectScreen::selectSkin(int index) {
     if (index < 0 || index >= (int)skins.size()) return;
     selectedIndex = index;
-    minecraft->options->skin = skins[index].id;
+    minecraft->options->skin = !skins[index].texturePath.empty() ? skins[index].texturePath : skins[index].id;
     minecraft->options->save();
 
     // Sync in-game player skin if player is active
     if (minecraft->player != nullptr) {
+        if (!skins[index].texturePath.empty()) {
+            minecraft->player->customTextureUrl = skins[index].texturePath;
+        } else {
+            minecraft->player->customTextureUrl = "";
+        }
+
         if (skins[index].id == "Default") {
             minecraft->player->setPlayerDefaultSkin(EDefaultSkins::Skin0);
         } else if (skins[index].id == "Tennis") {
@@ -361,9 +390,13 @@ void SkinSelectScreen::render(int xm, int ym, float a) {
 
     // 7. Render 3D Preview on the right
     if (previewModel != nullptr && selectedIndex >= 0 && selectedIndex < (int)skins.size()) {
-        float ss = (height >= 300) ? 100.0f : 80.0f;
+        float ss = (height >= 300) ? 90.0f : 75.0f;
         int pX = previewCenterX;
-        int pY = (int)((float)height - 24.0f - 1.5f * ss);
+        int pY = (int)((float)listY1 - 8.0f - 1.5f * ss);
+
+        // Hint above 3D character - never covers model
+        std::string hint = "Arrastra para rotar 360°";
+        drawCenteredString(font, hint, previewCenterX, listY0 + 6, 0xaaaaaa);
 
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         glDisable(GL_COLOR_MATERIAL);
@@ -415,10 +448,6 @@ void SkinSelectScreen::render(int xm, int ym, float a) {
         glDepthMask(false);
         glEnable(GL_CULL_FACE);
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-        // Hint below 3D character
-        std::string hint = "Arrastra para rotar 360°";
-        drawCenteredString(font, hint, previewCenterX, height - 52, 0x888888);
     }
 
     // 8. Screen Title & Buttons

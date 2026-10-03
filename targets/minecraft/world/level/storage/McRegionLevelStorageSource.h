@@ -30,6 +30,9 @@ public:
     virtual bool convertLevel(ConsoleSaveFile* saveFile,
                               const std::string& levelId,
                               ProgressListener* progress);
+    virtual void deleteLevel(const std::string& levelId) override;
+    virtual void renameLevel(const std::string& levelId,
+                             const std::string& newLevelName) override;
 
 private:
     void convertRegions(File& baseFolder, std::vector<ChunkFile*>* chunkFiles,

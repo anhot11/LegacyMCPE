@@ -129,6 +129,7 @@ public:
     int touchControlStyle;
     int touchControlScale;
     int touchControlOpacity;
+    bool splitControls;
 
     void init();  // 4J added
     Options(Minecraft* minecraft, File workingDirectory);

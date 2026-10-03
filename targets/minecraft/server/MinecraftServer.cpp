@@ -911,8 +911,7 @@ void MinecraftServer::stopServer(bool didInit) {
 
     // also need to check for a profile switch here - primary player signs out,
     // and another player signs in before dismissing the dash
-    if ((m_bPrimaryPlayerSignedOut == false) &&
-        PlatformProfile.IsSignedIn(PlatformInput.GetPrimaryPad())) {
+    if (m_bPrimaryPlayerSignedOut == false) {
         // if trial version or saving is disabled, then don't save anything.
         // Also don't save anything if we didn't actually get through the server
         // initialisation.

@@ -16,6 +16,7 @@
 #include "minecraft/client/model/geom/Model.h"
 #include "minecraft/client/model/geom/ModelPart.h"
 #include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
+#include "minecraft/client/gui/SkinSelectScreen.h"
 #include "minecraft/client/renderer/ItemInHandRenderer.h"
 #include "minecraft/client/renderer/Textures.h"
 #include "minecraft/client/renderer/TileRenderer.h"
@@ -533,6 +534,17 @@ void PlayerRenderer::renderShadow(std::shared_ptr<Entity> e, double x, double y,
 // 4J Added override
 void PlayerRenderer::bindTexture(std::shared_ptr<Entity> entity) {
     std::shared_ptr<Player> player = std::dynamic_pointer_cast<Player>(entity);
+    if (player != nullptr) {
+        Minecraft* mc = Minecraft::GetInstance();
+        if (mc && mc->player && player->name == mc->player->name) {
+            int texId = SkinSelectScreen::getActiveSkinTexture(mc);
+            if (texId > 0) {
+                glBindTexture(GL_TEXTURE_2D, texId);
+                mc->textures->clearLastBoundId();
+                return;
+            }
+        }
+    }
     bindTexture(player->customTextureUrl, player->getTexture());
 }
 

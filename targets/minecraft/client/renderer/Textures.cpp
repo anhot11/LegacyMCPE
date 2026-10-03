@@ -1240,6 +1240,10 @@ BufferedImage* Textures::readImage(
                 "1_2_2/" + name, false, isTu,
                 drive);  // new BufferedImage("/1_2_2" +
                          // name,false,isTu,drive);
+            if (img && img->getWidth() <= 1 && img->getHeight() <= 1) {
+                delete img;
+                img = skins->getDefault()->getImageResource(name, false, isTu, drive);
+            }
         }
     }
 
@@ -1340,6 +1344,7 @@ TEXTURE_NAME OriginalImages[] = {TN_MOB_CHAR,   TN_MOB_CHAR1, TN_MOB_CHAR2,
                                  TN_COUNT};
 
 const char* const OriginalImagesPaths[] = {"misc/watercolor.png",
+                                           "mob/alex.png",
 
                                            nullptr};
 
