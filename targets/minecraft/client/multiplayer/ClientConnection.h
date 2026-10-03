@@ -57,7 +57,6 @@ public:
     bool isStarted() { return started; }                     // 4J Added
     bool isClosed() { return done; }                         // 4J Added
     bool isConnected() { return createdOk && connection != nullptr; }
-    Connection* getConnection() { return connection; }
     Socket* getSocket() { return connection ? connection->getSocket() : nullptr; }  // 4J Added
 
 private:
