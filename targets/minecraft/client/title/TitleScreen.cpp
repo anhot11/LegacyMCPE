@@ -24,6 +24,7 @@
 #include "minecraft/client/gui/LunarModsScreen.h"
 #include "minecraft/client/gui/OptionsScreen.h"
 #include "minecraft/client/gui/SelectWorldScreen.h"
+#include "minecraft/client/gui/SkinSelectScreen.h"
 #include "minecraft/client/model/HumanoidModel.h"
 #include "minecraft/client/renderer/Tesselator.h"
 #include "minecraft/client/renderer/Textures.h"
@@ -176,6 +177,18 @@ if (c.get(Calendar.MONTH) + 1 == 11 && c.get(Calendar.DAY_OF_MONTH) == 9) {
     btnQuit->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
     buttons.push_back(btnQuit);
 #endif
+
+    // Aspectos / Skins button on the right side under the 3D player preview
+    int playerX = width * 3 / 4;
+    if (width < 450) {
+        playerX = width - 80;
+    }
+    int skinsBtnW = (width >= 600) ? 96 : 84;
+    int skinsBtnY = height - 26;
+    Button* btnSkins = new Button(6, playerX - skinsBtnW / 2, skinsBtnY, skinsBtnW, 20, "Aspectos");
+    btnSkins->setTextureIcon(48, 32, 16);
+    btnSkins->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::chestplate_leather)));
+    buttons.push_back(btnSkins);
 }
 
 void TitleScreen::buttonClicked(Button* button) {
@@ -199,6 +212,32 @@ void TitleScreen::buttonClicked(Button* button) {
             "TitleScreen::buttonClicked() 'Mods (Lunar Client)' if (button->id == 5)\n");
         minecraft->setScreen(new LunarModsScreen(this));
     }
+    if (button->id == 6) {
+        minecraft->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1.0f, 1.0f);
+        minecraft->setScreen(new SkinSelectScreen(this));
+    }
+}
+
+void TitleScreen::mouseClicked(int xm, int ym, int buttonNum) {
+    // Check if player tapped directly on the 3D character preview
+    float ss = (height >= 300) ? 96.0f : 80.0f;
+    int playerX = width * 3 / 4;
+    if (width < 450) {
+        playerX = width - 80;
+    }
+    int playerY = (int)((float)height - 18.0f - 1.5f * ss);
+    int hitLeft = playerX - (int)(0.55f * ss);
+    int hitRight = playerX + (int)(0.55f * ss);
+    int hitTop = playerY - (int)(0.4f * ss);
+    int hitBottom = playerY + (int)(1.6f * ss);
+
+    if (xm >= hitLeft && xm <= hitRight && ym >= hitTop && ym <= hitBottom) {
+        minecraft->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1.0f, 1.0f);
+        minecraft->setScreen(new SkinSelectScreen(this));
+        return;
+    }
+
+    Screen::mouseClicked(xm, ym, buttonNum);
 }
 
 // 4jcraft: render our panorama
@@ -483,37 +522,36 @@ void TitleScreen::render(int xm, int ym, float a) {
         float dy = 0.0f;
         if (xm <= 0 && ym <= 0) {
             // Default idle orientation: look slightly towards the screen center buttons
-            dx = -(float)width * 0.25f;
+            dx = -(float)width * 0.28f;
             dy = 0.0f;
         } else {
             dx = (float)xm - steveEyeX;
             dy = (float)ym - steveEyeY;
         }
 
-        // Body rotation: base angle of 20 deg facing slightly towards center,
-        // turning naturally with touch
-        float bodyTurn = (float)atan2(dx, 160.0f) * 57.29578f * 0.35f;
-        float bodyRot = 20.0f - bodyTurn;
-        if (bodyRot > 60.0f) bodyRot = 60.0f;
-        if (bodyRot < -20.0f) bodyRot = -20.0f;
+        // Smooth normalized tracking across the entire screen (eliminates left limit)
+        float refDistX = (float)width * 0.45f;
+        float refDistY = (float)height * 0.50f;
 
-        // Rotate Steve 180 deg to face forward towards the camera
-        glRotatef(180.0f - bodyRot, 0.0f, 1.0f, 0.0f);
+        float targetYaw = -(float)atan2(dx, refDistX) * (180.0f / 3.14159265f);
+        float targetPitch = (float)atan2(dy, refDistY) * (180.0f / 3.14159265f);
 
-        // Head tracking
-        float targetYaw = -(float)atan2(dx, 90.0f) * 57.29578f;
-        float relYaw = targetYaw - bodyRot;
-        if (relYaw > 45.0f) relYaw = 45.0f;
-        if (relYaw < -45.0f) relYaw = -45.0f;
-        float headYaw = relYaw + sinf(vo * 0.04f) * 1.5f;
+        // Clamp to natural turning range
+        if (targetYaw > 75.0f) targetYaw = 75.0f;
+        if (targetYaw < -75.0f) targetYaw = -75.0f;
+        if (targetPitch > 30.0f) targetPitch = 30.0f;
+        if (targetPitch < -30.0f) targetPitch = -30.0f;
 
-        float targetPitch = (float)atan2(dy, 90.0f) * 57.29578f;
-        if (targetPitch > 25.0f) targetPitch = 25.0f;
-        if (targetPitch < -25.0f) targetPitch = -25.0f;
+        // Distribute turning smoothly: 40% body, 60% head
+        float bodyRot = targetYaw * 0.40f;
+        float headYaw = (targetYaw * 0.60f) + sinf(vo * 0.04f) * 1.5f;
         float headPitch = targetPitch + cosf(vo * 0.04f) * 1.0f;
 
-        glBindTexture(GL_TEXTURE_2D,
-                      minecraft->textures->loadTexture(TN_MOB_CHAR));
+        // Rotate Steve 180 deg to face forward towards the camera, with body rotation
+        glRotatef(180.0f - bodyRot, 0.0f, 1.0f, 0.0f);
+
+        int activeTex = SkinSelectScreen::getActiveSkinTexture(minecraft);
+        glBindTexture(GL_TEXTURE_2D, activeTex);
 
         playerModel->attackTime = 0.0f;
         playerModel->holdingRightHand = 0;

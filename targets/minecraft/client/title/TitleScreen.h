@@ -59,6 +59,7 @@ public:
 
 protected:
     virtual void buttonClicked(Button* button) override;
+    virtual void mouseClicked(int xm, int ym, int buttonNum) override;
 
 public:
     virtual void render(int xm, int ym, float a) override;

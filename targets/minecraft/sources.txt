@@ -43,6 +43,7 @@ client/gui/Screen.cpp
 client/gui/ScreenSizeCalculator.cpp
 client/gui/ScrolledSelectionList.cpp
 client/gui/SelectWorldScreen.cpp
+client/gui/SkinSelectScreen.cpp
 client/gui/SlideButton.cpp
 client/gui/SmallButton.cpp
 client/gui/TradeSwitchButton.cpp

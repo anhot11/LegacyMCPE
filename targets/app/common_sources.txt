@@ -1,8 +1,8 @@
 common/AppGameServices.cpp
 common/ArchiveManager.cpp
+common/Audio/ConsoleSoundEngine.cpp
 common/Audio/SoundEngine.cpp
 common/Audio/SoundNames.cpp
-common/Audio/ConsoleSoundEngine.cpp
 common/BannedListManager.cpp
 common/ConsoleGameMode.cpp
 common/DLC/DLCAudioFile.cpp
@@ -46,6 +46,7 @@ common/GameRules/LevelRules/RuleDefinitions/UseTileRuleDefinition.cpp
 common/GameRules/LevelRules/Rules/GameRule.cpp
 common/GameSettingsManager.cpp
 common/Game_XuiActions.cpp
+common/Iggy/gdraw/gdraw.c
 common/LocalizationManager.cpp
 common/MenuController.cpp
 common/Network/GameNetworkManager.cpp
@@ -86,8 +87,6 @@ common/Tutorial/Tasks/XuiCraftingTask.cpp
 common/Tutorial/Tutorial.cpp
 common/Tutorial/TutorialMessage.cpp
 common/Tutorial/TutorialMode.cpp
-common/Iggy/gdraw/gdraw.c
-common/UI/ConsoleUIController.cpp
 common/UI/All Platforms/ArchiveFile.cpp
 common/UI/All Platforms/IUIScene_AbstractContainerMenu.cpp
 common/UI/All Platforms/IUIScene_AnvilMenu.cpp
@@ -117,6 +116,7 @@ common/UI/Components/UIComponent_PressStartToPlay.cpp
 common/UI/Components/UIComponent_Tooltips.cpp
 common/UI/Components/UIComponent_TutorialPopup.cpp
 common/UI/Components/UIScene_HUD.cpp
+common/UI/ConsoleUIController.cpp
 common/UI/Controls/UIControl.cpp
 common/UI/Controls/UIControl_Base.cpp
 common/UI/Controls/UIControl_BeaconEffectButton.cpp
@@ -143,6 +143,7 @@ common/UI/Controls/UIControl_SlotList.cpp
 common/UI/Controls/UIControl_SpaceIndicatorBar.cpp
 common/UI/Controls/UIControl_TextInput.cpp
 common/UI/Controls/UIControl_TexturePackList.cpp
+common/UI/Controls/UIControl_Touch.cpp
 common/UI/Scenes/Debug/UIScene_DebugCreateSchematic.cpp
 common/UI/Scenes/Debug/UIScene_DebugOptions.cpp
 common/UI/Scenes/Debug/UIScene_DebugOverlay.cpp
