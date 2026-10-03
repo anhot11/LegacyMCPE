@@ -67,6 +67,7 @@ void Screen::mouseClicked(int x, int y, int buttonNum) {
                 clickedButton = button;
                 minecraft->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1, 1);
                 buttonClicked(button);
+                break;
             }
         }
     }

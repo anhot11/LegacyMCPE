@@ -519,43 +519,41 @@ void SelectWorldScreen::updateTabVisibility() {
     }
 
     // Worlds controls
+    bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
     if (selectButton) {
         selectButton->visible = isWorlds;
-        bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
-        selectButton->active = hasSelection;
+        selectButton->active = isWorlds && hasSelection;
     }
     if (createButton) {
         createButton->visible = isWorlds;
-        createButton->active = true;
+        createButton->active = isWorlds;
     }
     if (deleteButton) {
         deleteButton->visible = isWorlds;
-        bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
-        deleteButton->active = hasSelection;
+        deleteButton->active = isWorlds && hasSelection;
     }
     if (renameButton) {
         renameButton->visible = isWorlds;
-        bool hasSelection = (selectedWorld >= 0 && levelList != nullptr && selectedWorld < (int)levelList->size());
-        renameButton->active = hasSelection;
+        renameButton->active = isWorlds && hasSelection;
     }
 
     // Server controls
     bool hasServerSelection = (selectedServer >= 0 && selectedServer < (int)serverList.size());
     if (connectServerButton) {
         connectServerButton->visible = !isWorlds;
-        connectServerButton->active = hasServerSelection;
+        connectServerButton->active = !isWorlds && hasServerSelection;
     }
     if (addServerButton) {
         addServerButton->visible = !isWorlds;
-        addServerButton->active = true;
+        addServerButton->active = !isWorlds;
     }
     if (deleteServerButton) {
         deleteServerButton->visible = !isWorlds;
-        deleteServerButton->active = hasServerSelection;
+        deleteServerButton->active = !isWorlds && hasServerSelection;
     }
     if (editServerButton) {
         editServerButton->visible = !isWorlds;
-        editServerButton->active = hasServerSelection;
+        editServerButton->active = !isWorlds && hasServerSelection;
     }
 
     // Cancel / Back button

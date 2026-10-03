@@ -75,7 +75,7 @@ void CreateWorldScreen::init() {
 
     nameEdit = new EditBox(this, font, width / 2 - 100, 60, 200, 20,
                            language->getElement("selectWorld.newWorld"));
-    nameEdit->inFocus = true;
+    nameEdit->focus(true);
     nameEdit->setMaxLength(32);
 
     seedEdit = new EditBox(this, font, width / 2 - 100, 60, 200, 20, "");
@@ -174,7 +174,12 @@ std::string CreateWorldScreen::findAvailableFolderName(
     return folder2;
 }
 
-void CreateWorldScreen::removed() { Keyboard::enableRepeatEvents(false); }
+void CreateWorldScreen::removed() {
+    Keyboard::enableRepeatEvents(false);
+    if (nameEdit != nullptr) nameEdit->focus(false);
+    if (seedEdit != nullptr) seedEdit->focus(false);
+    PlatformInput.StopTextInput();
+}
 
 void CreateWorldScreen::buttonClicked(Button* button) {
     Log::info("CreateWorldScreen::buttonClicked START\n");
@@ -185,8 +190,6 @@ void CreateWorldScreen::buttonClicked(Button* button) {
             "minecraft->setScreen(lastScreen)\n");
         minecraft->setScreen(lastScreen);
     } else if (button->id == 0) {
-        minecraft->setScreen(
-            new Screen());  // blank screen while the world loads
         if (done) return;
         done = true;
 
@@ -427,8 +430,6 @@ void CreateWorldScreen::render(int xm, int ym, float a) {
 
         seedEdit->render();
     }
-
-    Screen::render(xm, ym, a);
 
     Screen::render(xm, ym, a);
 }

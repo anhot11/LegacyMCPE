@@ -134,5 +134,5 @@ void Button::renderBg(Minecraft* minecraft, int xm, int ym) {}
 void Button::released(int mx, int my) {}
 
 bool Button::clicked(Minecraft* minecraft, int mx, int my) {
-    return active && mx >= x && my >= y && mx < x + w && my < y + h;
+    return visible && active && mx >= x && my >= y && mx < x + w && my < y + h;
 }
