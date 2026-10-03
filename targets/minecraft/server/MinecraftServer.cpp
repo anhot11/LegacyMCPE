@@ -1349,6 +1349,7 @@ void MinecraftServer::handleConsoleInputs() {
 }
 
 void MinecraftServer::main(int64_t seed, void* lpParameter) {
+    s_bServerHalted = false;
     ShutdownManager::HasStarted(ShutdownManager::eServerThread);
     server = new MinecraftServer();
     server->run(seed, lpParameter);

@@ -33,6 +33,7 @@
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/client/gui/ScrolledSelectionList.h"
 #include "minecraft/client/multiplayer/ConnectScreen.h"
+#include "minecraft/client/multiplayer/DisconnectedScreen.h"
 #include "minecraft/locale/Language.h"
 #include "minecraft/util/Log.h"
 #include "minecraft/world/item/Item.h"
@@ -255,6 +256,7 @@ SelectWorldScreen::~SelectWorldScreen() {
 
 void SelectWorldScreen::init() {
     Log::info("SelectWorldScreen::init() START\n");
+    done = false;
     Language* language = Language::getInstance();
     title = language->getElement("selectWorld.title");
     currentTab = TAB_WORLDS;
@@ -411,6 +413,14 @@ void SelectWorldScreen::deleteServer(int index) {
 void SelectWorldScreen::serverSelected(int id) {
     if (id < 0 || id >= (int)serverList.size()) return;
     const ServerData& s = serverList[id];
+    if (s.pingDone && !s.isOnline) {
+        Language* language = Language::getInstance();
+        std::string title = language ? language->getElement("connect.failed") : "Desconectado";
+        if (title.empty() || title == "connect.failed") title = "Desconectado";
+        std::string reason = "No se pudo conectar al servidor " + s.name + " (" + s.ip + ":" + std::to_string(s.port) + ").\nEl servidor se encuentra fuera de linea (Offline).";
+        minecraft->setScreen(new DisconnectedScreen(title, reason, nullptr));
+        return;
+    }
     minecraft->options->lastMpIp = replaceAll(s.ip + ":" + std::to_string(s.port), ":", "_");
     minecraft->options->save();
     minecraft->setScreen(new ConnectScreen(minecraft, s.ip, s.port));
@@ -669,7 +679,7 @@ void SelectWorldScreen::worldSelected(int id) {
     }
 
     PlatformStorage.ResetSaveData();
-    PlatformStorage.SetSaveTitle((char*)worldName.c_str());
+    PlatformStorage.SetSaveTitle((char*)worldFolderName.c_str());
 
     NetworkGameInitData* param = new NetworkGameInitData();
     param->seed = 0;

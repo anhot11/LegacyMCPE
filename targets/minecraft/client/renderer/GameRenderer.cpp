@@ -323,7 +323,7 @@ void GameRenderer::pick(float a) {
         Vec3 forward(sinTheta * (-cosPhi), sinPhi, cosTheta * (-cosPhi));
 
         // Right vector (horizontal, 90 deg clockwise from yaw)
-        Vec3 right(-cosTheta, 0.0f, sinTheta);
+        Vec3 right(cosTheta, 0.0f, -sinTheta);
 
         // Up vector (orthogonal to forward and right, pointing camera-up)
         Vec3 up(sinTheta * sinPhi, cosPhi, cosTheta * sinPhi);
@@ -334,7 +334,10 @@ void GameRenderer::pick(float a) {
             forward.z + right.z * (u * halfTanX) + up.z * (v * halfTanY)
         ).normalize();
 
-        Vec3 from = mc->cameraTargetPlayer->getPos(a);
+        double eyeX = mc->cameraTargetPlayer->xo + (mc->cameraTargetPlayer->x - mc->cameraTargetPlayer->xo) * a;
+        double eyeY = mc->cameraTargetPlayer->yo + (mc->cameraTargetPlayer->y - mc->cameraTargetPlayer->yo) * a - (mc->cameraTargetPlayer->heightOffset - 1.62f);
+        double eyeZ = mc->cameraTargetPlayer->zo + (mc->cameraTargetPlayer->z - mc->cameraTargetPlayer->zo) * a;
+        Vec3 from(eyeX, eyeY, eyeZ);
         Vec3 to(from.x + rayDir.x * range, from.y + rayDir.y * range, from.z + rayDir.z * range);
         mc->hitResult = mc->level->clip(&from, &to);
         hasTouchRay = true;
@@ -368,7 +371,10 @@ void GameRenderer::pick(float a) {
     }
 
     double dist = range;
-    Vec3 from = mc->cameraTargetPlayer->getPos(a);
+    double eyeX = mc->cameraTargetPlayer->xo + (mc->cameraTargetPlayer->x - mc->cameraTargetPlayer->xo) * a;
+    double eyeY = mc->cameraTargetPlayer->yo + (mc->cameraTargetPlayer->y - mc->cameraTargetPlayer->yo) * a - (mc->cameraTargetPlayer->heightOffset - 1.62f);
+    double eyeZ = mc->cameraTargetPlayer->zo + (mc->cameraTargetPlayer->z - mc->cameraTargetPlayer->zo) * a;
+    Vec3 from(eyeX, eyeY, eyeZ);
 
     if (mc->gameMode->hasFarPickRange()) {
         dist = range = 6;

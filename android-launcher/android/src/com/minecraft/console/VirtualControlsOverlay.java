@@ -676,6 +676,9 @@ public class VirtualControlsOverlay extends View {
                     mIsPanning = false;
                     mIsMining = false;
 
+                    // Immediately update native touch coordinates for block selection / raycasting
+                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_HOVER_MOVE, mWorldDownX, mWorldDownY, false);
+
                     // Schedule Hold to Mine after 200ms steady hold
                     mHoldToMineRunnable = new Runnable() {
                         @Override
@@ -730,7 +733,7 @@ public class VirtualControlsOverlay extends View {
                             float distFromDown = (float) Math.hypot(curX - mWorldDownX, curY - mWorldDownY);
 
                             if (mIsMining) {
-                                // While actively mining a block, ignore minor finger drift (< 45dp) so camera doesn't jerk
+                                // While actively mining a block, lock camera completely!
                                 if (distFromDown > 45.0f * mDensity) {
                                     SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
                                     mIsMining = false;
@@ -738,6 +741,7 @@ public class VirtualControlsOverlay extends View {
                                     mLastWorldX = curX;
                                     mLastWorldY = curY;
                                 }
+                                break; // Stop here: never pan or move camera while mining!
                             } else if (!mIsPanning) {
                                 if (distFromDown > 20.0f * mDensity) {
                                     // Finger moved before hold time -> User is rotating camera
@@ -758,7 +762,7 @@ public class VirtualControlsOverlay extends View {
                                 mLastWorldY = curY;
 
                                 // Clamp per-move delta to prevent camera jumping to sky
-                                float maxDelta = 35.0f * mDensity;
+                                float maxDelta = 150.0f * mDensity;
                                 dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
                                 dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
 

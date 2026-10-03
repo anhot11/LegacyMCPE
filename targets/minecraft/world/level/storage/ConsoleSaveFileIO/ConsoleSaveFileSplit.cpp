@@ -210,11 +210,13 @@ void ConsoleSaveFileSplit::RegionFileReference::Decompress() {
         unsigned char* dataIn = dataCompressed + 4;
         unsigned char* dataInLast = dataCompressed + dataCompressedSize;
 
-        while (dataIn != dataInLast) {
+        while (dataIn < dataInLast) {
             unsigned char thisByte = *dataIn++;
             if (thisByte == 0) {
+                if (dataIn >= dataInLast) break;
                 thisByte = *dataIn++;
                 if (thisByte == 0) {
+                    if (dataIn + 1 >= dataInLast) break;
                     unsigned int runLength = (*dataIn++) << 8;
                     runLength |= (*dataIn++);
                     runLength += 256;
@@ -231,7 +233,6 @@ void ConsoleSaveFileSplit::RegionFileReference::Decompress() {
         if (fileEntry->data.length != uncompressedSize) {
             // Treat as if it was an empty region file
             fileEntry->data.length = 0;
-            assert(0);
             return;
         }
     }
@@ -241,11 +242,13 @@ void ConsoleSaveFileSplit::RegionFileReference::Decompress() {
     unsigned char* dataInLast = dataCompressed + dataCompressedSize;
     unsigned char* dataOut = data;
 
-    while (dataIn != dataInLast) {
+    while (dataIn < dataInLast) {
         unsigned char thisByte = *dataIn++;
         if (thisByte == 0) {
+            if (dataIn >= dataInLast) break;
             thisByte = *dataIn++;
             if (thisByte == 0) {
+                if (dataIn + 1 >= dataInLast) break;
                 unsigned int runLength = (*dataIn++) << 8;
                 runLength |= (*dataIn++);
                 runLength += 256;
@@ -268,7 +271,6 @@ void ConsoleSaveFileSplit::RegionFileReference::Decompress() {
         free(data);
         fileEntry->data.length = 0;
         data = nullptr;
-        assert(0);
     }
     //	std::int64_t endTime = System::currentTimeMillis();
     //	Log::info("Decompressing region file from 0x%.8x %d to %d bytes -
@@ -478,9 +480,6 @@ void ConsoleSaveFileSplit::_init(const std::string& fileName, void* pvSaveData,
                     // Corrupt save, although most of the terrain should
                     // actually be ok
                     Log::info("Failed to decompress save data!\n");
-#if !defined(_CONTENT_PACKAGE)
-                    assert(0);
-#endif
                     memset(pvSaveMem, 0, fileSize);
                     // Clear the first 8 bytes that reference the header
                     header.WriteHeader(pvSaveMem);
@@ -1260,6 +1259,7 @@ void ConsoleSaveFileSplit::Flush(bool autosave, bool updateThumbnail) {
         memcpy(compData + 4, &fileSize, sizeof(int));
 
         Log::info("Save data compressed from %d to %d\n", fileSize, compLength);
+        PlatformStorage.SetActualSaveDataSize(compLength + 8);
 
         if (updateThumbnail) {
             std::uint8_t* pbThumbnailData = nullptr;

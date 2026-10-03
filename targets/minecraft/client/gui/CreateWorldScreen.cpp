@@ -80,12 +80,12 @@ void CreateWorldScreen::init() {
 
     seedEdit = new EditBox(this, font, width / 2 - 100, 60, 200, 20, "");
 
-    gameModeButton = new Button(2, width / 2 - 75, 100, 150, 20,
+    gameModeButton = new Button(2, width / 2 - 100, 100, 200, 20,
                                 language->getElement("selectWorld.gameMode"));
     gameModeButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_iron)));
     buttons.push_back(gameModeButton);
 
-    moreWorldOptionsButton = new Button(3, width / 2 - 75, 172, 150, 20,
+    moreWorldOptionsButton = new Button(3, width / 2 - 100, 172, 200, 20,
                                         language->getElement("selectWorld.moreWorldOptions"));
     moreWorldOptionsButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
     buttons.push_back(moreWorldOptionsButton);

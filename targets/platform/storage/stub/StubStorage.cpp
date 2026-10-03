@@ -78,7 +78,34 @@ void StubStorage::LoadFromDisk(const std::string& title) {
         if (std::filesystem::exists(alt, ec)) {
             worldDir = alt;
         } else {
-            return;
+            bool found = false;
+            std::filesystem::path roots[] = { getSavesRoot(), std::filesystem::path("/sdcard/LegacyMCPE/saves") };
+            for (const auto& root : roots) {
+                if (found) break;
+                if (!std::filesystem::exists(root, ec)) continue;
+                for (const auto& dir : std::filesystem::directory_iterator(root, ec)) {
+                    if (dir.is_directory()) {
+                        std::filesystem::path infoPath = dir.path() / "info.txt";
+                        if (std::filesystem::exists(infoPath, ec)) {
+                            std::ifstream fInfo(infoPath);
+                            std::string line;
+                            if (std::getline(fInfo, line)) {
+                                if (line == title || sanitizeSaveName(line) == safeName) {
+                                    worldDir = dir.path();
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!found && dir.path().filename().string() == title) {
+                            worldDir = dir.path();
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!found) return;
         }
     }
 
@@ -126,6 +153,7 @@ void StubStorage::ResetSaveData() {
         m_allocatedBuffer = nullptr;
     }
     m_allocatedBufferSize = 0;
+    m_actualSaveDataSize = 0;
 }
 
 void StubStorage::SetDefaultSaveNameForKeyboardDisplay(
@@ -182,6 +210,7 @@ void* StubStorage::AllocateSaveData(unsigned int uiBytes) {
         m_allocatedBuffer = nullptr;
     }
     m_allocatedBufferSize = uiBytes;
+    m_actualSaveDataSize = 0;
     m_allocatedBuffer = (uint8_t*)malloc(uiBytes);
     return m_allocatedBuffer;
 }
@@ -194,8 +223,10 @@ void StubStorage::SetSaveImages(std::uint8_t* pbThumbnail,
 
 StubStorage::ESaveGameState StubStorage::SaveSaveData(
     std::function<int(const bool)> callback) {
-    if (m_allocatedBuffer && m_allocatedBufferSize > 0) {
-        m_saveData.assign(m_allocatedBuffer, m_allocatedBuffer + m_allocatedBufferSize);
+    unsigned int writeSize = (m_actualSaveDataSize > 0 && m_actualSaveDataSize <= m_allocatedBufferSize)
+                             ? m_actualSaveDataSize : m_allocatedBufferSize;
+    if (m_allocatedBuffer && writeSize > 0) {
+        m_saveData.assign(m_allocatedBuffer, m_allocatedBuffer + writeSize);
     }
     if (!m_saveData.empty()) {
         std::string safeName = sanitizeSaveName(m_currentSaveTitle);

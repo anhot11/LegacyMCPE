@@ -203,8 +203,17 @@ class UIScene;
 
 ClientConnection::ClientConnection(Minecraft* minecraft, const std::string& ip,
                                    int port) {
-    // 4J Stu - No longer used as we use the socket version below.
-    assert(false);
+    random = new Random();
+    done = false;
+    level = nullptr;
+    started = false;
+    savedDataStorage = new SavedDataStorage(nullptr);
+    maxPlayers = 20;
+    this->minecraft = minecraft;
+    m_userIndex = PlatformInput.GetPrimaryPad();
+    createdOk = false;
+    connection = nullptr;
+    message = "Servidor fuera de linea";
 }
 
 ClientConnection::ClientConnection(Minecraft* minecraft, Socket* socket,
@@ -249,8 +258,10 @@ ClientConnection::~ClientConnection() {
 }
 
 void ClientConnection::tick() {
-    if (!done) connection->tick();
-    connection->flush();
+    if (connection != nullptr) {
+        if (!done) connection->tick();
+        connection->flush();
+    }
 }
 
 INetworkPlayer* ClientConnection::getNetworkPlayer() {
@@ -1366,13 +1377,17 @@ void ClientConnection::onDisconnect(DisconnectPacket::eDisconnectReason reason,
 
 void ClientConnection::sendAndDisconnect(std::shared_ptr<Packet> packet) {
     if (done) return;
-    connection->send(packet);
-    connection->sendAndQuit();
+    if (connection != nullptr) {
+        connection->send(packet);
+        connection->sendAndQuit();
+    }
 }
 
 void ClientConnection::send(std::shared_ptr<Packet> packet) {
     if (done) return;
-    connection->send(packet);
+    if (connection != nullptr) {
+        connection->send(packet);
+    }
 }
 
 void ClientConnection::handleTakeItemEntity(
@@ -2072,8 +2087,10 @@ void ClientConnection::close() {
     // trying to do something could cause a crash
     if (done) return;
     done = true;
-    connection->flush();
-    connection->close(DisconnectPacket::eDisconnect_Closed);
+    if (connection != nullptr) {
+        connection->flush();
+        connection->close(DisconnectPacket::eDisconnect_Closed);
+    }
 }
 
 void ClientConnection::handleAddMob(std::shared_ptr<AddMobPacket> packet) {

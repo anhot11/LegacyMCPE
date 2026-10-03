@@ -41,6 +41,7 @@ LunarModsScreen::LunarModsScreen(Screen* lastScreen)
       texturePackBtn(nullptr),
       tabThermalBtn(nullptr),
       thermalProtectionBtn(nullptr),
+      splitControlsBtn(nullptr),
       doneBtn(nullptr) {
     if (!itemRenderer) {
         itemRenderer = new ItemRenderer();
@@ -151,13 +152,15 @@ void LunarModsScreen::init() {
     thermalProtectionBtn = new Button(60, thBtnX, startY + 95, thBtnW, 30, "");
     buttons.push_back(thermalProtectionBtn);
 
-    // Tab 5: Controls settings (IDs 70, 71, 72)
+    // Tab 5: Controls settings (IDs 70, 71, 72, 73)
     controlStyleBtn = new Button(70, btnX, startY + 6, btnW, btnH, "");
     controlScaleBtn = new Button(71, btnX, startY + spacing + 6, btnW, btnH, "");
     controlOpacityBtn = new Button(72, btnX, startY + spacing * 2 + 6, btnW, btnH, "");
+    splitControlsBtn = new Button(73, btnX, startY + spacing * 3 + 6, btnW, btnH, "");
     buttons.push_back(controlStyleBtn);
     buttons.push_back(controlScaleBtn);
     buttons.push_back(controlOpacityBtn);
+    buttons.push_back(splitControlsBtn);
 
     // Done button (ID 200)
     int doneW = (width >= 400) ? 240 : 180;
@@ -247,6 +250,10 @@ void LunarModsScreen::updateButtonPositions() {
         controlOpacityBtn->x = btnX;
         controlOpacityBtn->y = startY + spacing * 2 + 6;
     }
+    if (splitControlsBtn) {
+        splitControlsBtn->x = btnX;
+        splitControlsBtn->y = startY + spacing * 3 + 6;
+    }
 
     // Deactivate buttons scrolled out of the visible vertical viewport
     int topClip = 56;
@@ -279,6 +286,7 @@ void LunarModsScreen::updateButtonVisibility() {
     controlStyleBtn->visible = (currentTab == 5);
     controlScaleBtn->visible = (currentTab == 5);
     controlOpacityBtn->visible = (currentTab == 5);
+    splitControlsBtn->visible = (currentTab == 5);
 
     updateButtonPositions();
 }
@@ -362,6 +370,8 @@ void LunarModsScreen::updateButtonLabels() {
     int cOpacity = opt->touchControlOpacity;
     if (cOpacity < 0 || cOpacity > 3) cOpacity = 1;
     controlOpacityBtn->msg = s_ctrlOpacities[cOpacity];
+
+    splitControlsBtn->msg = opt->splitControls ? "[ ACTIVADO ]" : "[ DESACTIVADO ]";
 }
 
 void LunarModsScreen::buttonClicked(Button* button) {
@@ -424,6 +434,8 @@ void LunarModsScreen::buttonClicked(Button* button) {
         opt->touchControlScale = (opt->touchControlScale + 1) % 4;
     } else if (button->id == 72) {
         opt->touchControlOpacity = (opt->touchControlOpacity + 1) % 4;
+    } else if (button->id == 73) {
+        opt->splitControls = !opt->splitControls;
     }
 
     // Save and Exit
@@ -492,7 +504,7 @@ void LunarModsScreen::render(int xm, int ym, float a) {
     else if (currentTab == 2) contentH = 145 + 30;
     else if (currentTab == 3) contentH = 2 * 43 + 30;
     else if (currentTab == 4) contentH = 145 + 30;
-    else if (currentTab == 5) contentH = 3 * 43 + 30;
+    else if (currentTab == 5) contentH = 4 * 43 + 40;
 
     contentH += 16; // Bottom margin breathing room
     maxScroll = (contentH > viewportH) ? (float)(contentH - viewportH) : 0.0f;
@@ -636,6 +648,8 @@ void LunarModsScreen::render(int xm, int ym, float a) {
                    "Tamano de Botones", "Escala de los controles virtuales en pantalla");
         renderCard(cardX, startY + spacing * 2, cardW, cardH, iconControls, 1.6f,
                    "Transparencia / Opacidad", "Nivel de visibilidad de los controles tactiles");
+        renderCard(cardX, startY + spacing * 3, cardW, cardH, iconControls, 1.6f,
+                   "Control Dividido (Mira)", "Mira central fija vs tocar bloques directamente");
     }
 
     // Render active tab buttons inside scissor test

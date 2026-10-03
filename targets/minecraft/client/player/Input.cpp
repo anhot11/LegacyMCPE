@@ -115,8 +115,11 @@ void Input::tick(LocalPlayer* player) {
         }
         tx = ty = 0.0f;
     }
-    player->interpolateTurn(tx * std::abs(tx) * turnSpeed,
-                            ty * std::abs(ty) * turnSpeed);
+
+    float sensSetting = ((float)gameServices().getGameSettings(iPad, eGameSetting_Sensitivity_InGame)) / 100.0f;
+    float lookFactor = 2.4f * (0.35f + 1.65f * sensSetting);
+    player->interpolateTurn(tx * turnSpeed * lookFactor,
+                            ty * turnSpeed * lookFactor);
 
     // jumping = controller.isButtonPressed(0);
 

@@ -122,13 +122,29 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
         int availStart = x + 24;
         int availW = w - 28;
         int strW = font->width(msg);
-        if (strW >= availW) {
-            drawString(font, msg, availStart, textY, color);
+        if (strW > availW && availW > 10) {
+            float scale = (float)availW / (float)strW;
+            glPushMatrix();
+            glTranslatef((float)availStart, (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
+            glScalef(scale, scale, 1.0f);
+            font->draw(msg, 0, 0, color);
+            glPopMatrix();
         } else {
             drawCenteredString(font, msg, availStart + availW / 2, textY, color);
         }
     } else {
-        drawCenteredString(font, msg, x + w / 2, textY, color);
+        int availW = w - 8;
+        int strW = font->width(msg);
+        if (strW > availW && availW > 10) {
+            float scale = (float)availW / (float)strW;
+            glPushMatrix();
+            glTranslatef((float)(x + 4), (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
+            glScalef(scale, scale, 1.0f);
+            font->draw(msg, 0, 0, color);
+            glPopMatrix();
+        } else {
+            drawCenteredString(font, msg, x + w / 2, textY, color);
+        }
     }
 #endif
 }

@@ -80,6 +80,7 @@ static float axisVal[AXS_COUNT] = {};
 static bool s_mouseLeftCurrent = false, s_mouseLeftPrev = false;
 static bool s_mouseRightCurrent = false, s_mouseRightPrev = false;
 static bool s_mouseLeftQueued = false;
+static bool s_mouseRightQueued = false;
 static bool s_menuDisplayed[4] = {};
 static bool s_prevMenuDisplayed = false;
 static bool s_snapTaken = false;
@@ -223,6 +224,8 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         s_hasTouchPos = true;
         if (e->button.button == SDL_BUTTON_LEFT) {
             s_mouseLeftQueued = true;
+        } else if (e->button.button == SDL_BUTTON_RIGHT) {
+            s_mouseRightQueued = true;
         } else if (e->button.button == 4) {
             s_scrollTicksForGetValue++;
             s_scrollTicksForButtonPressed++;
@@ -253,9 +256,11 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         s_mouseLeftCurrent = false;
         s_mouseLeftQueued = false;
     } else if (e->type == SDL_MOUSEMOTION) {
-        s_mouseX = e->motion.x;
-        s_mouseY = e->motion.y;
-        s_hasTouchPos = true;
+        if (!SDL_GetRelativeMouseMode() && (e->motion.x != (int)e->motion.xrel || e->motion.y != (int)e->motion.yrel || (e->motion.xrel == 0 && e->motion.yrel == 0))) {
+            s_mouseX = e->motion.x;
+            s_mouseY = e->motion.y;
+            s_hasTouchPos = true;
+        }
         s_accumRelX += (float)e->motion.xrel;
         s_accumRelY += (float)e->motion.yrel;
     } else if (e->type == SDL_TEXTINPUT) {
@@ -399,13 +404,14 @@ void SDL2Input::Tick() {
 
     int mx = 0, my = 0;
     Uint32 btns = SDL_GetMouseState(&mx, &my);
-    if (btns != 0) {
+    if (btns != 0 && !SDL_GetRelativeMouseMode()) {
         s_mouseX = mx;
         s_mouseY = my;
     }
     s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) || s_mouseLeftQueued;
     s_mouseLeftQueued = false;
-    s_mouseRightCurrent = (btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+    s_mouseRightCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0) || s_mouseRightQueued;
+    s_mouseRightQueued = false;
 
     if (!SDL_GetRelativeMouseMode()) {
         s_accumRelX = 0;

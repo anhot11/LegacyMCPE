@@ -68,6 +68,7 @@ private:
     Button* controlStyleBtn;
     Button* controlScaleBtn;
     Button* controlOpacityBtn;
+    Button* splitControlsBtn;
 
     // Bottom action
     Button* doneBtn;

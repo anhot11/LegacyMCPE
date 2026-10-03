@@ -189,6 +189,7 @@ public:
     virtual unsigned int GetSaveSize() = 0;
     virtual void GetSaveData(void* pvData, unsigned int* puiBytes) = 0;
     virtual void* AllocateSaveData(unsigned int uiBytes) = 0;
+    virtual void SetActualSaveDataSize(unsigned int uiBytes) {}
     virtual void SetSaveImages(std::uint8_t* pbThumbnail,
                                unsigned int thumbnailBytes,
                                std::uint8_t* pbImage, unsigned int imageBytes,

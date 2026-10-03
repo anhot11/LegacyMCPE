@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "ClientConnection.h"
+#include "DisconnectedScreen.h"
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/User.h"
 #include "minecraft/client/gui/Button.h"
@@ -21,12 +22,22 @@ ConnectScreen::ConnectScreen(Minecraft* minecraft, const std::string& ip,
     // actually need here
     connection = new ClientConnection(minecraft, ip, port);
     if (aborted) return;
-    connection->send(std::shared_ptr<PreLoginPacket>(
-        new PreLoginPacket(minecraft->user->name)));
+    if (connection != nullptr && connection->createdOk && connection->connection != nullptr) {
+        connection->send(std::shared_ptr<PreLoginPacket>(
+            new PreLoginPacket(minecraft->user->name)));
+    }
 }
 
 void ConnectScreen::tick() {
     if (connection != nullptr) {
+        if (!connection->createdOk || connection->connection == nullptr) {
+            Language* language = Language::getInstance();
+            std::string title = language->getElement("connect.failed");
+            if (title.empty() || title == "connect.failed") title = "Desconectado";
+            std::string reason = "No se pudo conectar con el servidor.\nEl servidor se encuentra fuera de linea (Offline).";
+            minecraft->setScreen(new DisconnectedScreen(title, reason, nullptr));
+            return;
+        }
         connection->tick();
     }
 }

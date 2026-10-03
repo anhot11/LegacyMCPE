@@ -13,11 +13,14 @@ DisconnectedScreen::DisconnectedScreen(const std::string& title,
                                        void* reasonObjects, ...) {
     Language* language = Language::getInstance();
 
-    this->title = language->getElement(title);
-    if (reasonObjects != nullptr) {
+    std::string locTitle = language ? language->getElement(title) : "";
+    this->title = (locTitle.empty() || locTitle == title) ? title : locTitle;
+
+    if (reasonObjects != nullptr && language) {
         this->reason = language->getElement(reason, reasonObjects);
     } else {
-        this->reason = language->getElement(reason);
+        std::string locReason = language ? language->getElement(reason) : "";
+        this->reason = (locReason.empty() || locReason == reason) ? reason : locReason;
     }
 }
 
@@ -43,7 +46,20 @@ void DisconnectedScreen::render(int xm, int ym, float a) {
     renderBackground();
 
     drawCenteredString(font, title, width / 2, height / 2 - 50, 0xffffff);
-    drawCenteredString(font, reason, width / 2, height / 2 - 10, 0xffffff);
+
+    size_t start = 0;
+    size_t end = 0;
+    int lineY = height / 2 - 10;
+    while ((end = reason.find('\n', start)) != std::string::npos) {
+        std::string line = reason.substr(start, end - start);
+        drawCenteredString(font, line, width / 2, lineY, 0xffffff);
+        lineY += 12;
+        start = end + 1;
+    }
+    if (start < reason.size()) {
+        std::string line = reason.substr(start);
+        drawCenteredString(font, line, width / 2, lineY, 0xffffff);
+    }
 
     Screen::render(xm, ym, a);
 }

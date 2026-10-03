@@ -191,11 +191,26 @@ int32_t Compression::Compress(void* pDestination, unsigned int* pDestSize,
 
 int32_t Compression::Decompress(void* pDestination, unsigned int* pDestSize,
                                 void* pSource, unsigned int SrcSize) {
-    size_t destSize = (size_t)(*pDestSize);
-    int res = ::uncompress((Bytef*)pDestination, (uLongf*)&destSize,
-                           (Bytef*)pSource, SrcSize);
-    *pDestSize = (unsigned int)destSize;
-    return ((res == Z_OK) ? 0 : -1);
+    z_stream strm;
+    memset(&strm, 0, sizeof(strm));
+    strm.next_in = (Bytef*)pSource;
+    strm.avail_in = SrcSize;
+    strm.next_out = (Bytef*)pDestination;
+    strm.avail_out = *pDestSize;
+
+    if (inflateInit(&strm) != Z_OK) {
+        return -1;
+    }
+
+    int ret = inflate(&strm, Z_FINISH);
+    if (ret == Z_STREAM_END || ret == Z_OK) {
+        *pDestSize = (unsigned int)strm.total_out;
+        inflateEnd(&strm);
+        return 0;
+    }
+
+    inflateEnd(&strm);
+    return -1;
 }
 
 Compression::Compression() {

@@ -241,6 +241,11 @@ public:
     std::vector<SubfileData> m_subfiles;
     uint8_t* m_allocatedBuffer = nullptr;
     unsigned int m_allocatedBufferSize = 0;
+    unsigned int m_actualSaveDataSize = 0;
+
+    virtual void SetActualSaveDataSize(unsigned int uiBytes) override {
+        m_actualSaveDataSize = uiBytes;
+    }
 
     void LoadFromDisk(const std::string& title);
 
