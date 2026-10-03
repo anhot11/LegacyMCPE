@@ -51,6 +51,7 @@ MODULES = [
         "rel_to": REPO_ROOT / "targets" / "app",
         "exclude": {
             "UIScene_InGameSaveManagementMenu.cpp",
+            "UIControl_Touch.cpp",
         },
     },
     {
