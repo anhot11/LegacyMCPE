@@ -278,6 +278,59 @@ void SkinSelectScreen::buttonClicked(Button* button) {
 
 void SkinSelectScreen::mouseClicked(int xm, int ym, int buttonNum) {
     Screen::mouseClicked(xm, ym, buttonNum);
+    if (buttonNum == 0) {
+        int listY0 = 30;
+        int listY1 = height - 40;
+        int slotHeight = 36;
+        int totalHeight = (int)skins.size() * slotHeight;
+        maxScroll = std::max(0.0f, (float)(totalHeight - (listY1 - listY0)));
+
+        int listX = 20;
+        int listW = (width >= 500) ? 230 : 180;
+        int barX = listX + listW + 4;
+        int barW = 8;
+        int previewLeft = barX + barW + 16;
+        int previewRight = width - 16;
+
+        if (xm >= previewLeft && xm <= previewRight && ym >= listY0 && ym <= listY1) {
+            isDraggingPreview = true;
+            previewDragStartX = xm;
+            previewDragStartY = ym;
+            previewDragStartYaw = previewYaw;
+            previewDragStartPitch = previewPitch;
+        } else if (maxScroll > 0.0f && xm >= barX - 12 && xm <= barX + barW + 16 &&
+                   ym >= listY0 && ym <= listY1) {
+            isDraggingScrollbar = true;
+        } else if (ym >= listY0 && ym <= listY1 && xm >= listX && xm <= listX + listW) {
+            isDragging = true;
+            dragStartY = ym;
+            dragStartScroll = scrollY;
+            hasMoved = false;
+        }
+    }
+}
+
+void SkinSelectScreen::mouseReleased(int xm, int ym, int buttonNum) {
+    Screen::mouseReleased(xm, ym, buttonNum);
+    if (buttonNum == 0) {
+        if (isDragging) {
+            if (!hasMoved) {
+                int listY0 = 30;
+                int slotHeight = 36;
+                int clickedY = dragStartY - listY0 + (int)scrollY;
+                int slot = clickedY / slotHeight;
+                if (slot >= 0 && slot < (int)skins.size()) {
+                    selectSkin(slot);
+                    if (minecraft != nullptr && minecraft->soundEngine != nullptr) {
+                        minecraft->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1.0f, 1.0f);
+                    }
+                }
+            }
+            isDragging = false;
+        }
+        isDraggingScrollbar = false;
+        isDraggingPreview = false;
+    }
 }
 
 static void renderClippedDirt(Minecraft* mc, int width, int yStart, int yEnd) {
@@ -324,62 +377,27 @@ void SkinSelectScreen::render(int xm, int ym, float a) {
     // 1. Draw base dirt background
     renderDirtBackground(0);
 
-    // 2. Touch / input handling
-    bool isDown = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_ACTION);
-    if (isDown) {
-        if (!isDragging && !isDraggingScrollbar && !isDraggingPreview) {
-            // Check if touch started on 3D preview area
-            if (xm >= previewLeft && xm <= previewRight && ym >= listY0 && ym <= listY1) {
-                isDraggingPreview = true;
-                previewDragStartX = xm;
-                previewDragStartY = ym;
-                previewDragStartYaw = previewYaw;
-                previewDragStartPitch = previewPitch;
-            } else if (maxScroll > 0.0f && xm >= barX - 10 && xm <= barX + barW + 16 &&
-                       ym >= trackY0 && ym <= trackY1) {
-                isDraggingScrollbar = true;
-            } else if (ym >= listY0 && ym <= listY1 && xm >= listX && xm <= listX + listW) {
-                isDragging = true;
-                dragStartY = ym;
-                dragStartScroll = scrollY;
-                hasMoved = false;
-            }
+    // 2. Active drag position updates
+    if (isDraggingPreview) {
+        int dx = xm - previewDragStartX;
+        int dy = ym - previewDragStartY;
+        previewYaw = previewDragStartYaw - (float)dx * 0.9f;
+        previewPitch = previewDragStartPitch + (float)dy * 0.4f;
+        if (previewPitch > 30.0f) previewPitch = 30.0f;
+        if (previewPitch < -30.0f) previewPitch = -30.0f;
+    } else if (isDraggingScrollbar && maxScroll > 0.0f) {
+        float rel = (float)(ym - trackY0 - thumbH / 2) / (float)(trackH - thumbH);
+        scrollY = rel * maxScroll;
+        if (scrollY < 0.0f) scrollY = 0.0f;
+        if (scrollY > maxScroll) scrollY = maxScroll;
+    } else if (isDragging) {
+        int dy = ym - dragStartY;
+        if (std::abs(dy) > 4) {
+            hasMoved = true;
         }
-
-        if (isDraggingPreview) {
-            int dx = xm - previewDragStartX;
-            int dy = ym - previewDragStartY;
-            previewYaw = previewDragStartYaw - (float)dx * 0.9f;
-            previewPitch = previewDragStartPitch + (float)dy * 0.4f;
-            if (previewPitch > 30.0f) previewPitch = 30.0f;
-            if (previewPitch < -30.0f) previewPitch = -30.0f;
-        } else if (isDraggingScrollbar && maxScroll > 0.0f) {
-            float rel = (float)(ym - trackY0 - thumbH / 2) / (float)(trackH - thumbH);
-            scrollY = rel * maxScroll;
-            if (scrollY < 0.0f) scrollY = 0.0f;
-            if (scrollY > maxScroll) scrollY = maxScroll;
-        } else if (isDragging) {
-            int dy = ym - dragStartY;
-            if (std::abs(dy) > 4) {
-                hasMoved = true;
-            }
-            scrollY = dragStartScroll - dy;
-            if (scrollY < 0.0f) scrollY = 0.0f;
-            if (scrollY > maxScroll) scrollY = maxScroll;
-        }
-    } else {
-        if (isDragging) {
-            if (!hasMoved) {
-                int clickedY = dragStartY - listY0 + (int)scrollY;
-                int slot = clickedY / slotHeight;
-                if (slot >= 0 && slot < (int)skins.size()) {
-                    selectSkin(slot);
-                }
-            }
-            isDragging = false;
-        }
-        isDraggingScrollbar = false;
-        isDraggingPreview = false;
+        scrollY = dragStartScroll - dy;
+        if (scrollY < 0.0f) scrollY = 0.0f;
+        if (scrollY > maxScroll) scrollY = maxScroll;
     }
 
     // 3. Render skin list items

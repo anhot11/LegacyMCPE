@@ -82,6 +82,14 @@ void Screen::mouseReleased(int x, int y, int buttonNum) {
 
 void Screen::buttonClicked(Button* button) {}
 
+static bool s_prevLeftState = true;
+static bool s_prevRightState = true;
+
+void Screen::resetInputState() {
+    s_prevLeftState = true;
+    s_prevRightState = true;
+}
+
 void Screen::init(Minecraft* minecraft, int width, int height) {
     particles = new GuiParticles(minecraft);
     this->minecraft = minecraft;
@@ -89,6 +97,7 @@ void Screen::init(Minecraft* minecraft, int width, int height) {
     this->width = width;
     this->height = height;
     buttons.clear();
+    resetInputState();
     init();
 }
 
@@ -113,32 +122,29 @@ void Screen::updateEvents() {
     int xMouse = PlatformInput.GetMouseX() * screenWidth / fbw;
     int yMouse = PlatformInput.GetMouseY() * screenHeight / fbh;
 
-    static bool prevLeftState = false;
-    static bool prevRightState = false;
-
     bool leftState = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_ACTION);
     bool rightState = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_USE);
 
-    if (leftState && !prevLeftState) {
-        prevLeftState = leftState;
-        prevRightState = rightState;
+    if (leftState && !s_prevLeftState) {
+        s_prevLeftState = leftState;
+        s_prevRightState = rightState;
         mouseClicked(xMouse, yMouse, 0);
         return;
-    } else if (!leftState && prevLeftState) {
-        prevLeftState = leftState;
-        prevRightState = rightState;
+    } else if (!leftState && s_prevLeftState) {
+        s_prevLeftState = leftState;
+        s_prevRightState = rightState;
         mouseReleased(xMouse, yMouse, 0);
         return;
     }
 
-    if (rightState && !prevRightState) {
-        prevLeftState = leftState;
-        prevRightState = rightState;
+    if (rightState && !s_prevRightState) {
+        s_prevLeftState = leftState;
+        s_prevRightState = rightState;
         mouseClicked(xMouse, yMouse, 1);
         return;
-    } else if (!rightState && prevRightState) {
-        prevLeftState = leftState;
-        prevRightState = rightState;
+    } else if (!rightState && s_prevRightState) {
+        s_prevLeftState = leftState;
+        s_prevRightState = rightState;
         mouseReleased(xMouse, yMouse, 1);
         return;
     }

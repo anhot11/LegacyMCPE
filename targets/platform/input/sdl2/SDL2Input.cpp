@@ -67,7 +67,8 @@ IPlatformInput& PlatformInput_get() {
 static const int KEY_COUNT = SDL_NUM_SCANCODES;
 static const int BTN_COUNT = SDL_CONTROLLER_BUTTON_MAX;
 static const int AXS_COUNT = SDL_CONTROLLER_AXIS_MAX;
-static const float MOUSE_SCALE = 0.022f;
+static const float MOUSE_SCALE = 0.007f;
+static int s_queuedHotbarSlot = -1;
 // Vars
 static bool s_sdlInitialized = false;
 static bool s_keysCurrent[KEY_COUNT] = {};
@@ -257,20 +258,30 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
     } else if (e->type == SDL_FINGERUP) {
         s_fingerDown = false;
         s_mouseLeftCurrent = false;
-    } else if (e->type == SDL_MOUSEMOTION) {
-        if (e->motion.xrel == 0 && e->motion.yrel == 0) {
-            // Absolute touch hover / position event from VirtualControlsOverlay
-            s_mouseX = e->motion.x;
-            s_mouseY = e->motion.y;
-            s_hasTouchPos = true;
-        } else if (!SDL_GetRelativeMouseMode()) {
-            s_mouseX = e->motion.x;
-            s_mouseY = e->motion.y;
-            s_hasTouchPos = true;
+        s_mouseLeftQueued = false;
+    } else if (e->type == SDL_MOUSEBUTTONUP) {
+        if (e->button.button == SDL_BUTTON_LEFT) {
+            s_mouseLeftCurrent = false;
+            s_mouseLeftQueued = false;
+            s_fingerDown = false;
+        } else if (e->button.button == SDL_BUTTON_RIGHT) {
+            s_mouseRightCurrent = false;
+            s_mouseRightQueued = false;
         }
-        if (SDL_GetRelativeMouseMode()) {
-            s_accumRelX += (float)e->motion.xrel;
-            s_accumRelY += (float)e->motion.yrel;
+    } else if (e->type == SDL_MOUSEMOTION) {
+        if (!SDL_GetRelativeMouseMode()) {
+            s_mouseX = e->motion.x;
+            s_mouseY = e->motion.y;
+            s_hasTouchPos = true;
+        } else {
+            // In relative mouse mode (in-game look):
+            // Only accumulate legitimate swipe deltas, discarding any full-screen jumps or absolute hover coords
+            float dx = (float)e->motion.xrel;
+            float dy = (float)e->motion.yrel;
+            if (fabsf(dx) < 80.0f && fabsf(dy) < 80.0f) {
+                s_accumRelX += dx;
+                s_accumRelY += dy;
+            }
         }
     } else if (e->type == SDL_TEXTINPUT) {
         if (s_keyboardActive) {
@@ -278,7 +289,10 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         }
         s_screenTextInputBuf += e->text.text;
     } else if (e->type == SDL_KEYDOWN) {
-        if (e->key.keysym.scancode == SDL_SCANCODE_BACKSPACE) {
+        if (e->key.keysym.scancode >= SDL_SCANCODE_1 &&
+            e->key.keysym.scancode <= SDL_SCANCODE_9) {
+            s_queuedHotbarSlot = (int)(e->key.keysym.scancode - SDL_SCANCODE_1);
+        } else if (e->key.keysym.scancode == SDL_SCANCODE_BACKSPACE) {
             s_screenBackspacePressed = true;
         } else if (e->key.keysym.scancode == SDL_SCANCODE_RETURN ||
                    e->key.keysym.scancode == SDL_SCANCODE_KP_ENTER) {
@@ -482,6 +496,12 @@ void SDL2Input::Tick() {
 
 int SDL2Input::GetHotbarSlotPressed(int iPad) {
     if (iPad != 0) return -1;
+
+    if (s_queuedHotbarSlot >= 0 && s_queuedHotbarSlot < 9) {
+        int slot = s_queuedHotbarSlot;
+        s_queuedHotbarSlot = -1;
+        return slot;
+    }
 
     constexpr size_t NUM_HOTBAR_SLOTS = 9;
 
@@ -689,7 +709,7 @@ static float MouseAxis(float raw) {
     if (fabsf(raw) < 0.0001f) return 0.f;
     float sign = (raw >= 0.f ? 1.f : -1.f);
     float mag = fabsf(raw);
-    if (mag > 8.0f) mag = 8.0f;
+    if (mag > 1.0f) mag = 1.0f;
     return sign * mag;
 }
 // We apply the Stick movement on the R(Right) X(2D Position)

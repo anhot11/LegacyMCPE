@@ -58,6 +58,7 @@ public:
     virtual void render(int xm, int ym, float a) override;
     virtual void buttonClicked(Button* button) override;
     virtual void mouseClicked(int xm, int ym, int buttonNum) override;
+    virtual void mouseReleased(int xm, int ym, int buttonNum) override;
 
     void selectSkin(int index);
     int bindSkinTexture(const SkinEntry& entry);

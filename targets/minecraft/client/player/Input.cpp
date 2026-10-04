@@ -86,7 +86,7 @@ void Input::tick(LocalPlayer* player) {
         ya *= 0.3f;
     }
 
-    float turnSpeed = 50.0f;
+    float turnSpeed = 24.0f;
 
     float tx = 0.0f;
     float ty = 0.0f;
@@ -118,7 +118,7 @@ void Input::tick(LocalPlayer* player) {
     }
 
     float sensSetting = ((float)gameServices().getGameSettings(iPad, eGameSetting_Sensitivity_InGame)) / 100.0f;
-    float lookFactor = 2.4f * (0.35f + 1.65f * sensSetting);
+    float lookFactor = 0.25f + 1.25f * sensSetting;
     player->interpolateTurn(tx * turnSpeed * lookFactor,
                             ty * turnSpeed * lookFactor);
 

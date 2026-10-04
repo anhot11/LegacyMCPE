@@ -160,18 +160,21 @@ CreativeInventoryScreen::ContainerCreative::clicked(
             return std::shared_ptr<ItemInstance>();
         }
 
-        // Handle normal clicks
+        // Handle normal clicks (Touch / Mobile PE behavior: equip directly to active hotbar slot!)
         if (slotItem != nullptr) {
-            if (buttonNum == 0)  // Left click
-            {
-                std::shared_ptr<ItemInstance> copy = slotItem->copy();
-                copy->count = copy->getMaxStackSize();
-                inventory->setCarried(copy);
-            } else if (buttonNum == 1)  // Right click
-            {
-                std::shared_ptr<ItemInstance> copy = slotItem->copy();
-                copy->count = 1;
-                inventory->setCarried(copy);
+            std::shared_ptr<ItemInstance> copy = slotItem->copy();
+            copy->count = copy->getMaxStackSize();
+            int hotbarSlot = inventory->selected;
+            if (hotbarSlot < 0 || hotbarSlot >= 9) hotbarSlot = 0;
+            inventory->setItem(hotbarSlot, copy);
+            Minecraft* mc = Minecraft::GetInstance();
+            if (mc != nullptr && mc->gameMode != nullptr) {
+                mc->gameMode->handleCreativeModeItemAdd(
+                    copy, hotbarSlot + InventoryMenu::USE_ROW_SLOT_START);
+            }
+            inventory->setCarried(std::shared_ptr<ItemInstance>());
+            if (mc != nullptr && mc->soundEngine != nullptr) {
+                mc->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1.0f, 1.0f);
             }
         } else if (carried != nullptr) {
             // Clicking on empty creative slot with item - clear the carried
@@ -182,9 +185,21 @@ CreativeInventoryScreen::ContainerCreative::clicked(
         return std::shared_ptr<ItemInstance>();
     }
 
-    // For hotbar slots (45-53), use normal container behavior
-    return AbstractContainerMenu::clicked(slotIndex, buttonNum, clickType,
-                                          player);
+    // For hotbar slots (45-53)
+    if (slotIndex >= ITEMS_PER_PAGE && slotIndex < ITEMS_PER_PAGE + 9) {
+        int hotbarIdx = slotIndex - ITEMS_PER_PAGE;
+        inventory->selected = hotbarIdx;
+        if (carried != nullptr) {
+            inventory->setItem(hotbarIdx, carried);
+            Minecraft* mc = Minecraft::GetInstance();
+            if (mc != nullptr && mc->gameMode != nullptr) {
+                mc->gameMode->handleCreativeModeItemAdd(
+                    carried, hotbarIdx + InventoryMenu::USE_ROW_SLOT_START);
+            }
+            inventory->setCarried(std::shared_ptr<ItemInstance>());
+        }
+        return std::shared_ptr<ItemInstance>();
+    }
 }
 
 void CreativeInventoryScreen::ContainerCreative::scrollTo(float pos) {
@@ -395,8 +410,8 @@ void CreativeInventoryScreen::render(int xm, int ym, float a) {
     int x2 = x1 + 14;
     int y2 = y1 + 112;
 
-    if (!wasClicking && mouseDown && xm >= x1 && ym >= y1 && xm < x2 &&
-        ym < y2) {
+    if (!wasClicking && mouseDown && xm >= x1 - 12 && ym >= y1 - 6 && xm < x2 + 16 &&
+        ym < y2 + 8) {
         isScrolling = needsScrollBars();
     }
 

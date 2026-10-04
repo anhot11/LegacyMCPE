@@ -1595,7 +1595,6 @@ void Minecraft::run_middle() {
                             // this player will now have actioned them
                             player->ullButtonsPressed = 0LL;
                         } else if (screen != nullptr) {
-                            screen->updateEvents();
                             // 4jcraft: this fixes the title screen panorama
                             // running faster than it should
                             if (!idx) {
@@ -2092,11 +2091,8 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
     }
 
     if (screen != nullptr) {
-        screen->updateEvents();
-        if (screen != nullptr) {
-            screen->particles->tick();
-            screen->tick();
-        }
+        screen->particles->tick();
+        screen->tick();
     }
 
     if (screen == nullptr && !ui.GetMenuDisplayed(iPad)) {
