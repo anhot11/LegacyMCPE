@@ -42,6 +42,9 @@ public class VirtualControlsOverlay extends View {
     private final Paint mBitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint mFpsPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF mFpsBox = new RectF();
+    private int mFrameCount = 0;
+    private long mLastFpsTime = 0;
+    private int mCurrentFps = 60;
 
     // Settings (loaded dynamically from options.txt)
     private int mControlStyle = 0;   // 0: Modern Bedrock, 1: Classic PE D-Pad, 2: Joystick
@@ -153,7 +156,7 @@ public class VirtualControlsOverlay extends View {
             post(new Runnable() {
                 @Override
                 public void run() {
-                    updateButtonLayouts();
+                    updateButtonPositions();
                     invalidate();
                 }
             });
