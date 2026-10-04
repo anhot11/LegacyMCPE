@@ -4,6 +4,7 @@
 #include <string>
 
 #include "AbstractContainerScreen.h"
+#include "app/common/Audio/ConsoleSoundEngine.h"
 #include "app/common/UI/All Platforms/IUIScene_CreativeMenu.h"
 #include "minecraft/IGameServices.h"
 #include "minecraft/client/Lighting.h"

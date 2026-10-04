@@ -170,8 +170,8 @@ void Screen::updateEvents() {
         keyPressed(13, Keyboard::KEY_RETURN);
     }
 
-    prevLeftState = leftState;
-    prevRightState = rightState;
+    s_prevLeftState = leftState;
+    s_prevRightState = rightState;
 #else
     /* 4J - TODO
 while (Mouse.next()) {
