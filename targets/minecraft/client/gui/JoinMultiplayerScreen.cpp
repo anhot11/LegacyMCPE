@@ -193,12 +193,12 @@ void JoinMultiplayerScreen::initModeAddServer() {
 
     if (addServerNameEdit != nullptr) delete addServerNameEdit;
     addServerNameEdit = new EditBox(this, font, startX, startY + 10, boxW, boxH, "Minecraft Server");
-    addServerNameEdit->inFocus = true;
+    addServerNameEdit->focus(true);
     addServerNameEdit->setMaxLength(64);
 
     if (addServerIpEdit != nullptr) delete addServerIpEdit;
     addServerIpEdit = new EditBox(this, font, startX, startY + 60, boxW, boxH, "");
-    addServerIpEdit->inFocus = false;
+    addServerIpEdit->focus(false);
     addServerIpEdit->setMaxLength(128);
 
     int btnW = 95;
@@ -226,7 +226,7 @@ void JoinMultiplayerScreen::initModeDirectConnect() {
     if (directIpEdit != nullptr) delete directIpEdit;
     std::string lastIp = replaceAll(minecraft->options->lastMpIp, "_", ":");
     directIpEdit = new EditBox(this, font, startX, startY, boxW, boxH, lastIp);
-    directIpEdit->inFocus = true;
+    directIpEdit->focus(true);
     directIpEdit->setMaxLength(128);
 
     int btnW = 95;

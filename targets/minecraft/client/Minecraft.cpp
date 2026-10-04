@@ -13,6 +13,13 @@
 #include "Options.h"
 #include "Pos.h"
 #include "ProgressRenderer.h"
+
+#if defined(__ANDROID__)
+#include <android/log.h>
+#define MCPL_LOGI(...) __android_log_print(ANDROID_LOG_INFO, "MCPL", __VA_ARGS__)
+#else
+#define MCPL_LOGI(...)
+#endif
 #include "SharedConstants.h"
 #include "Timer.h"
 #include "User.h"
@@ -3863,6 +3870,8 @@ void Minecraft::setLevel(MultiPlayerLevel* level, int message /*=-1*/,
         EntityRenderDispatcher::instance->cameraEntity = nullptr;
         TileEntityRenderDispatcher::instance->cameraEntity = nullptr;
         RegionFileCache::clear();
+        PlatformRenderer.CBuffDeleteAll();
+        MCPL_LOGI("Minecraft::setLevel(nullptr) - Cleared RegionFileCache and CBuffDeleteAll");
     }
     this->level = level;
 

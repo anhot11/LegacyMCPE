@@ -36,8 +36,8 @@ public class MainActivity2 extends SDLActivity
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK));
         getWindow().setFormat(android.graphics.PixelFormat.RGBA_8888);
         getWindow().setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             getWindow().getAttributes().layoutInDisplayCutoutMode =
@@ -102,11 +102,24 @@ public class MainActivity2 extends SDLActivity
 
         if (mLayout != null && mSurface != null) {
             // 1. Add virtual touch controls overlay
-            VirtualControlsOverlay overlay = new VirtualControlsOverlay(this, mSurface);
+            final VirtualControlsOverlay overlay = new VirtualControlsOverlay(this, mSurface);
             mLayout.addView(overlay, new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT
             ));
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                getWindow().getDecorView().setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                    @Override
+                    public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                        android.view.DisplayCutout cutout = insets.getDisplayCutout();
+                        if (cutout != null) {
+                            overlay.setSafeInsets(cutout.getSafeInsetLeft(), cutout.getSafeInsetRight());
+                        }
+                        return insets;
+                    }
+                });
+            }
 
             // 2. Add front loading screen in front of controls
             loadingScreenView = createLoadingScreen();

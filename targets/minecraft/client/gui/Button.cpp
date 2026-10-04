@@ -127,7 +127,7 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
             glPushMatrix();
             glTranslatef((float)availStart, (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
             glScalef(scale, scale, 1.0f);
-            font->draw(msg, 0, 0, color);
+            font->drawShadow(msg, 0, 0, color);
             glPopMatrix();
         } else {
             drawCenteredString(font, msg, availStart + availW / 2, textY, color);
@@ -140,7 +140,7 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
             glPushMatrix();
             glTranslatef((float)(x + 4), (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
             glScalef(scale, scale, 1.0f);
-            font->draw(msg, 0, 0, color);
+            font->drawShadow(msg, 0, 0, color);
             glPopMatrix();
         } else {
             drawCenteredString(font, msg, x + w / 2, textY, color);

@@ -31,6 +31,15 @@ void Input::tick(LocalPlayer* player) {
     Minecraft* pMinecraft = Minecraft::GetInstance();
     int iPad = player->GetXboxPad();
 
+    if (pMinecraft->screen != nullptr) {
+        xa = 0.0f;
+        ya = 0.0f;
+        jumping = false;
+        sneaking = false;
+        sprintKey = false;
+        return;
+    }
+
     // 4J-PB minecraft movement seems to be the wrong way round, so invert x!
     if (pMinecraft->localgameModes[iPad]->isInputAllowed(
             MINECRAFT_ACTION_LEFT) ||
@@ -85,20 +94,12 @@ void Input::tick(LocalPlayer* player) {
             MINECRAFT_ACTION_LOOK_LEFT) ||
         pMinecraft->localgameModes[iPad]->isInputAllowed(
             MINECRAFT_ACTION_LOOK_RIGHT))
-        tx = PlatformInput.GetJoypadStick_RX(iPad) *
-             (((float)gameServices().getGameSettings(
-                  iPad,
-                  eGameSetting_Sensitivity_InGame)) /
-              100.0f);  // apply sensitivity to look
+        tx = PlatformInput.GetJoypadStick_RX(iPad);
     if (pMinecraft->localgameModes[iPad]->isInputAllowed(
             MINECRAFT_ACTION_LOOK_UP) ||
         pMinecraft->localgameModes[iPad]->isInputAllowed(
             MINECRAFT_ACTION_LOOK_DOWN))
-        ty = PlatformInput.GetJoypadStick_RY(iPad) *
-             (((float)gameServices().getGameSettings(
-                  iPad,
-                  eGameSetting_Sensitivity_InGame)) /
-              100.0f);  // apply sensitivity to look
+        ty = PlatformInput.GetJoypadStick_RY(iPad);
 
 #ifndef _CONTENT_PACKAGE
     if (gameServices().debugFreezePlayers()) tx = ty = 0.0f;

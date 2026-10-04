@@ -118,9 +118,13 @@ void CreateWorldScreen::init() {
 void CreateWorldScreen::updateStrings() {
     Language* language = Language::getInstance();
 
-    gameModeButton->msg =
-        language->getElement("selectWorld.gameMode") + " " +
-        language->getElement("selectWorld.gameMode." + gameMode);
+    std::string modeName = language->getElement("selectWorld.gameMode." + gameMode);
+    std::string modeLabel = language->getElement("selectWorld.gameMode");
+    if (modeLabel.find("Modo") != std::string::npos) {
+        gameModeButton->msg = "Modo: " + modeName;
+    } else {
+        gameModeButton->msg = "Mode: " + modeName;
+    }
 
     std::string line1Key = "selectWorld.gameMode." + gameMode + ".line1";
     std::string line2Key = "selectWorld.gameMode." + gameMode + ".line2";

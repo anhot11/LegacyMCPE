@@ -53,27 +53,6 @@ void ChatScreen::sendMessage() {
 
 void ChatScreen::tick() {
     frame++;
-
-    // Poll virtual / soft keyboard input from Android/SDL
-    std::string typed = PlatformInput.PollTextInput();
-    if (!typed.empty()) {
-        for (char ch : typed) {
-            if (ch == '\b' || ch == 8) {
-                if (message.length() > 0) message.pop_back();
-            } else if (((unsigned char)ch >= 32 || (unsigned char)ch >= 160 || SharedConstants::isAllowedChatCharacter(ch)) &&
-                       message.length() < SharedConstants::maxChatLength) {
-                message += ch;
-            }
-        }
-    }
-
-    if (PlatformInput.PollBackspacePressed() && message.length() > 0) {
-        message.pop_back();
-    }
-
-    if (PlatformInput.PollReturnPressed()) {
-        sendMessage();
-    }
 }
 
 void ChatScreen::buttonClicked(Button* button) {

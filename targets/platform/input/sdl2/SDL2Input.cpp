@@ -67,7 +67,7 @@ IPlatformInput& PlatformInput_get() {
 static const int KEY_COUNT = SDL_NUM_SCANCODES;
 static const int BTN_COUNT = SDL_CONTROLLER_BUTTON_MAX;
 static const int AXS_COUNT = SDL_CONTROLLER_AXIS_MAX;
-static const float MOUSE_SCALE = 0.008f;
+static const float MOUSE_SCALE = 0.022f;
 // Vars
 static bool s_sdlInitialized = false;
 static bool s_keysCurrent[KEY_COUNT] = {};
@@ -258,13 +258,20 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         s_fingerDown = false;
         s_mouseLeftCurrent = false;
     } else if (e->type == SDL_MOUSEMOTION) {
-        if (!SDL_GetRelativeMouseMode() && (e->motion.x != (int)e->motion.xrel || e->motion.y != (int)e->motion.yrel || (e->motion.xrel == 0 && e->motion.yrel == 0))) {
+        if (e->motion.xrel == 0 && e->motion.yrel == 0) {
+            // Absolute touch hover / position event from VirtualControlsOverlay
+            s_mouseX = e->motion.x;
+            s_mouseY = e->motion.y;
+            s_hasTouchPos = true;
+        } else if (!SDL_GetRelativeMouseMode()) {
             s_mouseX = e->motion.x;
             s_mouseY = e->motion.y;
             s_hasTouchPos = true;
         }
-        s_accumRelX += (float)e->motion.xrel;
-        s_accumRelY += (float)e->motion.yrel;
+        if (SDL_GetRelativeMouseMode()) {
+            s_accumRelX += (float)e->motion.xrel;
+            s_accumRelY += (float)e->motion.yrel;
+        }
     } else if (e->type == SDL_TEXTINPUT) {
         if (s_keyboardActive) {
             s_textInputBuf += e->text.text;
@@ -677,12 +684,12 @@ float SDL2Input::GetJoypadStick_LY(int, bool) {
     return (KDown(SDL_SCANCODE_W) ? 1.f : 0.f) -
            (KDown(SDL_SCANCODE_S) ? 1.f : 0.f);
 }
-// Convert mouse delta into right stick output with strict clamping to prevent camera snapping to sky
+// Convert mouse/touch delta into right stick output with natural mobile response
 static float MouseAxis(float raw) {
     if (fabsf(raw) < 0.0001f) return 0.f;
     float sign = (raw >= 0.f ? 1.f : -1.f);
     float mag = fabsf(raw);
-    if (mag > 1.0f) mag = 1.0f;
+    if (mag > 8.0f) mag = 8.0f;
     return sign * mag;
 }
 // We apply the Stick movement on the R(Right) X(2D Position)

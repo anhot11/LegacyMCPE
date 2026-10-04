@@ -68,8 +68,6 @@ void VideoSettingsScreen::init() {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder)));
         } else if (item == Options::Option::AMBIENT_OCCLUSION) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::glowstone)));
-        } else if (item == Options::Option::FRAMERATE_LIMIT) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::clock)));
         } else if (item == Options::Option::RENDER_CLOUDS) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::feather)));
         } else if (item == Options::Option::VIEW_BOBBING) {
@@ -78,10 +76,6 @@ void VideoSettingsScreen::init() {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting)));
         } else if (item == Options::Option::ADVANCED_OPENGL) {
             btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
-        } else if (item == Options::Option::GAMMA) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::torch)));
-        } else if (item == Options::Option::FOV) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Item*)Item::bow)));
         }
 
         buttons.push_back(btn);

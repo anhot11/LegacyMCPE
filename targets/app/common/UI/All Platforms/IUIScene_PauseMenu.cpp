@@ -29,6 +29,15 @@
 #include "platform/profile/profile.h"
 #include "strings.h"
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#define MCPL_LOGI(...) __android_log_print(ANDROID_LOG_INFO, "MCPL", __VA_ARGS__)
+#define MCPL_LOGW(...) __android_log_print(ANDROID_LOG_WARN, "MCPL", __VA_ARGS__)
+#else
+#define MCPL_LOGI(...)
+#define MCPL_LOGW(...)
+#endif
+
 class TexturePack;
 
 int IUIScene_PauseMenu::ExitGameDialogReturned(
@@ -413,8 +422,14 @@ void IUIScene_PauseMenu::_ExitWorld(void* lpParameter) {
     // Fix for #93148 - TCR 001: BAS Game Stability: Title will crash for the
     // multiplayer client if host of the game will exit during the clients
     // loading to created world.
-    while (g_NetworkManager.IsNetworkThreadRunning()) {
+    // Safe timeout of 2000ms prevents infinite UI freeze / ANR on Android if network is stalled
+    int waitNetCounter = 0;
+    while (g_NetworkManager.IsNetworkThreadRunning() && waitNetCounter < 2000) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        waitNetCounter++;
+    }
+    if (waitNetCounter >= 2000) {
+        MCPL_LOGW("IUIScene_PauseMenu: Network thread did not stop within 2000ms; proceeding with world exit");
     }
     pMinecraft->setLevel(nullptr, exitReasonStringId, nullptr, saveStats);
 
@@ -431,8 +446,13 @@ void IUIScene_PauseMenu::_ExitWorld(void* lpParameter) {
     // Fix for #13259 - CRASH: Gameplay: loading process is halted when player
     // loads saved data We can't start/join a new game until the session is
     // destroyed, so wait for it to be idle again
-    while (g_NetworkManager.IsInSession()) {
+    int waitSessionCounter = 0;
+    while (g_NetworkManager.IsInSession() && waitSessionCounter < 2000) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        waitSessionCounter++;
+    }
+    if (waitSessionCounter >= 2000) {
+        MCPL_LOGW("IUIScene_PauseMenu: Network session did not close within 2000ms; proceeding with world exit");
     }
 
     app.SetChangingSessionType(false);

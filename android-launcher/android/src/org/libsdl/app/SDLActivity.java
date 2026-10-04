@@ -2020,7 +2020,7 @@ class DummyEdit extends View implements View.OnKeyListener {
         ic = new SDLInputConnection(this, true);
 
         outAttrs.inputType = InputType.TYPE_CLASS_TEXT |
-                             InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+                             InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI |
                               EditorInfo.IME_FLAG_NO_FULLSCREEN /* API 11 */;
 
@@ -2045,21 +2045,25 @@ class SDLInputConnection extends BaseInputConnection {
 
     @Override
     public boolean sendKeyEvent(KeyEvent event) {
-        /*
-         * This used to handle the keycodes from soft keyboard (and IME-translated input from hardkeyboard)
-         * However, as of Ice Cream Sandwich and later, almost all soft keyboard doesn't generate key presses
-         * and so we need to generate them ourselves in commitText.  To avoid duplicates on the handful of keys
-         * that still do, we empty this out.
-         */
-
-        /*
-         * Return DOES still generate a key event, however.  So rather than using it as the 'click a button' key
-         * as we do with physical keyboards, let's just use it to hide the keyboard.
-         */
+        if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                nativeGenerateScancodeForUnichar('\b');
+                Editable content = getEditable();
+                if (content != null && content.length() > 0) {
+                    content.delete(content.length() - 1, content.length());
+                }
+                if (mCommittedText.length() > 0) {
+                    mCommittedText = mCommittedText.substring(0, mCommittedText.length() - 1);
+                }
+            }
+            return true;
+        }
 
         if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-            if (SDLActivity.onNativeSoftReturnKey()) {
-                return true;
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (SDLActivity.onNativeSoftReturnKey()) {
+                    return true;
+                }
             }
         }
 
@@ -2086,15 +2090,20 @@ class SDLInputConnection extends BaseInputConnection {
 
     @Override
     public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-        // Workaround to capture backspace key. Ref: http://stackoverflow.com/questions>/14560344/android-backspace-in-webview-baseinputconnection
-        // and https://bugzilla.libsdl.org/show_bug.cgi?id=2265
         if (beforeLength > 0 && afterLength == 0) {
-            // backspace(s)
-            while (beforeLength-- > 0) {
+            int count = beforeLength;
+            while (count-- > 0) {
                 nativeGenerateScancodeForUnichar('\b');
             }
+            Editable content = getEditable();
+            if (content != null && content.length() >= beforeLength) {
+                content.delete(content.length() - beforeLength, content.length());
+            }
+            if (mCommittedText.length() >= beforeLength) {
+                mCommittedText = mCommittedText.substring(0, mCommittedText.length() - beforeLength);
+            }
             return true;
-       }
+        }
 
         if (!super.deleteSurroundingText(beforeLength, afterLength)) {
             return false;
@@ -2121,7 +2130,6 @@ class SDLInputConnection extends BaseInputConnection {
             }
             matchLength += Character.charCount(codePoint);
         }
-        /* FIXME: This doesn't handle graphemes, like '🌬️' */
         for (offset = matchLength; offset < mCommittedText.length(); ) {
             int codePoint = mCommittedText.codePointAt(offset);
             nativeGenerateScancodeForUnichar('\b');
@@ -2136,10 +2144,6 @@ class SDLInputConnection extends BaseInputConnection {
                     if (SDLActivity.onNativeSoftReturnKey()) {
                         return;
                     }
-                }
-                /* Higher code points don't generate simulated scancodes */
-                if (codePoint < 128) {
-                    nativeGenerateScancodeForUnichar((char)codePoint);
                 }
                 offset += Character.charCount(codePoint);
             }

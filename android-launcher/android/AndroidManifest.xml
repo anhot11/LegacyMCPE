@@ -76,6 +76,7 @@
             android:launchMode="singleInstance"
             android:resizeableActivity="false"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
+            android:windowSoftInputMode="adjustPan|stateHidden"
             android:screenOrientation="sensorLandscape">
             <meta-data android:name="android.max_aspect" android:value="2.5" />
             <intent-filter>

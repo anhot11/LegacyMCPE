@@ -32,6 +32,38 @@ void BufferedImage::ByteFlip4(unsigned int& data) {
 // 24-bits used (ie no alpha channel) whereas method 0 is a full 32-bit image
 // with a valid alpha channel.
 
+// Helper to safely convert modern 64x64 skins to 64x32 for legacy Minecraft humanoid models
+static void ConvertSkin64To32(int*& pData, int& height) {
+    int* px32 = new int[64 * 32];
+    // 1. Copy base 64x32 (head, hat, body, right arm, right leg)
+    memcpy(px32, pData, 64 * 32 * sizeof(int));
+
+    // 2. Alpha blend the 1.8+ body/limb overlay layers (jacket, sleeves, pants) over base layer
+    for (int y = 32; y < 48; y++) {
+        for (int x = 0; x < 64; x++) {
+            int overlay = pData[y * 64 + x];
+            int a = (overlay >> 24) & 0xFF;
+            if (a > 10) {
+                int baseIdx = (y - 16) * 64 + x;
+                int base = px32[baseIdx];
+                int ba = (base >> 24) & 0xFF;
+                if (a >= 250 || ba == 0) {
+                    px32[baseIdx] = overlay;
+                } else {
+                    float alpha = a / 255.0f;
+                    int r = (int)(((overlay >> 16) & 0xFF) * alpha + ((base >> 16) & 0xFF) * (1.0f - alpha));
+                    int g = (int)(((overlay >> 8) & 0xFF) * alpha + ((base >> 8) & 0xFF) * (1.0f - alpha));
+                    int b = (int)((overlay & 0xFF) * alpha + (base & 0xFF) * (1.0f - alpha));
+                    px32[baseIdx] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+    }
+    delete[] pData;
+    pData = px32;
+    height = 32;
+}
+
 // 4jcraft: mostly rewrote this function
 BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
                              bool bTitleUpdateTexture,
@@ -58,19 +90,7 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
                 width = ImageInfo.Width;
                 height = ImageInfo.Height;
                 if (width == 64 && height == 64) {
-                    int* px32 = new int[64 * 32];
-                    memcpy(px32, data[0], 64 * 32 * sizeof(int));
-                    for (int y = 32; y < 48; y++) {
-                        for (int x = 0; x < 64; x++) {
-                            int p = data[0][y * 64 + x];
-                            if (((p >> 24) & 0xFF) > 20) {
-                                px32[(y - 16) * 64 + x] = p;
-                            }
-                        }
-                    }
-                    delete[] data[0];
-                    data[0] = px32;
-                    height = 32;
+                    ConvertSkin64To32(data[0], height);
                 }
                 return;
             }
@@ -155,19 +175,7 @@ BufferedImage::BufferedImage(const std::string& File, bool filenameHasExtension,
                 width = ImageInfo.Width;
                 height = ImageInfo.Height;
                 if (width == 64 && height == 64 && (fileName.find("mob/") != std::string::npos || fileName.find("skin") != std::string::npos || fileName.find("alex") != std::string::npos || fileName.find("char") != std::string::npos)) {
-                    int* px32 = new int[64 * 32];
-                    memcpy(px32, data[0], 64 * 32 * sizeof(int));
-                    for (int y = 32; y < 48; y++) {
-                        for (int x = 0; x < 64; x++) {
-                            int p = data[0][y * 64 + x];
-                            if (((p >> 24) & 0xFF) > 20) {
-                                px32[(y - 16) * 64 + x] = p;
-                            }
-                        }
-                    }
-                    delete[] data[0];
-                    data[0] = px32;
-                    height = 32;
+                    ConvertSkin64To32(data[0], height);
                 }
             }
         } else {

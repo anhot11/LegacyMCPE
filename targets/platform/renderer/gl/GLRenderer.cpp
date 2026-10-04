@@ -14,6 +14,13 @@
 
 #if defined(__ANDROID__)
 #include <android/log.h>
+#define MCPL_LOGI(...) __android_log_print(ANDROID_LOG_INFO, "MCPL", __VA_ARGS__)
+#define MCPL_LOGW(...) __android_log_print(ANDROID_LOG_WARN, "MCPL", __VA_ARGS__)
+#define MCPL_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "MCPL", __VA_ARGS__)
+#else
+#define MCPL_LOGI(...)
+#define MCPL_LOGW(...)
+#define MCPL_LOGE(...)
 #endif
 
 // undefine macros from header to avoid argument mismatch
@@ -749,6 +756,38 @@ struct ChunkDrawCall {
     GLsizei count;
 };
 
+// Thread-safe deferred deletion of OpenGL ES buffers and VAOs.
+// In Android (Adreno/Mali), calling glDeleteBuffers/glDeleteVertexArrays from
+// background worker threads (like eRenderChunkUpdateThread) without an active EGL context
+// causes driver crashes, memory leaks and GL_INVALID_OPERATION.
+static std::vector<GLuint> s_deferredDeleteVBOs;
+static std::vector<GLuint> s_deferredDeleteVAOs;
+static std::mutex s_deferredDeleteMtx;
+
+static void QueueDeferredGLDeletes(GLuint vbo, GLuint vao) {
+    if (!vbo && !vao) return;
+    std::lock_guard<std::mutex> lock(s_deferredDeleteMtx);
+    if (vbo) s_deferredDeleteVBOs.push_back(vbo);
+    if (vao) s_deferredDeleteVAOs.push_back(vao);
+}
+
+static void ProcessDeferredGLDeletes() {
+    std::vector<GLuint> vbos;
+    std::vector<GLuint> vaos;
+    {
+        std::lock_guard<std::mutex> lock(s_deferredDeleteMtx);
+        if (s_deferredDeleteVBOs.empty() && s_deferredDeleteVAOs.empty()) return;
+        vbos.swap(s_deferredDeleteVBOs);
+        vaos.swap(s_deferredDeleteVAOs);
+    }
+    if (!vaos.empty()) {
+        glDeleteVertexArrays((GLsizei)vaos.size(), vaos.data());
+    }
+    if (!vbos.empty()) {
+        glDeleteBuffers((GLsizei)vbos.size(), vbos.data());
+    }
+}
+
 struct ChunkBuffer {
     GLuint vbo = 0;
     // each chunks has its one VAO now
@@ -758,12 +797,9 @@ struct ChunkBuffer {
     bool valid = false;
     bool vboReady = false;
     void destroy() {
-        if (vbo) {
-            glDeleteBuffers(1, &vbo);
+        if (vbo || vao) {
+            QueueDeferredGLDeletes(vbo, vao);
             vbo = 0;
-        }
-        if (vao) {
-            glDeleteVertexArrays(1, &vao);
             vao = 0;
         }
         draws.clear();
@@ -1001,6 +1037,7 @@ void GLRenderer::InitialiseContext() {
 }
 
 void GLRenderer::StartFrame() {
+    ProcessDeferredGLDeletes();
     Set_matrixDirty();
     int w = 0, h = 0;
     SDL_GL_GetDrawableSize(s_window, &w, &h);
@@ -1249,11 +1286,14 @@ void GLRenderer::CBuffDelete(int first, int count) {
 
 void GLRenderer::CBuffDeleteAll() {
     std::lock_guard<std::mutex> lk(s_glCallMtx);
+    size_t count = s_chunkPool.size();
     for (auto& kv : s_chunkPool) {
         kv.second.destroy();
     }
     s_chunkPool.clear();
     s_nextListBase = 1;
+    ProcessDeferredGLDeletes();
+    MCPL_LOGI("CBuffDeleteAll: Cleared %zu chunk buffers and flushed deferred GL deletes", count);
 }
 
 void GLRenderer::CBuffStart(int index, bool) {

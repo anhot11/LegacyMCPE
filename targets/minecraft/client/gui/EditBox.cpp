@@ -37,22 +37,6 @@ std::string EditBox::getValue() { return value; }
 
 void EditBox::tick() {
     frame++;
-    if (inFocus && active) {
-        std::string typed = PlatformInput.PollTextInput();
-        if (!typed.empty()) {
-            for (char ch : typed) {
-                if (ch == '\b' || ch == 8) {
-                    if (value.length() > 0) value.pop_back();
-                } else if (((unsigned char)ch >= 32 || (unsigned char)ch >= 160 || SharedConstants::isAllowedChatCharacter(ch)) &&
-                           (value.length() < (size_t)maxLength || maxLength == 0)) {
-                    value += ch;
-                }
-            }
-        }
-        if (PlatformInput.PollBackspacePressed() && value.length() > 0) {
-            value.pop_back();
-        }
-    }
 }
 
 void EditBox::keyPressed(char ch, int eventKey) {

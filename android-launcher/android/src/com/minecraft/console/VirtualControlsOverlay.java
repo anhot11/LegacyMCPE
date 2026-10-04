@@ -118,6 +118,14 @@ public class VirtualControlsOverlay extends View {
     private boolean mIsPanning = false;
     private boolean mIsMining = false;
 
+    // Secondary touch interaction for multitouch (e.g. pan with one finger, tap/hold with second finger)
+    private int mSecondPointerId = -1;
+    private float mSecondDownX = 0;
+    private float mSecondDownY = 0;
+    private long mSecondDownTime = 0;
+    private boolean mSecondMining = false;
+    private Runnable mSecondHoldRunnable = null;
+
     private final Handler mTouchHandler = new Handler(Looper.getMainLooper());
     private Runnable mHoldToMineRunnable = null;
 
@@ -134,10 +142,23 @@ public class VirtualControlsOverlay extends View {
     private boolean mControlsVisible = false;
     private float mDensity = 1.0f;
 
-    // FPS Counter
-    private int mFrameCount = 0;
-    private long mLastFpsTime = 0;
-    private int mCurrentFps = 60;
+    // Display Cutout Safe Insets (Notch)
+    private int mCutoutLeft = 0;
+    private int mCutoutRight = 0;
+
+    public void setSafeInsets(int left, int right) {
+        if (mCutoutLeft != left || mCutoutRight != right) {
+            mCutoutLeft = left;
+            mCutoutRight = right;
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    updateButtonLayouts();
+                    invalidate();
+                }
+            });
+        }
+    }
 
     public VirtualControlsOverlay(Context context, SDLSurface surface) {
         super(context);
@@ -316,14 +337,14 @@ public class VirtualControlsOverlay extends View {
         float scale = getScaleFactor();
 
         // 1. FPS Box (top left)
-        mFpsBox.set(10 * d, 10 * d, 68 * d, 30 * d);
+        mFpsBox.set(10 * d + mCutoutLeft, 10 * d, 68 * d + mCutoutLeft, 30 * d);
 
         // 2. Top bar buttons (Pause, Perspective, Chat)
         float topBtnSize = 28 * d * scale;
         float topY = 8 * d;
 
         // Pause button (top right corner)
-        float pauseX = w - 12 * d - topBtnSize;
+        float pauseX = w - (12 * d + mCutoutRight) - topBtnSize;
         btnPause.bounds.set(pauseX, topY, pauseX + topBtnSize, topY + topBtnSize);
 
         // Chat button (next to pause)
@@ -349,7 +370,7 @@ public class VirtualControlsOverlay extends View {
         if (mControlStyle == 0 || mControlStyle == 1) {
             // Style 0 (Modern Bedrock) & Style 1 (Classic PE D-Pad)
             float dpadBtn = 56 * d * scale;
-            float leftMargin = 20 * d;
+            float leftMargin = 20 * d + mCutoutLeft;
             float bottomMargin = 20 * d;
 
             float cx = leftMargin + dpadBtn * 1.5f;
@@ -363,7 +384,7 @@ public class VirtualControlsOverlay extends View {
 
             // Right Action: Circular Jump Button
             float jumpSize = 58 * d * scale;
-            float jumpX = w - 24 * d - jumpSize;
+            float jumpX = w - (24 * d + mCutoutRight) - jumpSize;
             float jumpY = h - 28 * d - jumpSize;
             btnJump.bounds.set(jumpX, jumpY, jumpX + jumpSize, jumpY + jumpSize);
 
@@ -374,7 +395,7 @@ public class VirtualControlsOverlay extends View {
             // Style 2: Floating/Fixed Joystick + Action Buttons
             mJoyBaseRadius = 62 * d * scale;
             mJoyKnobRadius = 28 * d * scale;
-            mJoyCenterX = 28 * d + mJoyBaseRadius;
+            mJoyCenterX = 28 * d + mCutoutLeft + mJoyBaseRadius;
             mJoyCenterY = h - 28 * d - mJoyBaseRadius;
             if (!mJoyActive) {
                 mJoyKnobX = mJoyCenterX;
@@ -388,7 +409,7 @@ public class VirtualControlsOverlay extends View {
             btnCenter.bounds.set(0, 0, 0, 0);
 
             float jumpSize = 56 * d * scale;
-            float jumpX = w - 24 * d - jumpSize;
+            float jumpX = w - (24 * d + mCutoutRight) - jumpSize;
             float jumpY = h - 28 * d - jumpSize;
             btnJump.bounds.set(jumpX, jumpY, jumpX + jumpSize, jumpY + jumpSize);
 
@@ -465,9 +486,12 @@ public class VirtualControlsOverlay extends View {
         }
 
         // Draw Authentic MCPE 0.15 Circular Mining Progress Indicator at touched coordinates
-        if (mIsMining && mWorldPointerId != -1) {
-            float cx = mWorldDownX;
-            float cy = mWorldDownY;
+        boolean drawMineRing = (mIsMining && mWorldPointerId != -1);
+        boolean drawSecondRing = (mSecondMining && mSecondPointerId != -1);
+        if (drawMineRing || drawSecondRing) {
+            float cx = drawMineRing ? mWorldDownX : mSecondDownX;
+            float cy = drawMineRing ? mWorldDownY : mSecondDownY;
+            long startTime = drawMineRing ? mWorldDownTime : mSecondDownTime;
             float rOuter = 28 * mDensity;
             float rInner = 26 * mDensity;
 
@@ -481,7 +505,7 @@ public class VirtualControlsOverlay extends View {
             canvas.drawCircle(cx, cy, 3.5f * mDensity, mRingCenterPaint);
 
             // Progress arc filling clockwise
-            long holdMs = Math.max(0, SystemClock.uptimeMillis() - (mWorldDownTime + 200));
+            long holdMs = Math.max(0, SystemClock.uptimeMillis() - (startTime + 200));
             float sweep = Math.min(360.0f, (holdMs % 1200) / 1200.0f * 360.0f);
             RectF arcRect = new RectF(cx - rInner, cy - rInner, cx + rInner, cy + rInner);
             canvas.drawArc(arcRect, -90, sweep, false, mRingProgressPaint);
@@ -581,6 +605,16 @@ public class VirtualControlsOverlay extends View {
         }
         mWorldPointerId = -1;
         mIsPanning = false;
+
+        if (mSecondHoldRunnable != null) {
+            mTouchHandler.removeCallbacks(mSecondHoldRunnable);
+            mSecondHoldRunnable = null;
+        }
+        if (mSecondMining) {
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+            mSecondMining = false;
+        }
+        mSecondPointerId = -1;
     }
 
     @Override
@@ -682,11 +716,36 @@ public class VirtualControlsOverlay extends View {
                             if (mWorldPointerId != -1 && !mIsPanning) {
                                 mIsMining = true;
                                 // Start continuous block mining at the touched coordinate!
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_HOVER_MOVE, mWorldDownX, mWorldDownY, false);
                                 SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, mWorldDownX, mWorldDownY, false);
+                                invalidate();
                             }
                         }
                     };
                     mTouchHandler.postDelayed(mHoldToMineRunnable, 200);
+                    return true;
+                } else if (mSecondPointerId == -1 && mIsPanning) {
+                    // Multitouch: second finger taps/mines while first finger pans camera
+                    mSecondPointerId = pointerId;
+                    mSecondDownX = x;
+                    mSecondDownY = y;
+                    mSecondDownTime = SystemClock.uptimeMillis();
+                    mSecondMining = false;
+
+                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_HOVER_MOVE, mSecondDownX, mSecondDownY, false);
+
+                    mSecondHoldRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mSecondPointerId != -1) {
+                                mSecondMining = true;
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_HOVER_MOVE, mSecondDownX, mSecondDownY, false);
+                                SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, mSecondDownX, mSecondDownY, false);
+                                invalidate();
+                            }
+                        }
+                    };
+                    mTouchHandler.postDelayed(mSecondHoldRunnable, 200);
                     return true;
                 }
                 break;
@@ -739,7 +798,7 @@ public class VirtualControlsOverlay extends View {
                                 }
                                 break; // Stop here: never pan or move camera while mining!
                             } else if (!mIsPanning) {
-                                if (distFromDown > 20.0f * mDensity) {
+                                if (distFromDown > 28.0f * mDensity) {
                                     // Finger moved before hold time -> User is rotating camera
                                     if (mHoldToMineRunnable != null) {
                                         mTouchHandler.removeCallbacks(mHoldToMineRunnable);
@@ -768,6 +827,28 @@ public class VirtualControlsOverlay extends View {
                         }
                     }
                 }
+                if (mSecondPointerId != -1) {
+                    for (int i = 0; i < event.getPointerCount(); i++) {
+                        if (event.getPointerId(i) == mSecondPointerId) {
+                            float curX = event.getX(i);
+                            float curY = event.getY(i);
+                            float distFromDown = (float) Math.hypot(curX - mSecondDownX, curY - mSecondDownY);
+                            if (mSecondMining) {
+                                if (distFromDown > 45.0f * mDensity) {
+                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+                                    mSecondMining = false;
+                                    invalidate();
+                                }
+                            } else if (distFromDown > 28.0f * mDensity) {
+                                if (mSecondHoldRunnable != null) {
+                                    mTouchHandler.removeCallbacks(mSecondHoldRunnable);
+                                    mSecondHoldRunnable = null;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
                 break;
             }
 
@@ -789,6 +870,29 @@ public class VirtualControlsOverlay extends View {
                     }
                 }
                 if (buttonHit) {
+                    return true;
+                }
+
+                if (pointerId == mSecondPointerId) {
+                    if (mSecondHoldRunnable != null) {
+                        mTouchHandler.removeCallbacks(mSecondHoldRunnable);
+                        mSecondHoldRunnable = null;
+                    }
+                    if (mSecondMining) {
+                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+                        mSecondMining = false;
+                        invalidate();
+                    } else if ((SystemClock.uptimeMillis() - mSecondDownTime) < 300) {
+                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_HOVER_MOVE, mSecondDownX, mSecondDownY, false);
+                        SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, mSecondDownX, mSecondDownY, false);
+                        postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
+                            }
+                        }, 40);
+                    }
+                    mSecondPointerId = -1;
                     return true;
                 }
 
