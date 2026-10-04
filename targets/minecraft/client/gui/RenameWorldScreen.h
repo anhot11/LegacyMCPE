@@ -14,6 +14,7 @@ private:
 
 public:
     RenameWorldScreen(Screen* lastScreen, const std::string& levelId);
+    virtual ~RenameWorldScreen() override;
     virtual void tick() override;
     virtual void init() override;
     virtual void removed() override;

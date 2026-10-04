@@ -6,6 +6,7 @@
 #include <fstream>
 #include <memory>
 #include <set>
+#include <sys/stat.h>
 
 #include "LevelData.h"
 #include "LevelSummary.h"
@@ -50,6 +51,10 @@ std::vector<LevelSummary*>* McRegionLevelStorageSource::getLevelList() {
                     seen.insert(folderName);
                     std::string displayName = folderName;
                     int64_t lastPlayed = 0;
+                    struct stat st;
+                    if (stat(datFile.string().c_str(), &st) == 0) {
+                        lastPlayed = (int64_t)st.st_mtime * 1000LL;
+                    }
                     int64_t sizeOnDisk = (int64_t)std::filesystem::file_size(datFile, ec);
 
                     // Check info.txt

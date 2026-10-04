@@ -146,6 +146,7 @@ void StubStorage::LoadFromDisk(const std::string& title) {
 }
 
 void StubStorage::ResetSaveData() {
+    m_currentSaveTitle.clear();
     m_saveData.clear();
     m_subfiles.clear();
     if (m_allocatedBuffer) {

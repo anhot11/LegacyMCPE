@@ -3,16 +3,20 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
 #include "Button.h"
 #include "EditBox.h"
 #include "MessageScreen.h"
+#include "java/Random.h"
+#include "java/System.h"
 #include "minecraft/GameEnums.h"
 #include "minecraft/IGameServices.h"
 #include "minecraft/network/INetworkService.h"
 #include "minecraft/util/Log.h"
+#include "platform/fs/fs.h"
 #include "platform/storage/storage.h"
 // Needed for the &CGameNetworkManager::RunNetworkGameThreadProc address-of
 // below. Static thread procs can't be virtual; this one consumer keeps the
@@ -168,14 +172,30 @@ void CreateWorldScreen::updateResultFolder() {
         resultFolder = "World";
     }
     resultFolder = CreateWorldScreen::findAvailableFolderName(
-        minecraft->getLevelSource(), resultFolder);
+        minecraft ? minecraft->getLevelSource() : nullptr, resultFolder);
 }
 
 std::string CreateWorldScreen::findAvailableFolderName(
     LevelStorageSource* levelSource, const std::string& folder) {
-    std::string folder2 = folder;  // 4J - copy input as it is const
+    std::string safeBase = folder;
+    for (char& c : safeBase) {
+        if (c == '/' || c == '\\' || c == ':' || c == '*' || c == '?' || c == '"' || c == '<' || c == '>' || c == '|') {
+            c = '_';
+        }
+    }
+    safeBase = trimString(safeBase);
+    if (safeBase.empty()) safeBase = "World";
 
-    return folder2;
+    std::filesystem::path baseDir = PlatformFilesystem.getBasePath() / "saves";
+    std::filesystem::path altDir = std::filesystem::path("/sdcard/LegacyMCPE/saves");
+    std::error_code ec;
+
+    std::string result = safeBase;
+    int counter = 2;
+    while (std::filesystem::exists(baseDir / result, ec) || std::filesystem::exists(altDir / result, ec)) {
+        result = safeBase + " " + std::to_string(counter++);
+    }
+    return result;
 }
 
 void CreateWorldScreen::removed() {
@@ -223,22 +243,18 @@ void CreateWorldScreen::buttonClicked(Button* button) {
 
         moreOptionsParams->dwTexturePack = 0;
 
-        std::string worldName = nameEdit->getValue();
-        if (worldName.empty()) {
-            worldName = "2slimey";
-        }
+        updateResultFolder();
+        std::string folderName = resultFolder;
 
         PlatformStorage.ResetSaveData();
-        PlatformStorage.SetSaveTitle((char*)worldName.c_str());
+        PlatformStorage.SetSaveTitle((char*)folderName.c_str());
 
-        std::string seedString = seedEdit->getValue();
+        std::string seedString = trimString(seedEdit->getValue());
 
         int64_t seedValue = 0;
         NetworkGameInitData* param = new NetworkGameInitData();
 
         if (seedString.length() != 0) {
-            // try to convert it to a long first
-            //            try {	// 4J - removed try/catch
             int64_t value = fromWString<int64_t>(seedString);
 
             bool isNumber = true;
@@ -261,13 +277,16 @@ void CreateWorldScreen::buttonClicked(Button* button) {
                     hashValue = 31 * hashValue + seedString.at(i);
                 seedValue = hashValue;
             }
-            //           } catch (NumberFormatException e) {
-            //               // not a number, fetch hash value
-            //               seedValue = seedString.hashCode();
-            //           }
+            param->findSeed = false;
         } else {
-            param->findSeed = true;
+            // Mobile: fast 64-bit random seed without exhaustive Xbox 360 island loop
+            Random rand(System::nanoTime());
+            seedValue = rand.nextLong();
+            param->findSeed = false;
         }
+
+        Log::info("MCPL: CreateWorldScreen starting world folder=%s seed=%lld\n",
+                  folderName.c_str(), (long long)seedValue);
 
         param->seed = seedValue;
         param->saveData = nullptr;

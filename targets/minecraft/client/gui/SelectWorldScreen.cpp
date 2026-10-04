@@ -252,6 +252,13 @@ SelectWorldScreen::~SelectWorldScreen() {
         delete serverSelectionList;
         serverSelectionList = nullptr;
     }
+    if (levelList != nullptr) {
+        for (auto* item : *levelList) {
+            delete item;
+        }
+        delete levelList;
+        levelList = nullptr;
+    }
 }
 
 void SelectWorldScreen::init() {
@@ -265,6 +272,15 @@ void SelectWorldScreen::init() {
     conversionLang = language->getElement("selectWorld.conversion");
     loadLevelList();
     loadServers();
+
+    if (worldSelectionList != nullptr) {
+        delete worldSelectionList;
+        worldSelectionList = nullptr;
+    }
+    if (serverSelectionList != nullptr) {
+        delete serverSelectionList;
+        serverSelectionList = nullptr;
+    }
 
     worldSelectionList = new WorldSelectionList(this);
     worldSelectionList->init(&buttons, BUTTON_UP_ID, BUTTON_DOWN_ID);
@@ -290,8 +306,19 @@ void SelectWorldScreen::mouseClicked(int x, int y, int buttonNum) {
 }
 
 void SelectWorldScreen::loadLevelList() {
-    LevelStorageSource* levelSource = minecraft->getLevelSource();
-    levelList = levelSource->getLevelList();
+    if (levelList != nullptr) {
+        for (auto* item : *levelList) {
+            delete item;
+        }
+        delete levelList;
+        levelList = nullptr;
+    }
+    LevelStorageSource* levelSource = minecraft ? minecraft->getLevelSource() : nullptr;
+    if (levelSource != nullptr) {
+        levelList = levelSource->getLevelList();
+    } else {
+        levelList = new std::vector<LevelSummary*>();
+    }
     selectedWorld = -1;
 }
 
@@ -427,15 +454,21 @@ void SelectWorldScreen::serverSelected(int id) {
 }
 
 std::string SelectWorldScreen::getWorldId(int id) {
+    if (!levelList || id < 0 || id >= (int)levelList->size()) {
+        return "";
+    }
     return levelList->at(id)->getLevelId();
 }
 
 std::string SelectWorldScreen::getWorldName(int id) {
+    if (!levelList || id < 0 || id >= (int)levelList->size()) {
+        return "";
+    }
     std::string levelName = levelList->at(id)->getLevelName();
 
     if (levelName.length() == 0) {
         Language* language = Language::getInstance();
-        levelName = language->getElement("selectWorld.world") + " " +
+        levelName = (language ? language->getElement("selectWorld.world") : "World") + " " +
                     toWString<int>(id + 1);
     }
 
@@ -622,19 +655,19 @@ void SelectWorldScreen::buttonClicked(Button* button) {
     }
 
     if (button->id == BUTTON_DELETE_ID) {
-        if (currentTab == TAB_WORLDS) {
+        if (currentTab == TAB_WORLDS && selectedWorld >= 0 && levelList && selectedWorld < (int)levelList->size()) {
             std::string worldName = getWorldName(selectedWorld);
-            if (worldName != "") {
+            if (!worldName.empty()) {
                 isDeleting = true;
 
                 Language* language = Language::getInstance();
                 std::string title =
-                    language->getElement("selectWorld.deleteQuestion");
+                    language ? language->getElement("selectWorld.deleteQuestion") : "Eliminar mundo";
                 std::string warning =
                     "'" + worldName + "' " +
-                    language->getElement("selectWorld.deleteWarning");
-                std::string yes = language->getElement("selectWorld.deleteButton");
-                std::string no = language->getElement("gui.cancel");
+                    (language ? language->getElement("selectWorld.deleteWarning") : "¿Seguro que deseas eliminar este mundo?");
+                std::string yes = language ? language->getElement("selectWorld.deleteButton") : "Eliminar";
+                std::string no = language ? language->getElement("gui.cancel") : "Cancelar";
 
                 ConfirmScreen* confirmScreen =
                     new ConfirmScreen(this, title, warning, yes, no, selectedWorld);
@@ -642,7 +675,7 @@ void SelectWorldScreen::buttonClicked(Button* button) {
             }
         }
     } else if (button->id == BUTTON_SELECT_ID) {
-        if (currentTab == TAB_WORLDS) {
+        if (currentTab == TAB_WORLDS && selectedWorld >= 0 && levelList && selectedWorld < (int)levelList->size()) {
             worldSelected(selectedWorld);
         }
     } else if (button->id == BUTTON_CREATE_ID) {
@@ -650,9 +683,12 @@ void SelectWorldScreen::buttonClicked(Button* button) {
             minecraft->setScreen(new CreateWorldScreen(this));
         }
     } else if (button->id == BUTTON_RENAME_ID) {
-        if (currentTab == TAB_WORLDS) {
-            minecraft->setScreen(
-                new RenameWorldScreen(this, getWorldId(selectedWorld)));
+        if (currentTab == TAB_WORLDS && selectedWorld >= 0 && levelList && selectedWorld < (int)levelList->size()) {
+            std::string worldId = getWorldId(selectedWorld);
+            if (!worldId.empty()) {
+                minecraft->setScreen(
+                    new RenameWorldScreen(this, worldId));
+            }
         }
     } else if (button->id == BUTTON_CANCEL_ID) {
         Log::info(
@@ -670,6 +706,7 @@ void SelectWorldScreen::buttonClicked(Button* button) {
 
 void SelectWorldScreen::worldSelected(int id) {
     if (done) return;
+    if (!levelList || id < 0 || id >= (int)levelList->size()) return;
     done = true;
 
     std::string worldFolderName = getWorldId(id);
@@ -713,15 +750,24 @@ void SelectWorldScreen::worldSelected(int id) {
 }
 
 void SelectWorldScreen::confirmResult(bool result, int id) {
+    Log::info("MCPL: SelectWorldScreen::confirmResult(result=%d, id=%d)\n", result, id);
     if (isDeleting) {
         isDeleting = false;
-        if (result) {
-            LevelStorageSource* levelSource = minecraft->getLevelSource();
-            levelSource->clearAll();
-            levelSource->deleteLevel(getWorldId(id));
-
+        if (result && id >= 0) {
+            std::string worldId = getWorldId(id);
+            if (!worldId.empty()) {
+                Log::info("MCPL: Deleting worldId=%s\n", worldId.c_str());
+                LevelStorageSource* levelSource = minecraft ? minecraft->getLevelSource() : nullptr;
+                if (levelSource != nullptr) {
+                    levelSource->clearAll();
+                    levelSource->deleteLevel(worldId);
+                }
+                PlatformStorage.ResetSaveData();
+            }
             loadLevelList();
         }
+        minecraft->setScreen(this);
+    } else {
         minecraft->setScreen(this);
     }
 }
@@ -781,7 +827,9 @@ void SelectWorldScreen::WorldSelectionList::renderBackground() {
 
 void SelectWorldScreen::WorldSelectionList::renderItem(int i, int x, int y,
                                                        int h, Tesselator* t) {
+    if (!parent->levelList || i < 0 || i >= (int)parent->levelList->size()) return;
     LevelSummary* levelSummary = parent->levelList->at(i);
+    if (!levelSummary) return;
 
     std::string name = levelSummary->getLevelName();
     if (name.length() == 0) {
@@ -790,32 +838,40 @@ void SelectWorldScreen::WorldSelectionList::renderItem(int i, int x, int y,
 
     std::string id = levelSummary->getLevelId();
 
-    constexpr int64_t kFileTimeEpochToUnixEpochMs = 11644473600000LL;
-    const int64_t lastPlayedUnixMs =
-        levelSummary->getLastPlayed() - kFileTimeEpochToUnixEpochMs;
-    const auto tp = std::chrono::system_clock::time_point{
-        std::chrono::milliseconds{lastPlayedUnixMs}};
-    auto dp = std::chrono::floor<std::chrono::days>(tp);
-    std::chrono::year_month_day ymd{dp};
-    std::chrono::hh_mm_ss hms{
-        std::chrono::floor<std::chrono::minutes>(tp - dp)};
-
-    id += std::format(" ({}/{}/{} {}:{:02d}", (unsigned)ymd.day(),
-                      (unsigned)ymd.month(), (int)ymd.year(),
-                      (int)hms.hours().count(), (int)hms.minutes().count());
+    int64_t lastPlayed = levelSummary->getLastPlayed();
+    if (lastPlayed > 0) {
+        time_t sec = (time_t)(lastPlayed / 1000);
+        struct tm tmBuf;
+        if (localtime_r(&sec, &tmBuf) != nullptr) {
+            char dateStr[64];
+            snprintf(dateStr, sizeof(dateStr), " (%02d/%02d/%04d %02d:%02d",
+                     tmBuf.tm_mday, tmBuf.tm_mon + 1, tmBuf.tm_year + 1900,
+                     tmBuf.tm_hour, tmBuf.tm_min);
+            id += dateStr;
+        } else {
+            id += " (";
+        }
+    } else {
+        id += " (";
+    }
 
     int64_t size = levelSummary->getSizeOnDisk();
-    id = id + ", " + toWString<float>(size / 1024 * 100 / 1024 / 100.0f) +
-         " MB)";
-    std::string info;
+    char sizeBuf[64];
+    snprintf(sizeBuf, sizeof(sizeBuf), "%s%.2f MB)",
+             (lastPlayed > 0 ? ", " : ""),
+             (float)size / (1024.0f * 1024.0f));
+    id += sizeBuf;
 
+    std::string info;
     if (levelSummary->isRequiresConversion()) {
         info = parent->conversionLang + " " + info;
     }
 
     parent->drawString(parent->font, name, x + 2, y + 1, 0xffffff);
     parent->drawString(parent->font, id, x + 2, y + 12, 0x808080);
-    parent->drawString(parent->font, info, x + 2, y + 12 + 10, 0x808080);
+    if (!info.empty()) {
+        parent->drawString(parent->font, info, x + 2, y + 12 + 10, 0x808080);
+    }
 }
 
 // =========================================================================

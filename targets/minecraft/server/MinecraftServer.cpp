@@ -239,7 +239,13 @@ bool MinecraftServer::initServer(int64_t seed, NetworkGameInitData* initData,
     mcprogress->progressStart(IDS_PROGRESS_INITIALISING_SERVER);
 
     if (findSeed) {
+#if defined(__ANDROID__)
+        Random rand(System::nanoTime());
+        seed = rand.nextLong();
+        Log::info("MCPL: MinecraftServer fallback random seed=%lld\n", (long long)seed);
+#else
         seed = BiomeSource::findSeed(pLevelType);
+#endif
     }
 
     setMaxBuildHeight(

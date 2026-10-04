@@ -96,6 +96,7 @@ void Screen::init(Minecraft* minecraft, int width, int height) {
     this->font = minecraft->font;
     this->width = width;
     this->height = height;
+    clickedButton = nullptr;
     buttons.clear();
     resetInputState();
     init();
