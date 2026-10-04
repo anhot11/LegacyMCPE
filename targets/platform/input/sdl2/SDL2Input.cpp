@@ -9,7 +9,6 @@
 
 #include "../../PlatformTypes.h"
 #include "../InputConstants.h"
-#include "platform/renderer/renderer.h"
 #include "SDL.h"
 #include "SDL_events.h"
 #include "SDL_gamecontroller.h"
@@ -20,6 +19,7 @@
 #include "SDL_stdinc.h"
 #include "SDL_video.h"
 #include "begin_code.h"
+#include "platform/renderer/renderer.h"
 
 #if defined(__APPLE__)
 #include "SDL2CursorPatch.h"
@@ -27,6 +27,7 @@
 
 #ifdef __ANDROID__
 #include <jni.h>
+
 #include "SDL_system.h"
 
 extern "C" float Android_GetDeviceTemperature() {
@@ -109,19 +110,20 @@ static bool s_screenReturnPressed = false;
 // We set all the watched keys
 // I don't know if I'll need to change this if we add chat support soon.
 static const int s_watchedKeys[] = {
-    SDL_SCANCODE_W,      SDL_SCANCODE_A,      SDL_SCANCODE_S,
-    SDL_SCANCODE_D,      SDL_SCANCODE_SPACE,  SDL_SCANCODE_LSHIFT,
-    SDL_SCANCODE_RSHIFT, SDL_SCANCODE_E,      SDL_SCANCODE_Q,
-    SDL_SCANCODE_F,      SDL_SCANCODE_C,      SDL_SCANCODE_ESCAPE,
-    SDL_SCANCODE_RETURN, SDL_SCANCODE_BACKSPACE, SDL_SCANCODE_F3, SDL_SCANCODE_F5,
-    SDL_SCANCODE_UP,     SDL_SCANCODE_DOWN,   SDL_SCANCODE_LEFT,
-    SDL_SCANCODE_RIGHT,  SDL_SCANCODE_PAGEUP, SDL_SCANCODE_PAGEDOWN,
-    SDL_SCANCODE_TAB,    SDL_SCANCODE_LCTRL,  SDL_SCANCODE_RCTRL,
-    SDL_SCANCODE_1,      SDL_SCANCODE_2,      SDL_SCANCODE_3,
-    SDL_SCANCODE_4,      SDL_SCANCODE_5,      SDL_SCANCODE_6,
-    SDL_SCANCODE_7,      SDL_SCANCODE_8,      SDL_SCANCODE_9,
-    SDL_SCANCODE_Z,      SDL_SCANCODE_X,      SDL_SCANCODE_C,
-    SDL_SCANCODE_V,      SDL_SCANCODE_AC_BACK, SDL_SCANCODE_T};
+    SDL_SCANCODE_W,        SDL_SCANCODE_A,         SDL_SCANCODE_S,
+    SDL_SCANCODE_D,        SDL_SCANCODE_SPACE,     SDL_SCANCODE_LSHIFT,
+    SDL_SCANCODE_RSHIFT,   SDL_SCANCODE_E,         SDL_SCANCODE_Q,
+    SDL_SCANCODE_F,        SDL_SCANCODE_C,         SDL_SCANCODE_ESCAPE,
+    SDL_SCANCODE_RETURN,   SDL_SCANCODE_BACKSPACE, SDL_SCANCODE_F3,
+    SDL_SCANCODE_F5,       SDL_SCANCODE_UP,        SDL_SCANCODE_DOWN,
+    SDL_SCANCODE_LEFT,     SDL_SCANCODE_RIGHT,     SDL_SCANCODE_PAGEUP,
+    SDL_SCANCODE_PAGEDOWN, SDL_SCANCODE_TAB,       SDL_SCANCODE_LCTRL,
+    SDL_SCANCODE_RCTRL,    SDL_SCANCODE_1,         SDL_SCANCODE_2,
+    SDL_SCANCODE_3,        SDL_SCANCODE_4,         SDL_SCANCODE_5,
+    SDL_SCANCODE_6,        SDL_SCANCODE_7,         SDL_SCANCODE_8,
+    SDL_SCANCODE_9,        SDL_SCANCODE_Z,         SDL_SCANCODE_X,
+    SDL_SCANCODE_C,        SDL_SCANCODE_V,         SDL_SCANCODE_AC_BACK,
+    SDL_SCANCODE_T};
 static const int s_watchedKeyCount =
     (int)(sizeof(s_watchedKeys) / sizeof(s_watchedKeys[0]));
 
@@ -137,7 +139,9 @@ static inline bool KReleased(int sc) {
                                       : false;
 }
 
-static inline bool MouseLDown() { return s_mouseLeftCurrent || s_fingerDown || s_mouseLeftQueued; }
+static inline bool MouseLDown() {
+    return s_mouseLeftCurrent || s_fingerDown || s_mouseLeftQueued;
+}
 static inline bool MouseLPressed() {
     return (s_mouseLeftCurrent && !s_mouseLeftPrev) || s_mouseLeftQueued;
 }
@@ -257,16 +261,11 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         }
     } else if (e->type == SDL_FINGERUP) {
         s_fingerDown = false;
-        s_mouseLeftCurrent = false;
-        s_mouseLeftQueued = false;
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT) {
-            s_mouseLeftCurrent = false;
-            s_mouseLeftQueued = false;
             s_fingerDown = false;
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
             s_mouseRightCurrent = false;
-            s_mouseRightQueued = false;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
         if (!SDL_GetRelativeMouseMode()) {
@@ -275,7 +274,8 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
             s_hasTouchPos = true;
         } else {
             // In relative mouse mode (in-game look):
-            // Only accumulate legitimate swipe deltas, discarding any full-screen jumps or absolute hover coords
+            // Only accumulate legitimate swipe deltas, discarding any
+            // full-screen jumps or absolute hover coords
             float dx = (float)e->motion.xrel;
             float dy = (float)e->motion.yrel;
             if (fabsf(dx) < 1200.0f && fabsf(dy) < 1200.0f) {
@@ -431,9 +431,11 @@ void SDL2Input::Tick() {
         s_mouseX = mx;
         s_mouseY = my;
     }
-    s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) || s_mouseLeftQueued || s_fingerDown;
+    s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) ||
+                         s_mouseLeftQueued || s_fingerDown;
     s_mouseLeftQueued = false;
-    s_mouseRightCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0) || s_mouseRightQueued;
+    s_mouseRightCurrent =
+        ((btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0) || s_mouseRightQueued;
     s_mouseRightQueued = false;
 
     if (!SDL_GetRelativeMouseMode()) {
@@ -540,14 +542,14 @@ int SDL2Input::GetHotbarSlotPressed(int iPad) {
         return KFN(SDL_SCANCODE_RETURN) || KFN(SDL_SCANCODE_Z) ||              \
                CFN(SDL_CONTROLLER_BUTTON_A);                                   \
     case ACTION_MENU_CANCEL:                                                   \
-        return KFN(SDL_SCANCODE_ESCAPE) || KFN(SDL_SCANCODE_AC_BACK) ||         \
+        return KFN(SDL_SCANCODE_ESCAPE) || KFN(SDL_SCANCODE_AC_BACK) ||        \
                KFN(SDL_SCANCODE_X) || CFN(SDL_CONTROLLER_BUTTON_B);            \
     case ACTION_MENU_A:                                                        \
         return KFN(SDL_SCANCODE_Z) || KFN(SDL_SCANCODE_RETURN) ||              \
                CFN(SDL_CONTROLLER_BUTTON_A);                                   \
     case ACTION_MENU_B:                                                        \
         return KFN(SDL_SCANCODE_X) || KFN(SDL_SCANCODE_ESCAPE) ||              \
-               KFN(SDL_SCANCODE_AC_BACK) || CFN(SDL_CONTROLLER_BUTTON_B);       \
+               KFN(SDL_SCANCODE_AC_BACK) || CFN(SDL_CONTROLLER_BUTTON_B);      \
     case ACTION_MENU_X:                                                        \
         return KFN(SDL_SCANCODE_C) || CFN(SDL_CONTROLLER_BUTTON_X);            \
     case ACTION_MENU_Y:                                                        \
@@ -704,7 +706,8 @@ float SDL2Input::GetJoypadStick_LY(int, bool) {
     return (KDown(SDL_SCANCODE_W) ? 1.f : 0.f) -
            (KDown(SDL_SCANCODE_S) ? 1.f : 0.f);
 }
-// Convert mouse/touch delta into right stick output with natural mobile response
+// Convert mouse/touch delta into right stick output with natural mobile
+// response
 static float MouseAxis(float raw) {
     if (fabsf(raw) < 0.0001f) return 0.f;
     float sign = (raw >= 0.f ? 1.f : -1.f);
@@ -804,7 +807,8 @@ bool SDL2Input::PollBackspacePressed() {
 }
 
 bool SDL2Input::PollReturnPressed() {
-    bool res = s_screenReturnPressed || KPressed(SDL_SCANCODE_RETURN) || KPressed(SDL_SCANCODE_KP_ENTER);
+    bool res = s_screenReturnPressed || KPressed(SDL_SCANCODE_RETURN) ||
+               KPressed(SDL_SCANCODE_KP_ENTER);
     s_screenReturnPressed = false;
     return res;
 }
@@ -814,9 +818,7 @@ void SDL2Input::StartTextInput() {
     SDL_StartTextInput();
 }
 
-void SDL2Input::StopTextInput() {
-    SDL_StopTextInput();
-}
+void SDL2Input::StopTextInput() { SDL_StopTextInput(); }
 bool SDL2Input::VerifyStrings(char**, int,
                               std::function<int(STRING_VERIFY_RESPONSE*)>) {
     return true;

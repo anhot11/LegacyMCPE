@@ -1,6 +1,6 @@
 #include "Button.h"
-#include "Font.h"
 
+#include "Font.h"
 #include "minecraft/client/Lighting.h"
 #include "minecraft/client/Minecraft.h"
 #include "minecraft/client/renderer/Textures.h"
@@ -75,7 +75,8 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
 
         // Bottom half (samples texture v0 + 10 .. v0 + 20)
         blit(x, y + hTop, 0, v0 + 10, w / 2, hBot, twHalf, 10);
-        blit(x + w / 2, y + hTop, 200 - twHalf, v0 + 10, w - w / 2, hBot, twHalf, 10);
+        blit(x + w / 2, y + hTop, 200 - twHalf, v0 + 10, w - w / 2, hBot,
+             twHalf, 10);
     }
 
     if (textureIcon.enabled) {
@@ -125,12 +126,14 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
         if (strW > availW && availW > 10) {
             float scale = (float)availW / (float)strW;
             glPushMatrix();
-            glTranslatef((float)availStart, (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
+            glTranslatef((float)availStart,
+                         (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
             glScalef(scale, scale, 1.0f);
             font->drawShadow(msg, 0, 0, color);
             glPopMatrix();
         } else {
-            drawCenteredString(font, msg, availStart + availW / 2, textY, color);
+            drawCenteredString(font, msg, availStart + availW / 2, textY,
+                               color);
         }
     } else {
         int availW = w - 8;
@@ -138,7 +141,8 @@ void Button::render(Minecraft* minecraft, int xm, int ym) {
         if (strW > availW && availW > 10) {
             float scale = (float)availW / (float)strW;
             glPushMatrix();
-            glTranslatef((float)(x + 4), (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
+            glTranslatef((float)(x + 4),
+                         (float)textY + (8.0f * (1.0f - scale) * 0.5f), 0.0f);
             glScalef(scale, scale, 1.0f);
             font->drawShadow(msg, 0, 0, color);
             glPopMatrix();
@@ -154,5 +158,8 @@ void Button::renderBg(Minecraft* minecraft, int xm, int ym) {}
 void Button::released(int mx, int my) {}
 
 bool Button::clicked(Minecraft* minecraft, int mx, int my) {
-    return visible && active && mx >= x && my >= y && mx < x + w && my < y + h;
+    int padX = 6;
+    int padY = 6;
+    return visible && active && mx >= x - padX && my >= y - padY &&
+           mx < x + w + padX && my < y + h + padY;
 }

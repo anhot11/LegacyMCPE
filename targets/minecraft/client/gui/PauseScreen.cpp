@@ -37,22 +37,30 @@ void PauseScreen::init() {
         MinecraftServer::getInstance()->queueServerAction(
             minecraft::server::PauseServer{true});
 
-    Button* btnReturnGame = new Button(4, width / 2 - 100, height / 4 + 24 * 1 + yo,
-                                       I18n::get("menu.returnToGame"));
+    Button* btnReturnGame =
+        new Button(4, width / 2 - 100, height / 4 + 24 * 1 + yo,
+                   I18n::get("menu.returnToGame"));
     btnReturnGame->setTextureIcon(0, 32, 16);
-    btnReturnGame->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_diamond)));
+    btnReturnGame->setIconItem(
+        std::shared_ptr<ItemInstance>(new ItemInstance(Item::sword_diamond)));
     buttons.push_back(btnReturnGame);
 
-    Button* btnOptions = new Button(0, width / 2 - 100, height / 4 + 24 * 2 + yo + 4,
-                                    I18n::get("menu.options"));
+    Button* btnOptions =
+        new Button(0, width / 2 - 100, height / 4 + 24 * 2 + yo + 4,
+                   I18n::get("menu.options"));
     btnOptions->setTextureIcon(48, 16, 16);
-    btnOptions->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
+    btnOptions->setIconItem(
+        std::shared_ptr<ItemInstance>(new ItemInstance(Item::repeater)));
     buttons.push_back(btnOptions);
 
-    std::string quitMsg = NetworkService.IsHost() ? I18n::get("menu.returnToMenu") : I18n::get("menu.disconnect");
-    Button* btnQuit = new Button(1, width / 2 - 100, height / 4 + 24 * 3 + yo + 8, quitMsg);
+    std::string quitMsg = NetworkService.IsHost()
+                              ? I18n::get("menu.returnToMenu")
+                              : I18n::get("menu.disconnect");
+    Button* btnQuit =
+        new Button(1, width / 2 - 100, height / 4 + 24 * 3 + yo + 8, quitMsg);
     btnQuit->setTextureIcon(96, 32, 16);
-    btnQuit->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
+    btnQuit->setIconItem(
+        std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_iron)));
     buttons.push_back(btnQuit);
 }
 
@@ -65,8 +73,10 @@ void PauseScreen::exitWorld(Minecraft* minecraft, bool save) {
     if (NetworkService.IsHost()) {
         server->setSaveOnExit(save);
     }
-    gameServices().setAction(minecraft->player->GetXboxPad(),
-                             eAppAction_ExitWorld);
+    int pad = (minecraft->player && minecraft->player->GetXboxPad() >= 0)
+                  ? minecraft->player->GetXboxPad()
+                  : 0;
+    gameServices().setAction(pad, eAppAction_ExitWorld);
 }
 
 void PauseScreen::buttonClicked(Button* button) {

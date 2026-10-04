@@ -82,12 +82,12 @@ void Screen::mouseReleased(int x, int y, int buttonNum) {
 
 void Screen::buttonClicked(Button* button) {}
 
-static bool s_prevLeftState = true;
-static bool s_prevRightState = true;
+static bool s_prevLeftState = false;
+static bool s_prevRightState = false;
 
 void Screen::resetInputState() {
-    s_prevLeftState = true;
-    s_prevRightState = true;
+    s_prevLeftState = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_ACTION);
+    s_prevRightState = PlatformInput.ButtonDown(0, MINECRAFT_ACTION_USE);
 }
 
 void Screen::init(Minecraft* minecraft, int width, int height) {
@@ -159,7 +159,8 @@ void Screen::updateEvents() {
         keyPressed('e', Keyboard::KEY_E);
     }
 
-    // Process typed characters from Android soft keyboard (IME) and physical keyboard
+    // Process typed characters from Android soft keyboard (IME) and physical
+    // keyboard
     std::string text = PlatformInput.PollTextInput();
     for (char c : text) {
         keyPressed(c, 0);

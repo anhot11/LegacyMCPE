@@ -106,7 +106,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v1.0.11 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.11" --notes "Release v1.0.11: Calibración fluida de sensibilidad táctil, minado continuo con giro de cámara, distinción precisa tap vs hold y renderizado corregido de items caídos en el mundo" || gh release upload v1.0.11 MCPL-Public.apk MCPL-Data.zip --clobber || true
+          gh release create v1.0.12 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.12" --notes "Release v1.0.12: Apuntado exacto de bloques centrado en retícula, menú de muerte operativo con Respawn y Salir al menú principal, hotbar in-game táctil precisa y selector de inventario creativo fluido sin bloqueos de cursor." || gh release upload v1.0.12 MCPL-Public.apk MCPL-Data.zip --clobber || true
+          gh release upload v1.0.11 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.10 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.1 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.0 MCPL-Public.apk MCPL-Data.zip --clobber || true

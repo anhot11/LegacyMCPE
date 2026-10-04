@@ -9,9 +9,9 @@
 #include "minecraft/IGameServices.h"
 #include "minecraft/client/Lighting.h"
 #include "minecraft/client/Minecraft.h"
+#include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/Font.h"
 #include "minecraft/client/gui/Screen.h"
-#include "minecraft/client/gui/Button.h"
 #include "minecraft/client/gui/inventory/AbstractContainerScreen.h"
 #include "minecraft/client/multiplayer/MultiPlayerGameMode.h"
 #include "minecraft/client/multiplayer/MultiPlayerLocalPlayer.h"
@@ -161,7 +161,8 @@ CreativeInventoryScreen::ContainerCreative::clicked(
             return std::shared_ptr<ItemInstance>();
         }
 
-        // Handle normal clicks (Touch / Mobile PE behavior: equip directly to active hotbar slot!)
+        // Handle normal clicks (Touch / Mobile PE behavior: equip directly to
+        // active hotbar slot!)
         if (slotItem != nullptr) {
             std::shared_ptr<ItemInstance> copy = slotItem->copy();
             copy->count = copy->getMaxStackSize();
@@ -331,8 +332,10 @@ void CreativeInventoryScreen::mouseClicked(int x, int y, int buttonNum) {
             (x < xo || y < yo || x >= xo + imageWidth || y >= yo + imageHeight);
 
         if (clickedOutside && player->inventory->getCarried() == nullptr) {
-            // Only close container if tapped intentionally far outside the window margins
-            if (x < xo - 40 || y < yo - 40 || x >= xo + imageWidth + 40 || y >= yo + imageHeight + 40) {
+            // Only close container if tapped intentionally far outside the
+            // window margins
+            if (x < xo - 40 || y < yo - 40 || x >= xo + imageWidth + 40 ||
+                y >= yo + imageHeight + 40) {
                 minecraft->player->closeContainer();
                 minecraft->setScreen(nullptr);
             }
@@ -363,6 +366,35 @@ void CreativeInventoryScreen::mouseClicked(int x, int y, int buttonNum) {
         // SetCreativeModeSlotPacket.
         menu->clicked(slotId, buttonNum, clickType, minecraft->player);
 
+        // Mobile touch enhancement: when tapping a creative palette item,
+        // place it directly into the active/next available hotbar slot and
+        // clear carried so the item does not get stuck floating on the finger!
+        if (slotId >= 0 && slotId < ITEMS_PER_PAGE) {
+            std::shared_ptr<ItemInstance> carried =
+                player->inventory->getCarried();
+            if (carried != nullptr) {
+                int targetHotbar = player->inventory->selected;
+                if (targetHotbar < 0 || targetHotbar >= 9) targetHotbar = 0;
+                // If selected slot is already occupied, find the first empty
+                // slot
+                if (player->inventory->getItem(targetHotbar) != nullptr) {
+                    for (int h = 0; h < 9; ++h) {
+                        if (player->inventory->getItem(h) == nullptr) {
+                            targetHotbar = h;
+                            break;
+                        }
+                    }
+                }
+                player->inventory->setItem(targetHotbar, carried);
+                player->inventory->selected = targetHotbar;
+                player->inventory->setCarried(nullptr);
+                minecraft->gameMode->handleCreativeModeItemAdd(
+                    carried, targetHotbar + InventoryMenu::USE_ROW_SLOT_START);
+                minecraft->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1.0f,
+                                               1.0f);
+            }
+        }
+
         // 4jcraft: sync hotbar slot changes to the server using
         // SetCreativeModeSlotPacket. The packet handler
         // (PlayerConnection::handleSetCreativeModeSlot) validates slots against
@@ -390,8 +422,27 @@ void CreativeInventoryScreen::mouseReleased(int x, int y, int buttonNum) {
         for (int tab = 0;
              tab < IUIScene_CreativeMenu::eCreativeInventoryTab_COUNT; tab++) {
             if (isMouseOverTab(tab, mouseX, mouseY)) {
+                if (player->inventory->getCarried() != nullptr) {
+                    player->inventory->setCarried(nullptr);
+                }
                 setCurrentCreativeTab(tab);
                 return;
+            }
+        }
+
+        // If an item was dragged and released over a hotbar slot:
+        std::shared_ptr<ItemInstance> carried = player->inventory->getCarried();
+        if (carried != nullptr) {
+            Slot* slot = findSlot(x, y);
+            if (slot != nullptr && slot->index >= ITEMS_PER_PAGE &&
+                slot->index < ITEMS_PER_PAGE + 9) {
+                int hotbarSlot = slot->index - ITEMS_PER_PAGE;
+                player->inventory->setItem(hotbarSlot, carried);
+                player->inventory->setCarried(nullptr);
+                minecraft->gameMode->handleCreativeModeItemAdd(
+                    carried, hotbarSlot + InventoryMenu::USE_ROW_SLOT_START);
+                minecraft->soundEngine->playUI(eSoundType_RANDOM_CLICK, 1.0f,
+                                               1.0f);
             }
         }
     }
@@ -412,8 +463,8 @@ void CreativeInventoryScreen::render(int xm, int ym, float a) {
     int x2 = x1 + 14;
     int y2 = y1 + 112;
 
-    if (!wasClicking && mouseDown && xm >= x1 - 12 && ym >= y1 - 6 && xm < x2 + 16 &&
-        ym < y2 + 8) {
+    if (!wasClicking && mouseDown && xm >= x1 - 12 && ym >= y1 - 6 &&
+        xm < x2 + 16 && ym < y2 + 8) {
         isScrolling = needsScrollBars();
     }
 

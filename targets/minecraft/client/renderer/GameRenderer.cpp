@@ -21,7 +21,6 @@
 #include "minecraft/GameEnums.h"
 #include "minecraft/IGameServices.h"
 #include "minecraft/SharedConstants.h"
-#include "minecraft/util/Mth.h"
 #include "minecraft/client/BufferedImage.h"
 #include "minecraft/client/Camera.h"
 #include "minecraft/client/Lighting.h"
@@ -50,6 +49,7 @@
 #include "minecraft/client/skins/TexturePack.h"
 #include "minecraft/client/skins/TexturePackRepository.h"
 #include "minecraft/util/Log.h"
+#include "minecraft/util/Mth.h"
 #include "minecraft/util/SmoothFloat.h"
 #include "minecraft/world/effect/MobEffect.h"
 #include "minecraft/world/effect/MobEffectInstance.h"
@@ -288,62 +288,7 @@ void GameRenderer::pick(float a) {
     double range = mc->gameMode->getPickRange();
     delete mc->hitResult;
 
-    bool split = (mc->options != nullptr) ? mc->options->splitControls : true;
-    int mouseX = PlatformInput.GetMouseX();
-    int mouseY = PlatformInput.GetMouseY();
-    int fbw = mc->width;
-    int fbh = mc->height;
-    PlatformRenderer.GetFramebufferSize(fbw, fbh);
-    int screenW = (fbw > 0) ? fbw : mc->width;
-    int screenH = (fbh > 0) ? fbh : mc->height;
-    bool hasTouchRay = false;
-    Vec3 rayDir(0.0f, 0.0f, 0.0f);
-
-    if (!split && screenW > 0 && screenH > 0 && mouseX > 0 && mouseY > 0 && mouseX < screenW && mouseY < screenH) {
-        float u = ((float)mouseX / (float)screenW - 0.5f) * 2.0f;
-        float v = (0.5f - (float)mouseY / (float)screenH) * 2.0f;
-
-        float fovY = getFov(a, true) * Mth::DEG_TO_RAD;
-        float aspect = (float)screenW / (float)screenH;
-        float halfTanY = tanf(fovY * 0.5f);
-        float halfTanX = halfTanY * aspect;
-
-        float yRot = mc->cameraTargetPlayer->yRotO + (mc->cameraTargetPlayer->yRot - mc->cameraTargetPlayer->yRotO) * a;
-        float xRot = mc->cameraTargetPlayer->xRotO + (mc->cameraTargetPlayer->xRot - mc->cameraTargetPlayer->xRotO) * a;
-
-        float theta = -yRot * Mth::DEG_TO_RAD - std::numbers::pi;
-        float phi = -xRot * Mth::DEG_TO_RAD;
-
-        float sinTheta = sinf(theta);
-        float cosTheta = cosf(theta);
-        float sinPhi = sinf(phi);
-        float cosPhi = cosf(phi);
-
-        // Forward vector (exact view direction)
-        Vec3 forward(sinTheta * (-cosPhi), sinPhi, cosTheta * (-cosPhi));
-
-        // Right vector (horizontal, 90 deg clockwise from yaw)
-        Vec3 right(cosTheta, 0.0f, -sinTheta);
-
-        // Up vector (orthogonal to forward and right, pointing camera-up)
-        Vec3 up(sinTheta * sinPhi, cosPhi, cosTheta * sinPhi);
-
-        rayDir = Vec3(
-            forward.x + right.x * (u * halfTanX) + up.x * (v * halfTanY),
-            forward.y + right.y * (u * halfTanX) + up.y * (v * halfTanY),
-            forward.z + right.z * (u * halfTanX) + up.z * (v * halfTanY)
-        ).normalize();
-
-        double eyeX = mc->cameraTargetPlayer->xo + (mc->cameraTargetPlayer->x - mc->cameraTargetPlayer->xo) * a;
-        double eyeY = mc->cameraTargetPlayer->yo + (mc->cameraTargetPlayer->y - mc->cameraTargetPlayer->yo) * a - (mc->cameraTargetPlayer->heightOffset - 1.62f);
-        double eyeZ = mc->cameraTargetPlayer->zo + (mc->cameraTargetPlayer->z - mc->cameraTargetPlayer->zo) * a;
-        Vec3 from(eyeX, eyeY, eyeZ);
-        Vec3 to(from.x + rayDir.x * range, from.y + rayDir.y * range, from.z + rayDir.z * range);
-        mc->hitResult = mc->level->clip(&from, &to);
-        hasTouchRay = true;
-    } else {
-        mc->hitResult = mc->cameraTargetPlayer->pick(range, a);
-    }
+    mc->hitResult = mc->cameraTargetPlayer->pick(range, a);
 
     // 4J - added - stop blocks right at the edge of the world from being
     // pickable so we shouldn't be able to directly destroy or create anything
@@ -371,9 +316,13 @@ void GameRenderer::pick(float a) {
     }
 
     double dist = range;
-    double eyeX = mc->cameraTargetPlayer->xo + (mc->cameraTargetPlayer->x - mc->cameraTargetPlayer->xo) * a;
-    double eyeY = mc->cameraTargetPlayer->yo + (mc->cameraTargetPlayer->y - mc->cameraTargetPlayer->yo) * a - (mc->cameraTargetPlayer->heightOffset - 1.62f);
-    double eyeZ = mc->cameraTargetPlayer->zo + (mc->cameraTargetPlayer->z - mc->cameraTargetPlayer->zo) * a;
+    double eyeX = mc->cameraTargetPlayer->xo +
+                  (mc->cameraTargetPlayer->x - mc->cameraTargetPlayer->xo) * a;
+    double eyeY = mc->cameraTargetPlayer->yo +
+                  (mc->cameraTargetPlayer->y - mc->cameraTargetPlayer->yo) * a -
+                  (mc->cameraTargetPlayer->heightOffset - 1.62f);
+    double eyeZ = mc->cameraTargetPlayer->zo +
+                  (mc->cameraTargetPlayer->z - mc->cameraTargetPlayer->zo) * a;
     Vec3 from(eyeX, eyeY, eyeZ);
 
     if (mc->gameMode->hasFarPickRange()) {
@@ -387,7 +336,7 @@ void GameRenderer::pick(float a) {
         dist = mc->hitResult->pos.distanceTo(from);
     }
 
-    Vec3 b = hasTouchRay ? rayDir : mc->cameraTargetPlayer->getViewVector(a);
+    Vec3 b = mc->cameraTargetPlayer->getViewVector(a);
     Vec3 to(b.x * range, b.y * range, b.z * range);
     to = to.add(from.x, from.y, from.z);
     hovered = nullptr;
@@ -949,11 +898,14 @@ void GameRenderer::updateLightTexture(float a) {
         float nvScale = hasNV ? getNightVisionScale(player, a) : 0.0f;
 
         bool hasDynamicLight = false;
-        if (mc->options->modOptifineDynamicLights && mc->player && mc->player->inventory) {
-            std::shared_ptr<ItemInstance> sel = mc->player->inventory->getSelected();
+        if (mc->options->modOptifineDynamicLights && mc->player &&
+            mc->player->inventory) {
+            std::shared_ptr<ItemInstance> sel =
+                mc->player->inventory->getSelected();
             if (sel != nullptr) {
                 int id = sel->id;
-                // Torch=50, Redstone Torch=76, Glowstone=89, JackOLantern=91, LavaBucket=327
+                // Torch=50, Redstone Torch=76, Glowstone=89, JackOLantern=91,
+                // LavaBucket=327
                 if (id == 50 || id == 76 || id == 89 || id == 91 || id == 327) {
                     hasDynamicLight = true;
                 }
@@ -981,8 +933,8 @@ void GameRenderer::updateLightTexture(float a) {
             if (hasDynamicLight && blockIdx < 10) {
                 blockIdx = 10;
             }
-            float block =
-                level->dimension->brightnessRamp[blockIdx] * (blr * 0.1f + 1.5f);
+            float block = level->dimension->brightnessRamp[blockIdx] *
+                          (blr * 0.1f + 1.5f);
 
             if (level->skyFlashTime > 0) {
                 sky = level->dimension->brightnessRamp[i / 16];
@@ -1038,7 +990,8 @@ void GameRenderer::updateLightTexture(float a) {
             if (_g > 1) _g = 1;
             if (_b > 1) _b = 1;
 
-            float brightness = (mc->options->modFullbright) ? 1.0f : mc->options->gamma;
+            float brightness =
+                (mc->options->modFullbright) ? 1.0f : mc->options->gamma;
 
             float ir = 1 - _r;
             float ig = 1 - _g;

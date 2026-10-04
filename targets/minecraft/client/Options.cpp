@@ -193,12 +193,12 @@ void Options::init() {
     touchControlStyle = 0;
     touchControlScale = 1;
     touchControlOpacity = 1;
-    splitControls = false;
+    splitControls = true;
 
 #ifdef __ANDROID__
     fancyGraphics = false;
     renderClouds = false;
-    viewDistance = 2; // Short (8 chunks for 60fps mobile)
+    viewDistance = 2;  // Short (8 chunks for 60fps mobile)
     particles = 1;
 #endif
 }
@@ -451,19 +451,32 @@ void Options::load() {
 
         // Lunar Client & Mod options
         if (cmds[0] == "modFullbright") modFullbright = cmds[1] == "true";
-        if (cmds[0] == "modSodiumChunkEngine") modSodiumChunkEngine = cmds[1] == "true";
-        if (cmds[0] == "modSodiumEntityCulling") modSodiumEntityCulling = cmds[1] == "true";
-        if (cmds[0] == "modSodiumFogOcclusion") modSodiumFogOcclusion = cmds[1] == "true";
-        if (cmds[0] == "modOptifineFastMath") modOptifineFastMath = cmds[1] == "true";
-        if (cmds[0] == "modOptifineDynamicLights") modOptifineDynamicLights = cmds[1] == "true";
-        if (cmds[0] == "modOptifineClearWater") modOptifineClearWater = cmds[1] == "true";
-        if (cmds[0] == "modOptifineBetterGrass") modOptifineBetterGrass = cmds[1] == "true";
-        if (cmds[0] == "modShaderPreset") modShaderPreset = fromWString<int>(cmds[1]);
-        if (cmds[0] == "modTexturePack") modTexturePack = fromWString<int>(cmds[1]);
-        if (cmds[0] == "modThermalProtection") modThermalProtection = fromWString<int>(cmds[1]);
-        if (cmds[0] == "touchControlStyle") touchControlStyle = fromWString<int>(cmds[1]);
-        if (cmds[0] == "touchControlScale") touchControlScale = fromWString<int>(cmds[1]);
-        if (cmds[0] == "touchControlOpacity") touchControlOpacity = fromWString<int>(cmds[1]);
+        if (cmds[0] == "modSodiumChunkEngine")
+            modSodiumChunkEngine = cmds[1] == "true";
+        if (cmds[0] == "modSodiumEntityCulling")
+            modSodiumEntityCulling = cmds[1] == "true";
+        if (cmds[0] == "modSodiumFogOcclusion")
+            modSodiumFogOcclusion = cmds[1] == "true";
+        if (cmds[0] == "modOptifineFastMath")
+            modOptifineFastMath = cmds[1] == "true";
+        if (cmds[0] == "modOptifineDynamicLights")
+            modOptifineDynamicLights = cmds[1] == "true";
+        if (cmds[0] == "modOptifineClearWater")
+            modOptifineClearWater = cmds[1] == "true";
+        if (cmds[0] == "modOptifineBetterGrass")
+            modOptifineBetterGrass = cmds[1] == "true";
+        if (cmds[0] == "modShaderPreset")
+            modShaderPreset = fromWString<int>(cmds[1]);
+        if (cmds[0] == "modTexturePack")
+            modTexturePack = fromWString<int>(cmds[1]);
+        if (cmds[0] == "modThermalProtection")
+            modThermalProtection = fromWString<int>(cmds[1]);
+        if (cmds[0] == "touchControlStyle")
+            touchControlStyle = fromWString<int>(cmds[1]);
+        if (cmds[0] == "touchControlScale")
+            touchControlScale = fromWString<int>(cmds[1]);
+        if (cmds[0] == "touchControlOpacity")
+            touchControlOpacity = fromWString<int>(cmds[1]);
         if (cmds[0] == "splitControls") splitControls = (cmds[1] == "true");
 
         for (int i = 0; i < keyMappings_length; i++) {
@@ -510,35 +523,55 @@ void Options::save() {
     dos.writeChars("guiScale:" + toWString<int>(guiScale) + "\n");
     dos.writeChars("particles:" + toWString<int>(particles) + "\n");
     dos.writeChars("bobView:" + std::string(bobView ? "true" : "false") + "\n");
-    dos.writeChars("anaglyph3d:" + std::string(anaglyph3d ? "true" : "false") + "\n");
+    dos.writeChars("anaglyph3d:" + std::string(anaglyph3d ? "true" : "false") +
+                   "\n");
     dos.writeChars("advancedOpengl:" +
                    std::string(advancedOpengl ? "true" : "false") + "\n");
     dos.writeChars("fpsLimit:" + toWString<int>(framerateLimit) + "\n");
     dos.writeChars("difficulty:" + toWString<int>(difficulty) + "\n");
     dos.writeChars("fancyGraphics:" +
                    std::string(fancyGraphics ? "true" : "false") + "\n");
-    dos.writeChars("ao:" + std::string(ambientOcclusion ? "true" : "false") + "\n");
+    dos.writeChars("ao:" + std::string(ambientOcclusion ? "true" : "false") +
+                   "\n");
     dos.writeChars("clouds:" + toWString<bool>(renderClouds) + "\n");
     dos.writeChars("skin:" + skin + "\n");
     dos.writeChars("lang:" + language + "\n");
     dos.writeChars("lastServer:" + lastMpIp + "\n");
 
     // Lunar Client & Mod options
-    dos.writeChars("modFullbright:" + std::string(modFullbright ? "true" : "false") + "\n");
-    dos.writeChars("modSodiumChunkEngine:" + std::string(modSodiumChunkEngine ? "true" : "false") + "\n");
-    dos.writeChars("modSodiumEntityCulling:" + std::string(modSodiumEntityCulling ? "true" : "false") + "\n");
-    dos.writeChars("modSodiumFogOcclusion:" + std::string(modSodiumFogOcclusion ? "true" : "false") + "\n");
-    dos.writeChars("modOptifineFastMath:" + std::string(modOptifineFastMath ? "true" : "false") + "\n");
-    dos.writeChars("modOptifineDynamicLights:" + std::string(modOptifineDynamicLights ? "true" : "false") + "\n");
-    dos.writeChars("modOptifineClearWater:" + std::string(modOptifineClearWater ? "true" : "false") + "\n");
-    dos.writeChars("modOptifineBetterGrass:" + std::string(modOptifineBetterGrass ? "true" : "false") + "\n");
+    dos.writeChars("modFullbright:" +
+                   std::string(modFullbright ? "true" : "false") + "\n");
+    dos.writeChars("modSodiumChunkEngine:" +
+                   std::string(modSodiumChunkEngine ? "true" : "false") + "\n");
+    dos.writeChars("modSodiumEntityCulling:" +
+                   std::string(modSodiumEntityCulling ? "true" : "false") +
+                   "\n");
+    dos.writeChars("modSodiumFogOcclusion:" +
+                   std::string(modSodiumFogOcclusion ? "true" : "false") +
+                   "\n");
+    dos.writeChars("modOptifineFastMath:" +
+                   std::string(modOptifineFastMath ? "true" : "false") + "\n");
+    dos.writeChars("modOptifineDynamicLights:" +
+                   std::string(modOptifineDynamicLights ? "true" : "false") +
+                   "\n");
+    dos.writeChars("modOptifineClearWater:" +
+                   std::string(modOptifineClearWater ? "true" : "false") +
+                   "\n");
+    dos.writeChars("modOptifineBetterGrass:" +
+                   std::string(modOptifineBetterGrass ? "true" : "false") +
+                   "\n");
     dos.writeChars("modShaderPreset:" + toWString<int>(modShaderPreset) + "\n");
     dos.writeChars("modTexturePack:" + toWString<int>(modTexturePack) + "\n");
-    dos.writeChars("modThermalProtection:" + toWString<int>(modThermalProtection) + "\n");
-    dos.writeChars("touchControlStyle:" + toWString<int>(touchControlStyle) + "\n");
-    dos.writeChars("touchControlScale:" + toWString<int>(touchControlScale) + "\n");
-    dos.writeChars("touchControlOpacity:" + toWString<int>(touchControlOpacity) + "\n");
-    dos.writeChars("splitControls:" + std::string(splitControls ? "true" : "false") + "\n");
+    dos.writeChars(
+        "modThermalProtection:" + toWString<int>(modThermalProtection) + "\n");
+    dos.writeChars("touchControlStyle:" + toWString<int>(touchControlStyle) +
+                   "\n");
+    dos.writeChars("touchControlScale:" + toWString<int>(touchControlScale) +
+                   "\n");
+    dos.writeChars(
+        "touchControlOpacity:" + toWString<int>(touchControlOpacity) + "\n");
+    dos.writeChars("splitControls:" +
+                   std::string(splitControls ? "true" : "false") + "\n");
 
     for (int i = 0; i < keyMappings_length; i++) {
         dos.writeChars("key_" + keyMappings[i]->name + ":" +

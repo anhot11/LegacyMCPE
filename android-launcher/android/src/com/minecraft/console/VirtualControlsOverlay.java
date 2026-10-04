@@ -555,13 +555,20 @@ public class VirtualControlsOverlay extends View {
             guiScale++;
         }
 
+        int screenHeight = (int) Math.ceil(h / (double) guiScale);
+        int splitYOffset = (guiScale >= 3) ? 20 : 10;
+        int iSafezoneYHalf = screenHeight / 20;
+        int iTooltipsYOffset = 40 + splitYOffset;
+
+        float hotbarGuiY = (float) (screenHeight - iSafezoneYHalf - iTooltipsYOffset);
+        float top = (hotbarGuiY - 6.0f) * guiScale;
+        float bottom = (hotbarGuiY + 28.0f) * guiScale;
+
         float hotbarWidth = 182.0f * guiScale;
-        float hotbarHeight = 28.0f * guiScale;
         float left = (w - hotbarWidth) / 2.0f;
         float right = (w + hotbarWidth) / 2.0f;
-        float top = h - hotbarHeight - (10.0f * mDensity);
 
-        if (y >= top && y <= h && x >= left && x <= right) {
+        if (y >= top && y <= bottom && x >= left && x <= right) {
             float slotWidth = hotbarWidth / 9.0f;
             int slot = (int) ((x - left) / slotWidth);
             if (slot >= 0 && slot < 9) {
