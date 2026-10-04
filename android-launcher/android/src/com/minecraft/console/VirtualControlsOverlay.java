@@ -719,7 +719,7 @@ public class VirtualControlsOverlay extends View {
                     mIsPanning = false;
                     mIsMining = false;
 
-                    // Schedule Hold to Mine after 200ms steady hold
+                    // Schedule Hold to Mine after 320ms steady hold
                     mHoldToMineRunnable = new Runnable() {
                         @Override
                         public void run() {
@@ -730,7 +730,7 @@ public class VirtualControlsOverlay extends View {
                             }
                         }
                     };
-                    mTouchHandler.postDelayed(mHoldToMineRunnable, 200);
+                    mTouchHandler.postDelayed(mHoldToMineRunnable, 320);
                     return true;
                 } else if (mSecondPointerId == -1 && mIsPanning) {
                     // Multitouch: second finger taps/mines while first finger pans camera
@@ -750,7 +750,7 @@ public class VirtualControlsOverlay extends View {
                             }
                         }
                     };
-                    mTouchHandler.postDelayed(mSecondHoldRunnable, 200);
+                    mTouchHandler.postDelayed(mSecondHoldRunnable, 320);
                     return true;
                 }
                 break;
@@ -793,17 +793,21 @@ public class VirtualControlsOverlay extends View {
                             float distFromDown = (float) Math.hypot(curX - mWorldDownX, curY - mWorldDownY);
 
                             if (mIsMining) {
-                                // While actively mining a block, lock camera completely!
-                                if (distFromDown > 45.0f * mDensity) {
-                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, false);
-                                    mIsMining = false;
-                                    mIsPanning = true;
-                                    mLastWorldX = curX;
-                                    mLastWorldY = curY;
+                                // While actively mining a block, allow rotating camera smoothly to continue onto next block
+                                float dx = curX - mLastWorldX;
+                                float dy = curY - mLastWorldY;
+                                mLastWorldX = curX;
+                                mLastWorldY = curY;
+
+                                if (distFromDown > 12.0f * mDensity) {
+                                    float maxDelta = 300.0f * mDensity;
+                                    dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
+                                    dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
+                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_MOVE, dx, dy, true);
                                 }
-                                break; // Stop here: never pan or move camera while mining!
+                                break;
                             } else if (!mIsPanning) {
-                                if (distFromDown > 28.0f * mDensity) {
+                                if (distFromDown > 22.0f * mDensity) {
                                     // Finger moved before hold time -> User is rotating camera
                                     if (mHoldToMineRunnable != null) {
                                         mTouchHandler.removeCallbacks(mHoldToMineRunnable);
@@ -821,8 +825,8 @@ public class VirtualControlsOverlay extends View {
                                 mLastWorldX = curX;
                                 mLastWorldY = curY;
 
-                                // Clamp per-move delta to prevent camera jumping or spinning
-                                float maxDelta = 35.0f * mDensity;
+                                // Clamp per-move delta to prevent anomalous jumps while allowing fast swipes
+                                float maxDelta = 300.0f * mDensity;
                                 dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
                                 dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
 
@@ -839,12 +843,15 @@ public class VirtualControlsOverlay extends View {
                             float curY = event.getY(i);
                             float distFromDown = (float) Math.hypot(curX - mSecondDownX, curY - mSecondDownY);
                             if (mSecondMining) {
-                                if (distFromDown > 45.0f * mDensity) {
-                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
-                                    mSecondMining = false;
-                                    invalidate();
+                                float dx = curX - mSecondDownX;
+                                float dy = curY - mSecondDownY;
+                                if (distFromDown > 12.0f * mDensity) {
+                                    float maxDelta = 300.0f * mDensity;
+                                    dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
+                                    dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
+                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_MOVE, dx, dy, true);
                                 }
-                            } else if (distFromDown > 28.0f * mDensity) {
+                            } else if (distFromDown > 22.0f * mDensity) {
                                 if (mSecondHoldRunnable != null) {
                                     mTouchHandler.removeCallbacks(mSecondHoldRunnable);
                                     mSecondHoldRunnable = null;
@@ -887,7 +894,7 @@ public class VirtualControlsOverlay extends View {
                         SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                         mSecondMining = false;
                         invalidate();
-                    } else if ((SystemClock.uptimeMillis() - mSecondDownTime) < 300) {
+                    } else if ((SystemClock.uptimeMillis() - mSecondDownTime) < 320) {
                         SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, true);
                         postDelayed(new Runnable() {
                             @Override
@@ -910,7 +917,7 @@ public class VirtualControlsOverlay extends View {
                         // Finished mining
                         SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                         mIsMining = false;
-                    } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 250) {
+                    } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 320) {
                         // TAP DETECTED: Place block / Interact / Attack targeted entity at crosshair!
                         SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, true);
                         postDelayed(new Runnable() {

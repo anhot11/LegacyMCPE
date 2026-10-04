@@ -67,7 +67,7 @@ IPlatformInput& PlatformInput_get() {
 static const int KEY_COUNT = SDL_NUM_SCANCODES;
 static const int BTN_COUNT = SDL_CONTROLLER_BUTTON_MAX;
 static const int AXS_COUNT = SDL_CONTROLLER_AXIS_MAX;
-static const float MOUSE_SCALE = 0.007f;
+static const float MOUSE_SCALE = 0.055f;
 static int s_queuedHotbarSlot = -1;
 // Vars
 static bool s_sdlInitialized = false;
@@ -278,7 +278,7 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
             // Only accumulate legitimate swipe deltas, discarding any full-screen jumps or absolute hover coords
             float dx = (float)e->motion.xrel;
             float dy = (float)e->motion.yrel;
-            if (fabsf(dx) < 80.0f && fabsf(dy) < 80.0f) {
+            if (fabsf(dx) < 1200.0f && fabsf(dy) < 1200.0f) {
                 s_accumRelX += dx;
                 s_accumRelY += dy;
             }
@@ -709,7 +709,7 @@ static float MouseAxis(float raw) {
     if (fabsf(raw) < 0.0001f) return 0.f;
     float sign = (raw >= 0.f ? 1.f : -1.f);
     float mag = fabsf(raw);
-    if (mag > 1.0f) mag = 1.0f;
+    if (mag > 40.0f) mag = 40.0f;
     return sign * mag;
 }
 // We apply the Stick movement on the R(Right) X(2D Position)

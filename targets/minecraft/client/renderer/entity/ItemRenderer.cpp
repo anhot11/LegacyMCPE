@@ -201,6 +201,18 @@ void ItemRenderer::renderItemBillboard(std::shared_ptr<ItemEntity> entity,
     if (icon == nullptr)
         icon = entityRenderDispatcher->textures->getMissingIcon(
             entity->getItem()->getIconType());
+    if (icon == nullptr) return;
+
+    std::shared_ptr<ItemInstance> item = entity->getItem();
+    if (item == nullptr) return;
+
+    if (item->getIconType() == Icon::TYPE_TERRAIN &&
+        Tile::tiles[item->id] != nullptr) {
+        bindTexture(&TextureAtlas::LOCATION_BLOCKS);
+    } else {
+        bindTexture(&TextureAtlas::LOCATION_ITEMS);
+    }
+
     float u0 = icon->getU0();
     float u1 = icon->getU1();
     float v0 = icon->getV0();
@@ -210,135 +222,87 @@ void ItemRenderer::renderItemBillboard(std::shared_ptr<ItemEntity> entity,
     float xo = 0.5f;
     float yo = 0.25f;
 
-    if (entityRenderDispatcher->options->fancyGraphics) {
-        // Consider forcing the mipmap LOD level to use, if this is to be
-        // rendered from a larger than standard source texture.
-        int iconWidth = icon->getWidth();
-        int LOD = -1;  // Default to not doing anything special with LOD forcing
-        if (iconWidth == 32) {
-            LOD = 1;  // Force LOD level 1 to achieve texture reads from 256x256
-                      // map
-        } else if (iconWidth == 64) {
-            LOD = 2;  // Force LOD level 2 to achieve texture reads from 256x256
-                      // map
-        }
-        PlatformRenderer.StateSetForceLOD(LOD);
+    glPushMatrix();
 
+    // Disable backface culling so dropped items are always 100% visible from all angles
+    glDisable(GL_CULL_FACE);
+
+    if (m_bItemFrame) {
+        glRotatef(180, 0, 1, 0);
+    } else {
+        float spin =
+            ((entity->age + a) / 20.0f + entity->bobOffs) * Mth::RAD_TO_DEG;
+        glRotatef(spin, 0, 1, 0);
+    }
+
+    for (int i = 0; i < count; i++) {
         glPushMatrix();
-        if (m_bItemFrame) {
-            glRotatef(180, 0, 1, 0);
-        } else {
-            glRotatef(
-                ((entity->age + a) / 20.0f + entity->bobOffs) * Mth::RAD_TO_DEG,
-                0, 1, 0);
+        if (i > 0) {
+            float _xo = (random->nextFloat() * 2 - 1) * 0.2f;
+            float _yo = (random->nextFloat() * 2 - 1) * 0.2f;
+            float _zo = (random->nextFloat() * 2 - 1) * 0.2f;
+            glTranslatef(_xo, _yo, _zo);
         }
 
-        float width = 1 / 16.0f;
-        float margin = 0.35f / 16.0f;
-        std::shared_ptr<ItemInstance> item = entity->getItem();
-        int items = item->count;
+        glColor4f(red, green, blue, 1.0f);
+        t->begin();
+        t->normal(0, 0, 1);
+        // Front face
+        t->vertexUV((float)(0.0f - xo), (float)(0.0f - yo), 0.0f, (float)u0,
+                    (float)v1);
+        t->vertexUV((float)(r - xo), (float)(0.0f - yo), 0.0f, (float)u1,
+                    (float)v1);
+        t->vertexUV((float)(r - xo), (float)(1.0f - yo), 0.0f, (float)u1,
+                    (float)v0);
+        t->vertexUV((float)(0.0f - xo), (float)(1.0f - yo), 0.0f, (float)u0,
+                    (float)v0);
+        // Back face (wound reverse for two-sided visibility)
+        t->vertexUV((float)(r - xo), (float)(0.0f - yo), 0.0f, (float)u1,
+                    (float)v1);
+        t->vertexUV((float)(0.0f - xo), (float)(0.0f - yo), 0.0f, (float)u0,
+                    (float)v1);
+        t->vertexUV((float)(0.0f - xo), (float)(1.0f - yo), 0.0f, (float)u0,
+                    (float)v0);
+        t->vertexUV((float)(r - xo), (float)(1.0f - yo), 0.0f, (float)u1,
+                    (float)v0);
+        t->end();
 
-        if (items < 2) {
-            count = 1;
-        } else if (items < 16) {
-            count = 2;
-        } else if (items < 32) {
-            count = 3;
-        } else {
-            count = 4;
-        }
+        // Enchantment glint pass if item is foil
+        if (item->isFoil()) {
+            glDepthFunc(GL_EQUAL);
+            glDisable(GL_LIGHTING);
+            entityRenderDispatcher->textures->bindTexture(
+                &ItemInHandRenderer::ENCHANT_GLINT_LOCATION);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_COLOR, GL_ONE);
+            float br = 0.76f;
+            glColor4f(0.5f * br, 0.25f * br, 0.8f * br, 1.0f);
 
-        glTranslatef(-xo, -yo, -((width + margin) * count / 2));
+            t->begin();
+            t->normal(0, 0, 1);
+            t->vertexUV((float)(0.0f - xo), (float)(0.0f - yo), 0.0f, 0.0f, 1.0f);
+            t->vertexUV((float)(r - xo), (float)(0.0f - yo), 0.0f, 1.0f, 1.0f);
+            t->vertexUV((float)(r - xo), (float)(1.0f - yo), 0.0f, 1.0f, 0.0f);
+            t->vertexUV((float)(0.0f - xo), (float)(1.0f - yo), 0.0f, 0.0f, 0.0f);
+            t->end();
 
-        for (int i = 0; i < count; i++) {
-            glTranslatef(0, 0, width + margin);
+            glDisable(GL_BLEND);
+            glEnable(GL_LIGHTING);
+            glDepthFunc(GL_LEQUAL);
 
-            bool bIsTerrain = false;
             if (item->getIconType() == Icon::TYPE_TERRAIN &&
                 Tile::tiles[item->id] != nullptr) {
-                bIsTerrain = true;
-                bindTexture(&TextureAtlas::LOCATION_BLOCKS);  // TODO: Do this
-                                                              // sanely by Icon
+                bindTexture(&TextureAtlas::LOCATION_BLOCKS);
             } else {
-                bindTexture(&TextureAtlas::LOCATION_ITEMS);  // TODO: Do this
-                                                             // sanely by Icon
-            }
-
-            glColor4f(red, green, blue, 1);
-            // 4J Stu - u coords were swapped in Java
-            // ItemInHandRenderer::renderItem3D(t, u1, v0, u0, v1,
-            // icon->getSourceWidth(), icon->getSourceHeight(), width, false);
-            ItemInHandRenderer::renderItem3D(
-                t, u0, v0, u1, v1, icon->getSourceWidth(),
-                icon->getSourceHeight(), width, false, bIsTerrain);
-
-            if (item != nullptr && item->isFoil()) {
-                glDepthFunc(GL_EQUAL);
-                glDisable(GL_LIGHTING);
-                entityRenderDispatcher->textures->bindTexture(
-                    &ItemInHandRenderer::ENCHANT_GLINT_LOCATION);
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_COLOR, GL_ONE);
-                float br = 0.76f;
-                glColor4f(0.5f * br, 0.25f * br, 0.8f * br, 1);
-                glMatrixMode(GL_TEXTURE);
-                glPushMatrix();
-                float ss = 1 / 8.0f;
-                glScalef(ss, ss, ss);
-                float sx =
-                    Minecraft::currentTimeMillis() % (3000) / (3000.0f) * 8;
-                glTranslatef(sx, 0, 0);
-                glRotatef(-50, 0, 0, 1);
-
-                ItemInHandRenderer::renderItem3D(t, 0, 0, 1, 1, 255, 255, width,
-                                                 true, bIsTerrain);
-                glPopMatrix();
-                glPushMatrix();
-                glScalef(ss, ss, ss);
-                sx = Minecraft::currentTimeMillis() % (3000 + 1873) /
-                     (3000 + 1873.0f) * 8;
-                glTranslatef(-sx, 0, 0);
-                glRotatef(10, 0, 0, 1);
-                ItemInHandRenderer::renderItem3D(t, 0, 0, 1, 1, 255, 255, width,
-                                                 true, bIsTerrain);
-                glPopMatrix();
-                glMatrixMode(GL_MODELVIEW);
-                glDisable(GL_BLEND);
-                glEnable(GL_LIGHTING);
-                glDepthFunc(GL_LEQUAL);
+                bindTexture(&TextureAtlas::LOCATION_ITEMS);
             }
         }
 
         glPopMatrix();
-
-        PlatformRenderer.StateSetForceLOD(-1);
-    } else {
-        for (int i = 0; i < count; i++) {
-            glPushMatrix();
-            if (i > 0) {
-                float _xo = (random->nextFloat() * 2 - 1) * 0.3f;
-                float _yo = (random->nextFloat() * 2 - 1) * 0.3f;
-                float _zo = (random->nextFloat() * 2 - 1) * 0.3f;
-                glTranslatef(_xo, _yo, _zo);
-            }
-            if (!m_bItemFrame)
-                glRotatef(180 - entityRenderDispatcher->playerRotY, 0, 1, 0);
-            glColor4f(red, green, blue, 1);
-            t->begin();
-            t->normal(0, 1, 0);
-            t->vertexUV((float)(0 - xo), (float)(0 - yo), (float)(0),
-                        (float)(u0), (float)(v1));
-            t->vertexUV((float)(r - xo), (float)(0 - yo), (float)(0),
-                        (float)(u1), (float)(v1));
-            t->vertexUV((float)(r - xo), (float)(1 - yo), (float)(0),
-                        (float)(u1), (float)(v0));
-            t->vertexUV((float)(0 - xo), (float)(1 - yo), (float)(0),
-                        (float)(u0), (float)(v0));
-            t->end();
-
-            glPopMatrix();
-        }
     }
+
+    glEnable(GL_CULL_FACE);
+    glPopMatrix();
 }
 
 void ItemRenderer::renderGuiItem(Font* font, Textures* textures,

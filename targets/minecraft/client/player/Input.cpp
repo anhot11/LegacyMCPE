@@ -118,7 +118,7 @@ void Input::tick(LocalPlayer* player) {
     }
 
     float sensSetting = ((float)gameServices().getGameSettings(iPad, eGameSetting_Sensitivity_InGame)) / 100.0f;
-    float lookFactor = 0.25f + 1.25f * sensSetting;
+    float lookFactor = 0.35f + 1.65f * sensSetting;
     player->interpolateTurn(tx * turnSpeed * lookFactor,
                             ty * turnSpeed * lookFactor);
 

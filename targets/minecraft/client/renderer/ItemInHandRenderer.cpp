@@ -67,11 +67,16 @@ ItemInHandRenderer::ItemInHandRenderer(Minecraft* minecraft,
     minimap = new Minimap(minecraft->font, minecraft->options,
                           minecraft->textures, optimisedMinimap);
 
-    // 4J - replaced mesh that is used to render held items with individual
-    // cubes, so we can make it all join up properly without seams. This has a
-    // lot more quads in it than the original, so is now precompiled with a UV
-    // matrix offset to put it in the final place for the current icon. Compile
-    // it on demand for the first ItemInHandRenderer (list is static)
+    compileListsIfNeeded();
+}
+
+void ItemInHandRenderer::resetLists() {
+    listItem = -1;
+    listTerrain = -1;
+    listGlint = -1;
+}
+
+void ItemInHandRenderer::compileListsIfNeeded() {
     if (listItem == -1) {
         listItem = MemoryTracker::genLists(1);
         float dd = 1 / 16.0f;
@@ -375,6 +380,7 @@ void ItemInHandRenderer::renderItem3D(Tesselator* t, float u0, float v0,
                                       float u1, float v1, int width, int height,
                                       float depth, bool isGlint,
                                       bool isTerrain) {
+    compileListsIfNeeded();
     float r = 1.0f;
 
     // 4J - replaced mesh that is used to render held items with individual

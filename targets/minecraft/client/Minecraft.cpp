@@ -3867,6 +3867,7 @@ void Minecraft::setLevel(MultiPlayerLevel* level, int message /*=-1*/,
         TileEntityRenderDispatcher::instance->cameraEntity = nullptr;
         RegionFileCache::clear();
         PlatformRenderer.CBuffDeleteAll();
+        ItemInHandRenderer::resetLists();
         MCPL_LOGI("Minecraft::setLevel(nullptr) - Cleared RegionFileCache and CBuffDeleteAll");
     }
     this->level = level;

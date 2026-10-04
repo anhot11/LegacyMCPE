@@ -25,8 +25,10 @@ private:
     float oHeight;
     TileRenderer* tileRenderer;
     static int listItem, listGlint, listTerrain;
+    static void compileListsIfNeeded();
 
 public:
+    static void resetLists();
     // 4J Stu - Made public so we can use it from ItemFramRenderer
     Minimap* minimap;
 

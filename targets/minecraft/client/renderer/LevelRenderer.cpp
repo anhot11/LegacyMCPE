@@ -14,6 +14,7 @@
 
 #include "Chunk.h"
 #include "GameRenderer.h"
+#include "ItemInHandRenderer.h"
 #include "Tesselator.h"
 #include "app/common/Audio/ConsoleSoundEngine.h"
 #include "app/common/Audio/SoundTypes.h"
@@ -439,6 +440,7 @@ void LevelRenderer::setLevel(int playerIndex, MultiPlayerLevel* level) {
         // level to nullptr
         if (playerIndex == PlatformInput.GetPrimaryPad()) {
             PlatformRenderer.CBuffDeleteAll();
+            ItemInHandRenderer::resetLists();
             {
                 std::lock_guard<std::mutex> lock(m_csRenderableTileEntities);
                 renderableTileEntities.clear();

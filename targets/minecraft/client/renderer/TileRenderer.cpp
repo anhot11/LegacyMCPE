@@ -7802,6 +7802,7 @@ void TileRenderer::renderCube(Tile* tile, float alpha) {
 
 void TileRenderer::renderTile(Tile* tile, int data, float brightness,
                               float fAlpha, bool useCompiled) {
+    if (!minecraft) minecraft = Minecraft::GetInstance();
     Tesselator* t = Tesselator::getInstance();
 
     bool isGrass = tile->id == Tile::grass_Id;
@@ -8381,8 +8382,12 @@ Icon* TileRenderer::getTexture(Tile* tile) {
 }
 
 Icon* TileRenderer::getTextureOrMissing(Icon* icon) {
-    if (icon == nullptr)
-        return minecraft->textures->getMissingIcon(Icon::TYPE_TERRAIN);
+    if (icon == nullptr) {
+        if (!minecraft) minecraft = Minecraft::GetInstance();
+        return (minecraft && minecraft->textures)
+                   ? minecraft->textures->getMissingIcon(Icon::TYPE_TERRAIN)
+                   : nullptr;
+    }
 
     return icon;
 }
