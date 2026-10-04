@@ -106,6 +106,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          gh release upload v1.0.10 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.1 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.0 MCPL-Public.apk MCPL-Data.zip --clobber || true
 

@@ -201,6 +201,7 @@ CreativeInventoryScreen::ContainerCreative::clicked(
         }
         return std::shared_ptr<ItemInstance>();
     }
+    return std::shared_ptr<ItemInstance>();
 }
 
 void CreativeInventoryScreen::ContainerCreative::scrollTo(float pos) {
