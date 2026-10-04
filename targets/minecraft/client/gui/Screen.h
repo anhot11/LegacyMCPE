@@ -45,6 +45,7 @@ protected:
     virtual void mouseReleased(int x, int y, int buttonNum);
     virtual void buttonClicked(Button* button);
 
+public:
     static void resetInputState();
     virtual void init(Minecraft* minecraft, int width, int height);
     virtual void setSize(int width, int height);
