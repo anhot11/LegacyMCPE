@@ -299,6 +299,14 @@ void GameRenderer::pick(float a) {
     float aimU = 0.5f, aimV = 0.5f;
     if (Platform_GetTouchAim(&aimU, &aimV)) {
         if (Camera::unprojectTouchRay(aimU, aimV, rayFrom, rayDir)) {
+            // Camera matrices are eye-relative (world translation is applied
+            // separately), so shift the ray origin to the eye position.
+            std::shared_ptr<LivingEntity> ct = mc->cameraTargetPlayer;
+            double ex = ct->xo + (ct->x - ct->xo) * a;
+            double ey =
+                ct->yo + (ct->y - ct->yo) * a - (ct->heightOffset - 1.62f);
+            double ez = ct->zo + (ct->z - ct->zo) * a;
+            rayFrom = Vec3(ex + rayFrom.x, ey + rayFrom.y, ez + rayFrom.z);
             Vec3 to(rayFrom.x + rayDir.x * range, rayFrom.y + rayDir.y * range,
                     rayFrom.z + rayDir.z * range);
             mc->hitResult = mc->level->clip(&rayFrom, &to);
