@@ -155,6 +155,7 @@ void SoundEngine::init(Options* pOptions) {
     memset(m_ListenerA, 0, sizeof(AUDIO_LISTENER) * XUSER_MAX_COUNT);
     m_audio->engineConfig = ma_engine_config_init();
     m_audio->engineConfig.listenerCount = MAX_LOCAL_PLAYERS;
+    m_audio->engineConfig.periodSizeInMilliseconds = 20;
 
     if (ma_engine_init(&m_audio->engineConfig, &m_audio->engine) !=
         MA_SUCCESS) {
