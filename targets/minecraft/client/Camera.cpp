@@ -63,6 +63,9 @@ zPlayerOffs = position->get(2);
     _final = _proj * _modelview;
     _invert = glm::inverse(_final);
 
+    s_invViewProj = _invert;
+    s_hasInvViewProj = true;
+
     trans = _invert[3];
 
     xPlayerOffs = trans.x / trans.w;
@@ -80,6 +83,28 @@ zPlayerOffs = position->get(2);
     xa2 = -za * sinf(xRot * std::numbers::pi / 180.0f) * (1 - flipCamera * 2);
     za2 = xa * sinf(xRot * std::numbers::pi / 180.0f) * (1 - flipCamera * 2);
     ya = cosf(xRot * std::numbers::pi / 180.0f);
+}
+
+static glm::mat4 s_invViewProj(1.0f);
+static bool s_hasInvViewProj = false;
+
+bool Camera::unprojectTouchRay(float normX, float normY, Vec3& outFrom,
+                               Vec3& outDir) {
+    if (!s_hasInvViewProj) return false;
+    float ndcX = normX * 2.0f - 1.0f;
+    float ndcY = 1.0f - normY * 2.0f;
+    glm::vec4 pNear = s_invViewProj * glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
+    glm::vec4 pFar = s_invViewProj * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
+    if (fabsf(pNear.w) < 1e-6f || fabsf(pFar.w) < 1e-6f) return false;
+    pNear /= pNear.w;
+    pFar /= pFar.w;
+    glm::vec3 diff(pFar.x - pNear.x, pFar.y - pNear.y, pFar.z - pNear.z);
+    float len = glm::length(diff);
+    if (len < 1e-6f) return false;
+    diff /= len;
+    outFrom = Vec3(pNear.x, pNear.y, pNear.z);
+    outDir = Vec3(diff.x, diff.y, diff.z);
+    return true;
 }
 
 TilePos* Camera::getCameraTilePos(std::shared_ptr<LivingEntity> player,

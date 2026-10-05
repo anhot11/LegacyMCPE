@@ -29,6 +29,9 @@ public:
 
     static void prepare(std::shared_ptr<Player> player, bool mirror);
 
+    static bool unprojectTouchRay(float normX, float normY, Vec3& outFrom,
+                                  Vec3& outDir);
+
     static TilePos* getCameraTilePos(std::shared_ptr<LivingEntity> player,
                                      double alpha);
     static Vec3 getCameraPos(std::shared_ptr<LivingEntity> player,
