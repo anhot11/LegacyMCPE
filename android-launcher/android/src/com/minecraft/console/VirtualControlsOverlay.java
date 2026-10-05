@@ -140,6 +140,8 @@ public class VirtualControlsOverlay extends View {
 
     private static native void nativeSetTouchAim(float u, float v, boolean active);
     private static native boolean nativeIsFlying();
+    private static native boolean nativeIsSneaking();
+    private boolean mSneaking = false;
 
     private static void aimTouch(float u, float v, boolean active) {
         try {
@@ -430,9 +432,17 @@ public class VirtualControlsOverlay extends View {
             btnLeft.bounds.set(cx - dpadBtn * 1.5f, cy - dpadBtn / 2, cx - dpadBtn * 0.5f, cy + dpadBtn / 2);
             btnRight.bounds.set(cx + dpadBtn * 0.5f, cy - dpadBtn / 2, cx + dpadBtn * 1.5f, cy + dpadBtn / 2);
             btnCenter.bounds.set(cx - dpadBtn / 2, cy - dpadBtn / 2, cx + dpadBtn / 2, cy + dpadBtn / 2);
-            // Diagonal forward-left / forward-right buttons (top corners of the pad)
-            btnUpLeft.bounds.set(cx - dpadBtn * 1.5f, cy - dpadBtn * 1.5f, cx - dpadBtn * 0.5f, cy - dpadBtn * 0.5f);
-            btnUpRight.bounds.set(cx + dpadBtn * 0.5f, cy - dpadBtn * 1.5f, cx + dpadBtn * 1.5f, cy - dpadBtn * 0.5f);
+            // Diagonal forward-left / forward-right buttons (top corners of the pad):
+            // only available while sneaking
+            if (mSneaking && !mFlying) {
+                btnUpLeft.bounds.set(cx - dpadBtn * 1.5f, cy - dpadBtn * 1.5f, cx - dpadBtn * 0.5f, cy - dpadBtn * 0.5f);
+                btnUpRight.bounds.set(cx + dpadBtn * 0.5f, cy - dpadBtn * 1.5f, cx + dpadBtn * 1.5f, cy - dpadBtn * 0.5f);
+            } else {
+                if (btnUpLeft.pressed) releaseButton(btnUpLeft);
+                if (btnUpRight.pressed) releaseButton(btnUpRight);
+                btnUpLeft.bounds.set(0, 0, 0, 0);
+                btnUpRight.bounds.set(0, 0, 0, 0);
+            }
 
             // Right Action: Circular Jump Button
             float jumpSize = 58 * d * scale;
@@ -496,11 +506,16 @@ public class VirtualControlsOverlay extends View {
 
     private void pollFlyingState() {
         boolean flying = false;
+        boolean sneaking = false;
         try {
             flying = nativeIsFlying();
         } catch (Throwable ignored) {}
-        if (flying != mFlying) {
+        try {
+            sneaking = nativeIsSneaking();
+        } catch (Throwable ignored) {}
+        if (flying != mFlying || sneaking != mSneaking) {
             mFlying = flying;
+            mSneaking = sneaking;
             updateButtonPositions();
             invalidate();
         }
@@ -543,6 +558,8 @@ public class VirtualControlsOverlay extends View {
         canvas.drawRoundRect(mFpsBox, 4 * mDensity, 4 * mDensity, mFpsPaint);
         mFpsPaint.setColor(mCurrentFps >= 45 ? Color.GREEN : (mCurrentFps >= 25 ? Color.YELLOW : Color.RED));
         canvas.drawText("FPS: " + mCurrentFps, mFpsBox.left + 6 * mDensity, mFpsBox.centerY() + 4 * mDensity, mFpsPaint);
+        // Tiny state indicator (F = flying, S = sneaking) for diagnosing control visibility
+        canvas.drawText((mFlying ? "F" : "-") + (mSneaking ? "S" : "-"), mFpsBox.right + 6 * mDensity, mFpsBox.centerY() + 4 * mDensity, mFpsPaint);
 
         int alpha = getControlAlpha();
 
@@ -625,7 +642,7 @@ public class VirtualControlsOverlay extends View {
         Bitmap b = btn.pressed ? btn.bmpActive : btn.bmpNormal;
         if (b != null) {
             mBitmapPaint.setAlpha(alpha);
-            if (btn.pressed) {
+            if (btn.pressed || ((btn == btnCenter || btn == btnSneak) && mSneaking)) {
                 mBitmapPaint.setColorFilter(new PorterDuffColorFilter(Color.argb(130, 0, 0, 0), PorterDuff.Mode.SRC_ATOP));
             } else {
                 mBitmapPaint.setColorFilter(null);

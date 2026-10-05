@@ -106,7 +106,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v1.0.20 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.20" --notes "Release v1.0.20: Solución definitiva al menú de pausa in-game (ya no se cierra al abrir), carga instantánea sin crash en preset Xbox, corrección de lag en drops de bloques y actualización de físicas (arena/hierba), eliminación del spider fantasma, y controles táctiles mejorados con estado oscuro en sneak y soporte de vuelo." || gh release upload v1.0.20 MCPL-Public.apk MCPL-Data.zip --clobber || true
+          gh release create v1.0.21 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.21" --notes "Release v1.0.21: carga de chunks reducida (arregla crash del preset Xbox y lag), mobs ya no se muestran antes de que su chunk exista (mobs fantasma), diagonales solo al agacharse, indicador F/S de estado, botones de vuelo." || gh release upload v1.0.21 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.19 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.14 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.13 MCPL-Public.apk MCPL-Data.zip --clobber || true

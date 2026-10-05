@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "EntityTracker.h"
+#include "PlayerChunkMap.h"
+#include "ServerLevel.h"
 #include "ServerPlayer.h"
 #include "java/Class.h"
 #include "minecraft/SharedConstants.h"
@@ -687,15 +689,23 @@ void TrackedEntity::updatePlayer(EntityTracker* tracker,
 }
 
 bool TrackedEntity::canBySeenBy(std::shared_ptr<ServerPlayer> player) {
-    // 4J - for some reason this isn't currently working, and is causing players
-    // to not appear until we are really close to them. Not sure what the
-    // conflict is between the java & our version, but removing for now as it is
-    // causing issues and we shouldn't *really* need it
-    // TODO - investigate further
+    // Players and forced-loading entities are always announced.
+    if (e->instanceof(eTYPE_PLAYER) || e->forcedLoading) return true;
+    if (player == nullptr) return true;
 
-    return true;
-    //	return player->getLevel()->getChunkMap()->isPlayerIn(player, e->xChunk,
-    // e->zChunk);
+    // Only announce an entity once the chunk it stands in has been added to
+    // (and sent to) this player. Otherwise the client creates the mob inside
+    // terrain that it has not received yet, so it falls / jumps erratically
+    // and then vanishes (ghost mob). Use the real position rather than
+    // e->xChunk, which may be stale right after the entity is created.
+    ServerLevel* sl = player->getLevel();
+    if (sl == nullptr) return true;
+    PlayerChunkMap* map = sl->getChunkMap();
+    if (map == nullptr) return true;
+
+    int xc = ((int)std::floor(e->x)) >> 4;
+    int zc = ((int)std::floor(e->z)) >> 4;
+    return map->isPlayerIn(player, xc, zc);
 }
 
 void TrackedEntity::updatePlayers(

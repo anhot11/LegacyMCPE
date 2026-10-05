@@ -127,7 +127,7 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
             options->fancyGraphics = true;
             options->ambientOcclusion = true;
             options->renderClouds = true;
-            options->viewDistance = 1;
+            options->viewDistance = 2;
             options->particles = 0;
         } else {
             // Back to the mobile-optimised look

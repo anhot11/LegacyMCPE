@@ -3,6 +3,7 @@
 #ifdef __ANDROID__
 extern "C" bool Platform_GetTouchAim(float* u, float* v);
 extern "C" void Platform_WriteFlyingState(bool flying);
+extern "C" void Platform_WriteSneakingState(bool sneaking);
 #endif
 
 #include <float.h>
@@ -290,8 +291,10 @@ void GameRenderer::pick(float a) {
 
     mc->crosshairPickMob = nullptr;
 #ifdef __ANDROID__
-    if (mc->player != nullptr)
+    if (mc->player != nullptr) {
         Platform_WriteFlyingState(mc->player->abilities.flying);
+        Platform_WriteSneakingState(mc->player->isSneaking());
+    }
 #endif
 
     double range = mc->gameMode->getPickRange();

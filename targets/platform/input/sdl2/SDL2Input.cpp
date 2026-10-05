@@ -873,6 +873,18 @@ Java_com_minecraft_console_VirtualControlsOverlay_nativeIsFlying(JNIEnv*,
                                                                  jclass) {
     return s_isPlayerFlying ? JNI_TRUE : JNI_FALSE;
 }
+
+static volatile bool s_isPlayerSneaking = false;
+
+extern "C" void Platform_WriteSneakingState(bool sneaking) {
+    s_isPlayerSneaking = sneaking;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_minecraft_console_VirtualControlsOverlay_nativeIsSneaking(JNIEnv*,
+                                                                   jclass) {
+    return s_isPlayerSneaking ? JNI_TRUE : JNI_FALSE;
+}
 #endif
 
 #ifdef __ANDROID__
