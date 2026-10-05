@@ -3968,7 +3968,7 @@ void Minecraft::prepareLevel(int title) {
         this->progressRenderer->progressStage(IDS_PROGRESS_BUILDING_TERRAIN);
     }
 #ifdef __ANDROID__
-    int r = g_mcplXboxPreset ? 128 : 16;
+    int r = 16;
 #else
     int r = 128;
 #endif

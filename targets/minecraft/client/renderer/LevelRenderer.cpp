@@ -490,7 +490,7 @@ void LevelRenderer::allChanged(int playerIndex) {
     int dist = (int)sqrtf((float)PLAYER_RENDER_AREA / (float)activePlayers());
 
 #ifdef __ANDROID__
-    if (mc->options && !g_mcplXboxPreset) {
+    if (mc->options) {
         int vd = mc->options->viewDistance;
         if (vd >= 3) dist = 8;        // Tiny: 8x8 = 64 chunk columns (1024 subchunks)
         else if (vd == 2) dist = 10;  // Short: 10x10 = 100 chunk columns (1600 subchunks)

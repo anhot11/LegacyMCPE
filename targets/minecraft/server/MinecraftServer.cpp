@@ -550,7 +550,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
 #ifdef __ANDROID__
     // Mobile optimization: Spawn radius 16 blocks (3x3 chunks) for instant world loading (< 2 seconds)
-    int r = g_mcplXboxPreset ? 64 : 16;
+    int r = 16;
 #else
     int r = 64;
 #endif

@@ -106,7 +106,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v1.0.18 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.18" --notes "Release v1.0.18: Giro de cámara fluido sin saltos ni congelamientos, indicador de minado dinámico que sigue al dedo, y desproyección de raycast 3D matemáticamente exacta con Camera::unprojectTouchRay." || gh release upload v1.0.18 MCPL-Public.apk MCPL-Data.zip --clobber || true
+          gh release create v1.0.19 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.19" --notes "Release v1.0.19: Giro de cámara fluido sin saltos ni congelamientos, indicador de minado dinámico que sigue al dedo, y desproyección de raycast 3D matemáticamente exacta con Camera::unprojectTouchRay." || gh release upload v1.0.19 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.14 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.13 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.12 MCPL-Public.apk MCPL-Data.zip --clobber || true

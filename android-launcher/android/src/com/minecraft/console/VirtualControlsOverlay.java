@@ -822,7 +822,7 @@ public class VirtualControlsOverlay extends View {
                                 btnInv.pressed = false;
                                 invalidate();
                             }
-                        }, 110);
+                        }, 50);
                         return true;
                     }
 
@@ -839,7 +839,7 @@ public class VirtualControlsOverlay extends View {
                                 targetHit.pressed = false;
                                 invalidate();
                             }
-                        }, 110);
+                        }, 50);
                         return true;
                     }
 
