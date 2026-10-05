@@ -858,3 +858,26 @@ extern "C" void Platform_WriteHotbarRect(float fx, float fy, float fw,
     s_last[3] = fh;
 }
 #endif
+
+#ifdef __ANDROID__
+// Touch aim: the Java overlay publishes the finger position (normalized) while
+// the finger is aiming at the world, so block picking follows the finger.
+static volatile float s_aimU = 0.5f;
+static volatile float s_aimV = 0.5f;
+static volatile bool s_aimActive = false;
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_minecraft_console_VirtualControlsOverlay_nativeSetTouchAim(
+    JNIEnv*, jclass, jfloat u, jfloat v, jboolean active) {
+    s_aimU = u;
+    s_aimV = v;
+    s_aimActive = active != JNI_FALSE;
+}
+
+extern "C" bool Platform_GetTouchAim(float* u, float* v) {
+    if (!s_aimActive) return false;
+    *u = s_aimU;
+    *v = s_aimV;
+    return true;
+}
+#endif

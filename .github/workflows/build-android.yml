@@ -106,7 +106,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v1.0.13 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.13" --notes "Release v1.0.13: hotbar tactil exacta (rect real del HUD) y giro de camara fluido al minar" || gh release upload v1.0.13 MCPL-Public.apk MCPL-Data.zip --clobber || true
+          gh release create v1.0.14 MCPL-Public.apk MCPL-Data.zip --title "LegacyMCPE v1.0.14" --notes "Release v1.0.14: romper y colocar bloques en la posicion exacta del dedo" || gh release upload v1.0.14 MCPL-Public.apk MCPL-Data.zip --clobber || true
+          gh release upload v1.0.13 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.12 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.11 MCPL-Public.apk MCPL-Data.zip --clobber || true
           gh release upload v1.0.10 MCPL-Public.apk MCPL-Data.zip --clobber || true

@@ -126,6 +126,27 @@ public class VirtualControlsOverlay extends View {
     private float mSecondDownX = 0;
     private float mSecondDownY = 0;
     private long mSecondDownTime = 0;
+
+    private static native void nativeSetTouchAim(float u, float v, boolean active);
+
+    private static void aimTouch(float u, float v, boolean active) {
+        try {
+            nativeSetTouchAim(u, v, active);
+        } catch (UnsatisfiedLinkError e) {
+            // Native library without touch-aim support: crosshair fallback
+        }
+    }
+
+    private void updateTouchAim(float x, float y) {
+        float w = getWidth();
+        float h = getHeight();
+        if (w <= 0 || h <= 0) return;
+        try {
+            nativeSetTouchAim(x / w, y / h, true);
+        } catch (UnsatisfiedLinkError e) {
+            // Native library without touch-aim support: fall back to crosshair
+        }
+    }
     private float mSecondLastX = 0;
     private float mSecondLastY = 0;
     private boolean mSecondMining = false;
@@ -657,6 +678,7 @@ public class VirtualControlsOverlay extends View {
             mIsMining = false;
         }
         mWorldPointerId = -1;
+        aimTouch(0.5f, 0.5f, false);
         mIsPanning = false;
 
         if (mSecondHoldRunnable != null) {
@@ -751,6 +773,7 @@ public class VirtualControlsOverlay extends View {
                 // Native In-World Touch Interaction (Hold to Mine, Tap to Place/Attack, Drag to Look)
                 if (mWorldPointerId == -1) {
                     mWorldPointerId = pointerId;
+                    updateTouchAim(x, y);
                     mWorldDownX = x;
                     mWorldDownY = y;
                     mLastWorldX = x;
@@ -835,19 +858,8 @@ public class VirtualControlsOverlay extends View {
                             float distFromDown = (float) Math.hypot(curX - mWorldDownX, curY - mWorldDownY);
 
                             if (mIsMining) {
-                                // While mining, keep the crosshair following the finger.
-                                // Small jitter is ignored, but once the finger really moves
-                                // every accumulated pixel is forwarded (no lost motion).
-                                if (distFromDown > 6.0f * mDensity) {
-                                    float dx = curX - mLastWorldX;
-                                    float dy = curY - mLastWorldY;
-                                    mLastWorldX = curX;
-                                    mLastWorldY = curY;
-                                    float maxDelta = 300.0f * mDensity;
-                                    dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
-                                    dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
-                                    SDLActivity.onNativeMouse(0, MotionEvent.ACTION_MOVE, dx, dy, true);
-                                }
+                                // While mining, the target block follows the finger position.
+                                updateTouchAim(curX, curY);
                                 break;
                             } else if (!mIsPanning) {
                                 if (distFromDown > 10.0f * mDensity) {
@@ -857,11 +869,14 @@ public class VirtualControlsOverlay extends View {
                                         mHoldToMineRunnable = null;
                                     }
                                     mIsPanning = true;
+                                    aimTouch(0.5f, 0.5f, false);
                                     // Keep the original down point so the first rotation
                                     // includes the distance already travelled.
                                     mLastWorldX = mWorldDownX;
                                     mLastWorldY = mWorldDownY;
                                     invalidate();
+                                } else {
+                                    updateTouchAim(curX, curY);
                                 }
                             }
 
@@ -961,12 +976,14 @@ public class VirtualControlsOverlay extends View {
                         mHoldToMineRunnable = null;
                     }
 
+                    boolean wasTap = false;
                     if (mIsMining) {
                         // Finished mining
                         SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                         mIsMining = false;
                     } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 320) {
-                        // TAP DETECTED: Place block / Interact / Attack targeted entity at crosshair!
+                        // TAP DETECTED: Place block / Interact / Attack at the tapped point!
+                        wasTap = true;
                         SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, true);
                         postDelayed(new Runnable() {
                             @Override
@@ -974,6 +991,19 @@ public class VirtualControlsOverlay extends View {
                                 SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                             }
                         }, 40);
+                    }
+
+                    if (wasTap) {
+                        postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mWorldPointerId == -1) {
+                                    aimTouch(0.5f, 0.5f, false);
+                                }
+                            }
+                        }, 200);
+                    } else {
+                        aimTouch(0.5f, 0.5f, false);
                     }
 
                     mWorldPointerId = -1;

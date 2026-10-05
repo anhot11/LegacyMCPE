@@ -1,5 +1,9 @@
 #include "GameRenderer.h"
 
+#ifdef __ANDROID__
+extern "C" bool Platform_GetTouchAim(float* u, float* v);
+#endif
+
 #include <float.h>
 
 #include <algorithm>
@@ -288,7 +292,60 @@ void GameRenderer::pick(float a) {
     double range = mc->gameMode->getPickRange();
     delete mc->hitResult;
 
-    mc->hitResult = mc->cameraTargetPlayer->pick(range, a);
+    bool hasTouchRay = false;
+    Vec3 rayDir(0.0f, 0.0f, 0.0f);
+#ifdef __ANDROID__
+    {
+        float aimU = 0.5f, aimV = 0.5f;
+        if (Platform_GetTouchAim(&aimU, &aimV)) {
+            float u = (aimU - 0.5f) * 2.0f;
+            float v = (0.5f - aimV) * 2.0f;
+
+            int fbw = mc->width, fbh = mc->height;
+            PlatformRenderer.GetFramebufferSize(fbw, fbh);
+            int screenW = (fbw > 0) ? fbw : mc->width;
+            int screenH = (fbh > 0) ? fbh : mc->height;
+            float aspect =
+                (screenH > 0) ? (float)screenW / (float)screenH : 1.7f;
+            float fovY = getFov(a, true) * Mth::DEG_TO_RAD;
+            float halfTanY = tanf(fovY * 0.5f);
+            float halfTanX = halfTanY * aspect;
+
+            auto cam = mc->cameraTargetPlayer;
+            float yRot = cam->yRotO + (cam->yRot - cam->yRotO) * a;
+            float xRot = cam->xRotO + (cam->xRot - cam->xRotO) * a;
+            float theta = -yRot * Mth::DEG_TO_RAD - std::numbers::pi;
+            float phi = -xRot * Mth::DEG_TO_RAD;
+            float sinTheta = sinf(theta), cosTheta = cosf(theta);
+            float sinPhi = sinf(phi), cosPhi = cosf(phi);
+
+            Vec3 forward(sinTheta * (-cosPhi), sinPhi, cosTheta * (-cosPhi));
+            Vec3 right(cosTheta, 0.0f, -sinTheta);
+            Vec3 up(sinTheta * sinPhi, cosPhi, cosTheta * sinPhi);
+
+            rayDir = Vec3(forward.x + right.x * (u * halfTanX) +
+                              up.x * (v * halfTanY),
+                          forward.y + right.y * (u * halfTanX) +
+                              up.y * (v * halfTanY),
+                          forward.z + right.z * (u * halfTanX) +
+                              up.z * (v * halfTanY))
+                         .normalize();
+
+            double ex = cam->xo + (cam->x - cam->xo) * a;
+            double ey =
+                cam->yo + (cam->y - cam->yo) * a - (cam->heightOffset - 1.62f);
+            double ez = cam->zo + (cam->z - cam->zo) * a;
+            Vec3 f(ex, ey, ez);
+            Vec3 t(f.x + rayDir.x * range, f.y + rayDir.y * range,
+                   f.z + rayDir.z * range);
+            mc->hitResult = mc->level->clip(&f, &t);
+            hasTouchRay = true;
+        }
+    }
+#endif
+    if (!hasTouchRay) {
+        mc->hitResult = mc->cameraTargetPlayer->pick(range, a);
+    }
 
     // 4J - added - stop blocks right at the edge of the world from being
     // pickable so we shouldn't be able to directly destroy or create anything
@@ -336,7 +393,7 @@ void GameRenderer::pick(float a) {
         dist = mc->hitResult->pos.distanceTo(from);
     }
 
-    Vec3 b = mc->cameraTargetPlayer->getViewVector(a);
+    Vec3 b = hasTouchRay ? rayDir : mc->cameraTargetPlayer->getViewVector(a);
     Vec3 to(b.x * range, b.y * range, b.z * range);
     to = to.add(from.x, from.y, from.z);
     hovered = nullptr;
