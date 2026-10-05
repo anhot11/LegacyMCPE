@@ -869,8 +869,8 @@ extern "C" void Platform_WriteFlyingState(bool flying) {
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_minecraft_console_VirtualControlsOverlay_nativeIsFlying(
-    JNIEnv*, jclass) {
+Java_com_minecraft_console_VirtualControlsOverlay_nativeIsFlying(JNIEnv*,
+                                                                 jclass) {
     return s_isPlayerFlying ? JNI_TRUE : JNI_FALSE;
 }
 #endif
