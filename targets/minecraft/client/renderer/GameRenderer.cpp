@@ -2,6 +2,7 @@
 
 #ifdef __ANDROID__
 extern "C" bool Platform_GetTouchAim(float* u, float* v);
+extern "C" void Platform_WriteFlyingState(bool flying);
 #endif
 
 #include <float.h>
@@ -288,6 +289,10 @@ void GameRenderer::pick(float a) {
     if (mc->level == nullptr) return;
 
     mc->crosshairPickMob = nullptr;
+#ifdef __ANDROID__
+    if (mc->player != nullptr)
+        Platform_WriteFlyingState(mc->player->abilities.flying);
+#endif
 
     double range = mc->gameMode->getPickRange();
     delete mc->hitResult;
@@ -1544,7 +1549,13 @@ void GameRenderer::renderLevel(float a, int64_t until) {
         if ((zoom == 1) &&
             cameraEntity->instanceof(eTYPE_PLAYER))  //&& !mc->options.hideGui)
         {
-            if (mc->hitResult != nullptr &&
+            bool showOutline = true;
+#ifdef __ANDROID__
+            // Touch UI: only outline the block while a finger is aiming at it
+            float outU, outV;
+            showOutline = Platform_GetTouchAim(&outU, &outV);
+#endif
+            if (showOutline && mc->hitResult != nullptr &&
                 !cameraEntity->isUnderLiquid(Material::water)) {
                 std::shared_ptr<Player> player =
                     std::dynamic_pointer_cast<Player>(cameraEntity);

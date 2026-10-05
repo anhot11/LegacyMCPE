@@ -60,6 +60,8 @@ public class VirtualControlsOverlay extends View {
     public static class VButton {
         String name;
         int keyCode;
+        int keyCode2 = 0;
+        String glyph = null;
         RectF bounds = new RectF();
         boolean pressed = false;
         int pointerId = -1;
@@ -78,6 +80,14 @@ public class VirtualControlsOverlay extends View {
     private final VButton btnLeft = new VButton("dpad_left", KeyEvent.KEYCODE_A);
     private final VButton btnRight = new VButton("dpad_right", KeyEvent.KEYCODE_D);
     private final VButton btnCenter = new VButton("sneak", KeyEvent.KEYCODE_SHIFT_LEFT);
+    private final VButton btnUpLeft = new VButton("dpad_upleft", KeyEvent.KEYCODE_W);
+    private final VButton btnUpRight = new VButton("dpad_upright", KeyEvent.KEYCODE_W);
+    private final VButton btnFlyUp = new VButton("fly_up", KeyEvent.KEYCODE_SPACE);
+    private final VButton btnFlyDown = new VButton("fly_down", KeyEvent.KEYCODE_SHIFT_LEFT);
+    private boolean mFlying = false;
+    private long mLastFlyCheck = 0;
+    private final Paint mGlyphPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mGlyphBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // Action buttons (Jump, Sneak, Inventory)
     private final VButton btnJump = new VButton("jump", KeyEvent.KEYCODE_SPACE);
@@ -91,6 +101,7 @@ public class VirtualControlsOverlay extends View {
 
     private final VButton[] allButtons = new VButton[] {
         btnUp, btnDown, btnLeft, btnRight, btnCenter,
+        btnUpLeft, btnUpRight, btnFlyUp, btnFlyDown,
         btnJump, btnSneak, btnInv,
         btnPause, btnPerspective, btnChat
     };
@@ -211,6 +222,17 @@ public class VirtualControlsOverlay extends View {
 
         mRingCenterPaint.setStyle(Paint.Style.FILL);
         mRingCenterPaint.setColor(Color.argb(220, 255, 255, 255));
+
+        btnUpLeft.keyCode2 = KeyEvent.KEYCODE_A;
+        btnUpLeft.glyph = "\u2196";
+        btnUpRight.keyCode2 = KeyEvent.KEYCODE_D;
+        btnUpRight.glyph = "\u2197";
+        btnFlyUp.glyph = "\u25B2";
+        btnFlyDown.glyph = "\u25BC";
+        mGlyphPaint.setColor(Color.WHITE);
+        mGlyphPaint.setTextAlign(Paint.Align.CENTER);
+        mGlyphPaint.setFakeBoldText(true);
+        mGlyphBgPaint.setStyle(Paint.Style.FILL);
 
         setFocusable(false);
         setFocusableInTouchMode(false);
@@ -407,6 +429,9 @@ public class VirtualControlsOverlay extends View {
             btnLeft.bounds.set(cx - dpadBtn * 1.5f, cy - dpadBtn / 2, cx - dpadBtn * 0.5f, cy + dpadBtn / 2);
             btnRight.bounds.set(cx + dpadBtn * 0.5f, cy - dpadBtn / 2, cx + dpadBtn * 1.5f, cy + dpadBtn / 2);
             btnCenter.bounds.set(cx - dpadBtn / 2, cy - dpadBtn / 2, cx + dpadBtn / 2, cy + dpadBtn / 2);
+            // Diagonal forward-left / forward-right buttons (top corners of the pad)
+            btnUpLeft.bounds.set(cx - dpadBtn * 1.5f, cy - dpadBtn * 1.5f, cx - dpadBtn * 0.5f, cy - dpadBtn * 0.5f);
+            btnUpRight.bounds.set(cx + dpadBtn * 0.5f, cy - dpadBtn * 1.5f, cx + dpadBtn * 1.5f, cy - dpadBtn * 0.5f);
 
             // Right Action: Circular Jump Button
             float jumpSize = 58 * d * scale;
@@ -416,6 +441,7 @@ public class VirtualControlsOverlay extends View {
 
             // Crouch is already in the center of the movement D-pad below forward, so remove the duplicate beside jump
             btnSneak.bounds.set(0, 0, 0, 0);
+            updateFlyButtons(w, h);
 
         } else if (mControlStyle == 2) {
             // Style 2: Floating/Fixed Joystick + Action Buttons
@@ -443,7 +469,61 @@ public class VirtualControlsOverlay extends View {
             float sneakX = jumpX + (jumpSize - sneakSize) / 2.0f;
             float sneakY = jumpY - sneakSize * 1.25f;
             btnSneak.bounds.set(sneakX, sneakY, sneakX + sneakSize, sneakY + sneakSize);
+            btnUpLeft.bounds.set(0, 0, 0, 0);
+            btnUpRight.bounds.set(0, 0, 0, 0);
+            updateFlyButtons(w, h);
         }
+    }
+
+    // Fly up/down buttons: only active while the player is flying.
+    private void updateFlyButtons(float w, float h) {
+        if (!mFlying) {
+            if (btnFlyUp.pressed) releaseButton(btnFlyUp);
+            if (btnFlyDown.pressed) releaseButton(btnFlyDown);
+            btnFlyUp.bounds.set(0, 0, 0, 0);
+            btnFlyDown.bounds.set(0, 0, 0, 0);
+            return;
+        }
+        float d = mDensity;
+        float s = 46 * d * getScaleFactor();
+        float x = w - (24 * d + mCutoutRight) - 58 * d * getScaleFactor() - s - 14 * d;
+        float yDown = h - 28 * d - s;
+        float yUp = yDown - s - 10 * d;
+        btnFlyUp.bounds.set(x, yUp, x + s, yUp + s);
+        btnFlyDown.bounds.set(x, yDown, x + s, yDown + s);
+    }
+
+    private void pollFlyingState() {
+        long now = SystemClock.uptimeMillis();
+        if (now - mLastFlyCheck < 200) return;
+        mLastFlyCheck = now;
+        boolean flying = false;
+        try {
+            File f = new File(getContext().getFilesDir(), "flying.txt");
+            if (f.exists()) {
+                java.io.BufferedReader br = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(new FileInputStream(f)));
+                String line = br.readLine();
+                br.close();
+                flying = line != null && line.trim().equals("1");
+            }
+        } catch (Exception ignored) {}
+        if (flying != mFlying) {
+            mFlying = flying;
+            updateButtonPositions();
+        }
+    }
+
+    private void drawGlyphButton(Canvas canvas, VButton btn, int alpha) {
+        if (btn.bounds.width() <= 0 || btn.glyph == null) return;
+        mGlyphBgPaint.setColor(btn.pressed ? Color.argb(Math.min(255, alpha + 60), 0, 0, 0)
+                                           : Color.argb(Math.min(255, alpha / 2 + 40), 90, 90, 90));
+        float r = 8 * mDensity;
+        canvas.drawRoundRect(btn.bounds, r, r, mGlyphBgPaint);
+        mGlyphPaint.setAlpha(btn.pressed ? 160 : Math.min(255, alpha + 40));
+        mGlyphPaint.setTextSize(btn.bounds.height() * 0.5f);
+        canvas.drawText(btn.glyph, btn.bounds.centerX(),
+                btn.bounds.centerY() + btn.bounds.height() * 0.18f, mGlyphPaint);
     }
 
     @Override
@@ -455,6 +535,7 @@ public class VirtualControlsOverlay extends View {
         }
 
         checkAndReloadOptions();
+        pollFlyingState();
 
         // Calculate real FPS (in-game only)
         long now = SystemClock.uptimeMillis();
@@ -489,6 +570,9 @@ public class VirtualControlsOverlay extends View {
             drawButtonBitmap(canvas, btnRight, alpha);
             drawButtonBitmap(canvas, btnCenter, alpha);
 
+            drawGlyphButton(canvas, btnUpLeft, alpha);
+            drawGlyphButton(canvas, btnUpRight, alpha);
+
             // Jump
             drawButtonBitmap(canvas, btnJump, alpha);
 
@@ -510,6 +594,9 @@ public class VirtualControlsOverlay extends View {
             drawButtonBitmap(canvas, btnJump, alpha);
             drawButtonBitmap(canvas, btnSneak, alpha);
         }
+
+        drawGlyphButton(canvas, btnFlyUp, alpha);
+        drawGlyphButton(canvas, btnFlyDown, alpha);
 
         // Draw Authentic MCPE 0.15 Circular Mining Progress Indicator at touched coordinates
         boolean drawMineRing = (mIsMining && mWorldPointerId != -1);
@@ -547,7 +634,7 @@ public class VirtualControlsOverlay extends View {
         if (b != null) {
             mBitmapPaint.setAlpha(alpha);
             if (btn.pressed && btn.bmpActive == btn.bmpNormal) {
-                mBitmapPaint.setColorFilter(new PorterDuffColorFilter(Color.argb(80, 0, 180, 255), PorterDuff.Mode.SRC_ATOP));
+                mBitmapPaint.setColorFilter(new PorterDuffColorFilter(Color.argb(140, 0, 0, 0), PorterDuff.Mode.SRC_ATOP));
             } else {
                 mBitmapPaint.setColorFilter(null);
             }
@@ -646,6 +733,7 @@ public class VirtualControlsOverlay extends View {
         if (btn.keyCode != 0) {
             SDLActivity.onNativeKeyDown(btn.keyCode);
         }
+        if (btn.keyCode2 != 0) SDLActivity.onNativeKeyDown(btn.keyCode2);
     }
 
     private void releaseButton(VButton btn) {
@@ -654,6 +742,7 @@ public class VirtualControlsOverlay extends View {
         if (btn.keyCode != 0) {
             SDLActivity.onNativeKeyUp(btn.keyCode);
         }
+        if (btn.keyCode2 != 0) SDLActivity.onNativeKeyUp(btn.keyCode2);
     }
 
     private void resetAllInputs() {
@@ -733,7 +822,7 @@ public class VirtualControlsOverlay extends View {
                                 btnInv.pressed = false;
                                 invalidate();
                             }
-                        }, 50);
+                        }, 110);
                         return true;
                     }
 
@@ -750,7 +839,7 @@ public class VirtualControlsOverlay extends View {
                                 targetHit.pressed = false;
                                 invalidate();
                             }
-                        }, 50);
+                        }, 110);
                         return true;
                     }
 
@@ -965,7 +1054,7 @@ public class VirtualControlsOverlay extends View {
                             public void run() {
                                 SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                             }
-                        }, 40);
+                        }, 90);
                     }
                     mSecondPointerId = -1;
                     return true;
@@ -992,7 +1081,7 @@ public class VirtualControlsOverlay extends View {
                             public void run() {
                                 SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                             }
-                        }, 40);
+                        }, 90);
                     }
 
                     if (wasTap) {

@@ -860,6 +860,25 @@ extern "C" void Platform_WriteHotbarRect(float fx, float fy, float fw,
 #endif
 
 #ifdef __ANDROID__
+// Publishes whether the local player is flying so the Java overlay can show
+// the fly up/down buttons.
+extern "C" void Platform_WriteFlyingState(bool flying) {
+    static int s_last = -1;
+    if (s_last == (flying ? 1 : 0)) return;
+    const char* base = SDL_AndroidGetInternalStoragePath();
+    if (!base) return;
+    std::string path = std::string(base) + "/flying.txt";
+    std::string tmp = path + ".tmp";
+    FILE* f = fopen(tmp.c_str(), "w");
+    if (!f) return;
+    fprintf(f, "%d\n", flying ? 1 : 0);
+    fclose(f);
+    rename(tmp.c_str(), path.c_str());
+    s_last = flying ? 1 : 0;
+}
+#endif
+
+#ifdef __ANDROID__
 // Touch aim: the Java overlay publishes the finger position (normalized) while
 // the finger is aiming at the world, so block picking follows the finger.
 static volatile float s_aimU = 0.5f;
