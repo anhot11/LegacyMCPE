@@ -18,11 +18,7 @@ DebugOptions::DebugOptions() {
     m_bMobsDontTick = false;
     m_bFreezePlayers = false;
 
-#if defined(_CONTENT_PACAKGE)
     m_bUseDPadForDebug = false;
-#else
-    m_bUseDPadForDebug = true;
-#endif
 }
 
 #if defined(_DEBUG_MENUS_ENABLED)

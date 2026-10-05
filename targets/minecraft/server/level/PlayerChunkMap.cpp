@@ -536,7 +536,9 @@ void PlayerChunkMap::getChunkAndRemovePlayer(
 // 4J - added - actually create & add player to a playerchunk, if there is one
 // queued for this player.
 void PlayerChunkMap::tickAddRequests(std::shared_ptr<ServerPlayer> player) {
-    if (addRequests.size()) {
+    if (addRequests.empty()) return;
+    // Process up to 4 chunk add requests per tick to eliminate chunk load lag
+    for (int step = 0; step < 4 && !addRequests.empty(); step++) {
         // Find the nearest chunk request to the player
         int px = (int)player->x;
         int pz = (int)player->z;
@@ -559,6 +561,8 @@ void PlayerChunkMap::tickAddRequests(std::shared_ptr<ServerPlayer> player) {
         if (itNearest != addRequests.end()) {
             getChunk(itNearest->x, itNearest->z, true)->add(itNearest->player);
             addRequests.erase(itNearest);
+        } else {
+            break;
         }
     }
 }
@@ -568,6 +572,17 @@ void PlayerChunkMap::broadcastTileUpdate(std::shared_ptr<Packet> packet, int x,
     int xc = x >> 4;
     int zc = z >> 4;
     PlayerChunk* chunk = getChunk(xc, zc, false);
+    if (chunk == nullptr) {
+        chunk = getChunk(xc, zc, true);
+        for (auto it = addRequests.begin(); it != addRequests.end();) {
+            if (it->x == xc && it->z == zc) {
+                chunk->add(it->player);
+                it = addRequests.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
     if (chunk != nullptr) {
         chunk->broadcast(packet);
     }
@@ -577,6 +592,17 @@ void PlayerChunkMap::tileChanged(int x, int y, int z) {
     int xc = x >> 4;
     int zc = z >> 4;
     PlayerChunk* chunk = getChunk(xc, zc, false);
+    if (chunk == nullptr) {
+        chunk = getChunk(xc, zc, true);
+        for (auto it = addRequests.begin(); it != addRequests.end();) {
+            if (it->x == xc && it->z == zc) {
+                chunk->add(it->player);
+                it = addRequests.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
     if (chunk != nullptr) {
         chunk->tileChanged(x & 15, y, z & 15);
     }
@@ -637,7 +663,7 @@ void PlayerChunkMap::add(std::shared_ptr<ServerPlayer> player) {
     // the central region of chunks, which adds them to a queue of chunks which
     // are added one per tick per player.
 #if defined(__ANDROID__) || defined(ANDROID)
-    const int maxLegSizeToAddNow = g_mcplXboxPreset ? 14 : 4;
+    const int maxLegSizeToAddNow = g_mcplXboxPreset ? 14 : 12;
 #else
     const int maxLegSizeToAddNow = 14;
 #endif

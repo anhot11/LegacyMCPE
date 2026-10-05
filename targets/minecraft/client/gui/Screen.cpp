@@ -26,6 +26,8 @@ Screen::Screen()  // 4J added
     font = nullptr;
     particles = nullptr;
     clickedButton = nullptr;
+    screenTicks = 0;
+    screenFrameCount = 0;
 }
 
 void Screen::render(int xm, int ym, float a) {
@@ -99,6 +101,8 @@ void Screen::init(Minecraft* minecraft, int width, int height) {
     clickedButton = nullptr;
     buttons.clear();
     resetInputState();
+    screenTicks = 0;
+    screenFrameCount = 0;
     init();
 }
 
@@ -150,13 +154,19 @@ void Screen::updateEvents() {
         return;
     }
 
-    if (PlatformInput.ButtonPressed(0, ACTION_MENU_CANCEL) ||
-        PlatformInput.ButtonPressed(0, ACTION_MENU_B)) {
-        keyPressed(0, Keyboard::KEY_ESCAPE);
-    }
+    // Guard against instant-closing on the frame the screen opens:
+    // the opening key press (e.g. KEY_ESCAPE or KEY_E) might still be registered as
+    // ButtonPressed on frame 0/1. Require at least 4 render frames or 1 logic tick.
+    screenFrameCount++;
+    if (screenTicks >= 1 || screenFrameCount >= 4) {
+        if (PlatformInput.ButtonPressed(0, ACTION_MENU_CANCEL) ||
+            PlatformInput.ButtonPressed(0, ACTION_MENU_B)) {
+            keyPressed(0, Keyboard::KEY_ESCAPE);
+        }
 
-    if (PlatformInput.ButtonPressed(0, MINECRAFT_ACTION_INVENTORY)) {
-        keyPressed('e', Keyboard::KEY_E);
+        if (PlatformInput.ButtonPressed(0, MINECRAFT_ACTION_INVENTORY)) {
+            keyPressed('e', Keyboard::KEY_E);
+        }
     }
 
     // Process typed characters from Android soft keyboard (IME) and physical
@@ -213,7 +223,9 @@ if (Keyboard.getEventKeyState()) {
     */
 }
 
-void Screen::tick() {}
+void Screen::tick() {
+    screenTicks++;
+}
 
 void Screen::removed() {}
 

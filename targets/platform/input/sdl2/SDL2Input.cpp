@@ -861,20 +861,17 @@ extern "C" void Platform_WriteHotbarRect(float fx, float fy, float fw,
 
 #ifdef __ANDROID__
 // Publishes whether the local player is flying so the Java overlay can show
-// the fly up/down buttons.
+// the fly up/down buttons instantly via JNI without disk I/O.
+static volatile bool s_isPlayerFlying = false;
+
 extern "C" void Platform_WriteFlyingState(bool flying) {
-    static int s_last = -1;
-    if (s_last == (flying ? 1 : 0)) return;
-    const char* base = SDL_AndroidGetInternalStoragePath();
-    if (!base) return;
-    std::string path = std::string(base) + "/flying.txt";
-    std::string tmp = path + ".tmp";
-    FILE* f = fopen(tmp.c_str(), "w");
-    if (!f) return;
-    fprintf(f, "%d\n", flying ? 1 : 0);
-    fclose(f);
-    rename(tmp.c_str(), path.c_str());
-    s_last = flying ? 1 : 0;
+    s_isPlayerFlying = flying;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_minecraft_console_VirtualControlsOverlay_nativeIsFlying(
+    JNIEnv*, jclass) {
+    return s_isPlayerFlying ? JNI_TRUE : JNI_FALSE;
 }
 #endif
 

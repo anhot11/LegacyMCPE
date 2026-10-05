@@ -139,6 +139,7 @@ public class VirtualControlsOverlay extends View {
     private long mSecondDownTime = 0;
 
     private static native void nativeSetTouchAim(float u, float v, boolean active);
+    private static native boolean nativeIsFlying();
 
     private static void aimTouch(float u, float v, boolean active) {
         try {
@@ -494,23 +495,14 @@ public class VirtualControlsOverlay extends View {
     }
 
     private void pollFlyingState() {
-        long now = SystemClock.uptimeMillis();
-        if (now - mLastFlyCheck < 200) return;
-        mLastFlyCheck = now;
         boolean flying = false;
         try {
-            File f = new File(getContext().getFilesDir(), "flying.txt");
-            if (f.exists()) {
-                java.io.BufferedReader br = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(new FileInputStream(f)));
-                String line = br.readLine();
-                br.close();
-                flying = line != null && line.trim().equals("1");
-            }
-        } catch (Exception ignored) {}
+            flying = nativeIsFlying();
+        } catch (Throwable ignored) {}
         if (flying != mFlying) {
             mFlying = flying;
             updateButtonPositions();
+            invalidate();
         }
     }
 
@@ -633,8 +625,8 @@ public class VirtualControlsOverlay extends View {
         Bitmap b = btn.pressed ? btn.bmpActive : btn.bmpNormal;
         if (b != null) {
             mBitmapPaint.setAlpha(alpha);
-            if (btn.pressed && btn.bmpActive == btn.bmpNormal) {
-                mBitmapPaint.setColorFilter(new PorterDuffColorFilter(Color.argb(140, 0, 0, 0), PorterDuff.Mode.SRC_ATOP));
+            if (btn.pressed) {
+                mBitmapPaint.setColorFilter(new PorterDuffColorFilter(Color.argb(130, 0, 0, 0), PorterDuff.Mode.SRC_ATOP));
             } else {
                 mBitmapPaint.setColorFilter(null);
             }

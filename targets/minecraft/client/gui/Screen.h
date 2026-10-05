@@ -22,6 +22,8 @@ protected:
 
 public:
     bool passEvents;
+    int screenTicks = 0;
+    int screenFrameCount = 0;
 
 protected:
     Font* font;

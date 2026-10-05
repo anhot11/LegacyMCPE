@@ -1960,8 +1960,10 @@ void Minecraft::pauseGame() {
     if (screen != nullptr) {
         // 4jcraft: Pass the keypress to the screen
         // normally this would've been done in updateEvents(), but it works
-        // better here (for now atleast)
-        screen->keyPressed(0, Keyboard::KEY_ESCAPE);
+        // better here (for now atleast). Only pass if screen has been up for at least 1 tick / 4 frames
+        if (screen->screenTicks >= 1 || screen->screenFrameCount >= 4) {
+            screen->keyPressed(0, Keyboard::KEY_ESCAPE);
+        }
         return;
     }
 #if defined(ENABLE_JAVA_GUIS)
@@ -3420,20 +3422,8 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
 #endif
                 }
 
-                if ((player->ullButtonsPressed &
-                     (1LL << MINECRAFT_ACTION_SPAWN_CREEPER)) &&
-                    gameServices().debugMobsDontAttack()) {
-                    // shared_ptr<Mob> mob =
-                    // std::dynamic_pointer_cast<Mob>(Creeper::_class->newInstance(
-                    // level )); shared_ptr<Mob> mob =
-                    // std::dynamic_pointer_cast<Mob>(Wolf::_class->newInstance(
-                    // level ));
-                    std::shared_ptr<Mob> mob = std::dynamic_pointer_cast<Mob>(
-                        std::make_shared<Spider>(level));
-                    mob->moveTo(player->x + 1, player->y, player->z + 1,
-                                level->random->nextFloat() * 360, 0);
-                    level->addEntity(mob);
-                }
+                // 4J debug client-side mob spawn removed: it created a local ghost spider
+                // not recognized by the server, causing it to desync, jump abnormally, and vanish upon being hit.
             }
 
             if ((player->ullButtonsPressed &
