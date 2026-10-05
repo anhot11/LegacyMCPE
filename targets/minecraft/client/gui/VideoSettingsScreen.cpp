@@ -11,9 +11,9 @@ extern bool g_mcplXboxPreset;
 #include "minecraft/client/gui/Screen.h"
 #include "minecraft/client/renderer/LevelRenderer.h"
 #include "minecraft/locale/Language.h"
-#include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ArmorItem.h"
 #include "minecraft/world/item/BowItem.h"
+#include "minecraft/world/item/Item.h"
 #include "minecraft/world/item/ItemInstance.h"
 #include "minecraft/world/level/tile/Tile.h"
 
@@ -66,51 +66,67 @@ void VideoSettingsScreen::init() {
 
         // Distinctive Minecraft icons for each video setting
         if (item == Options::Option::GRAPHICS) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::leaves)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(
+                new ItemInstance((Tile*)Tile::leaves)));
         } else if (item == Options::Option::RENDER_DISTANCE) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::eyeOfEnder)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(
+                new ItemInstance(Item::eyeOfEnder)));
         } else if (item == Options::Option::AMBIENT_OCCLUSION) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Tile*)Tile::glowstone)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(
+                new ItemInstance((Tile*)Tile::glowstone)));
         } else if (item == Options::Option::RENDER_CLOUDS) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::feather)));
+            btn->setIconItem(
+                std::shared_ptr<ItemInstance>(new ItemInstance(Item::feather)));
         } else if (item == Options::Option::VIEW_BOBBING) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance((Item*)Item::boots_iron)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(
+                new ItemInstance((Item*)Item::boots_iron)));
         } else if (item == Options::Option::GUI_SCALE) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::painting)));
+            btn->setIconItem(std::shared_ptr<ItemInstance>(
+                new ItemInstance(Item::painting)));
         } else if (item == Options::Option::ADVANCED_OPENGL) {
-            btn->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
+            btn->setIconItem(
+                std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
         }
 
         buttons.push_back(btn);
     }
 
     // Profile button (Row 5): Quick preset selector for performance vs high-end
-    profileButton = new Button(300, width / 2 - (btnW + 5), startY + rowSpacing * 5, btnW, btnH, "");
-    profileButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::apple_gold)));
+    profileButton = new Button(300, width / 2 - (btnW + 5),
+                               startY + rowSpacing * 5, btnW, btnH, "");
+    profileButton->setIconItem(
+        std::shared_ptr<ItemInstance>(new ItemInstance(Item::apple_gold)));
     buttons.push_back(profileButton);
 
     // Original Xbox preset: Xbox graphics + unthrottled chunk loading
-    s_xboxButton = new Button(301, width / 2 + 5, startY + rowSpacing * 5, btnW, btnH, "");
-    s_xboxButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
+    s_xboxButton =
+        new Button(301, width / 2 + 5, startY + rowSpacing * 5, btnW, btnH, "");
+    s_xboxButton->setIconItem(
+        std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
     buttons.push_back(s_xboxButton);
     updateProfileButton();
 
     int doneW = (width >= 450) ? 230 : 190;
-    Button* btnDone = new Button(200, width / 2 - doneW / 2, startY + rowSpacing * 6 + 3, doneW, btnH,
-                                 language->getElement("gui.done"));
+    Button* btnDone =
+        new Button(200, width / 2 - doneW / 2, startY + rowSpacing * 6 + 3,
+                   doneW, btnH, language->getElement("gui.done"));
     btnDone->setTextureIcon(64, 32, 16);
-    btnDone->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
+    btnDone->setIconItem(
+        std::shared_ptr<ItemInstance>(new ItemInstance(Item::door_wood)));
     buttons.push_back(btnDone);
 }
 
 void VideoSettingsScreen::updateProfileButton() {
     if (profileButton == nullptr) return;
     if (s_xboxButton != nullptr) {
-        s_xboxButton->msg = options->xboxPreset ? "Preset Xbox: SI" : "Preset Xbox: NO";
+        s_xboxButton->msg =
+            options->xboxPreset ? "Preset Xbox: SI" : "Preset Xbox: NO";
     }
-    if (!options->fancyGraphics && !options->ambientOcclusion && options->viewDistance >= 2) {
+    if (!options->fancyGraphics && !options->ambientOcclusion &&
+        options->viewDistance >= 2) {
         profileButton->msg = "Perfil: Rendimiento";
-    } else if (options->fancyGraphics && options->ambientOcclusion && options->viewDistance <= 1) {
+    } else if (options->fancyGraphics && options->ambientOcclusion &&
+               options->viewDistance <= 1) {
         profileButton->msg = "Perfil: Alta Calidad";
     } else {
         profileButton->msg = "Perfil: Equilibrado";
@@ -123,7 +139,8 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
         options->xboxPreset = !options->xboxPreset;
         g_mcplXboxPreset = options->xboxPreset;
         if (options->xboxPreset) {
-            // Original Xbox 360 look: fancy graphics, AO, clouds, far view, all particles
+            // Original Xbox 360 look: fancy graphics, AO, clouds, far view, all
+            // particles
             options->fancyGraphics = true;
             options->ambientOcclusion = true;
             options->renderClouds = true;
@@ -144,7 +161,8 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
         for (auto b : buttons) {
             if (b->id < 100) {
                 SmallButton* sb = dynamic_cast<SmallButton*>(b);
-                if (sb != nullptr) sb->msg = options->getMessage(sb->getOption());
+                if (sb != nullptr)
+                    sb->msg = options->getMessage(sb->getOption());
             }
         }
         updateProfileButton();
@@ -153,29 +171,34 @@ void VideoSettingsScreen::buttonClicked(Button* button) {
     if (button->id == 300) {
         options->xboxPreset = false;
         g_mcplXboxPreset = false;
-        // Preset cycle: Rendimiento -> Equilibrado -> Alta Calidad -> Rendimiento
-        if (!options->fancyGraphics && !options->ambientOcclusion && options->viewDistance >= 2) {
+        // Preset cycle: Rendimiento -> Equilibrado -> Alta Calidad ->
+        // Rendimiento
+        if (!options->fancyGraphics && !options->ambientOcclusion &&
+            options->viewDistance >= 2) {
             // Currently Rendimiento -> Switch to Equilibrado
             options->fancyGraphics = true;
             options->ambientOcclusion = true;
             options->renderClouds = true;
-            options->viewDistance = 2; // Short
+            options->viewDistance = 2;  // Short
             options->particles = 1;
-        } else if (options->fancyGraphics && options->ambientOcclusion && options->viewDistance <= 1) {
-            // Currently Alta Calidad -> Switch to Rendimiento (FPS+ for low-end phones)
+        } else if (options->fancyGraphics && options->ambientOcclusion &&
+                   options->viewDistance <= 1) {
+            // Currently Alta Calidad -> Switch to Rendimiento (FPS+ for low-end
+            // phones)
             options->fancyGraphics = false;
             options->ambientOcclusion = false;
             options->renderClouds = false;
-            options->viewDistance = 2; // Short (4 chunks)
-            options->particles = 2; // Minimal
+            options->viewDistance = 2;  // Short (4 chunks)
+            options->particles = 2;     // Minimal
             options->advancedOpengl = false;
         } else {
-            // Currently Equilibrado (or custom) -> Switch to Alta Calidad (High-end phones)
+            // Currently Equilibrado (or custom) -> Switch to Alta Calidad
+            // (High-end phones)
             options->fancyGraphics = true;
             options->ambientOcclusion = true;
             options->renderClouds = true;
-            options->viewDistance = 1; // Normal (8 chunks)
-            options->particles = 0; // All
+            options->viewDistance = 1;  // Normal (8 chunks)
+            options->particles = 0;     // All
         }
 
         if (minecraft->level) {
