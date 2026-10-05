@@ -1,5 +1,6 @@
 #include "LevelRenderer.h"
 
+extern bool g_mcplXboxPreset;
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -489,7 +490,7 @@ void LevelRenderer::allChanged(int playerIndex) {
     int dist = (int)sqrtf((float)PLAYER_RENDER_AREA / (float)activePlayers());
 
 #ifdef __ANDROID__
-    if (mc->options) {
+    if (mc->options && !g_mcplXboxPreset) {
         int vd = mc->options->viewDistance;
         if (vd >= 3) dist = 8;        // Tiny: 8x8 = 64 chunk columns (1024 subchunks)
         else if (vd == 2) dist = 10;  // Short: 10x10 = 100 chunk columns (1600 subchunks)

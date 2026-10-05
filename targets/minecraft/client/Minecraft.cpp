@@ -1,5 +1,6 @@
 #include "Minecraft.h"
 
+extern bool g_mcplXboxPreset;
 #include <assert.h>
 #include <stdlib.h>
 
@@ -1748,7 +1749,7 @@ void Minecraft::run_middle() {
 
 #ifdef __ANDROID__
                 // Lunar Client Thermal Protection Throttling
-                if (options && options->modThermalProtection > 0) {
+                if (options && options->modThermalProtection > 0 && !g_mcplXboxPreset) {
                     static int s_thermalCheckCounter = 0;
                     static float s_cachedDeviceTemp = 0.0f;
                     if (++s_thermalCheckCounter >= 60) {
@@ -3967,7 +3968,7 @@ void Minecraft::prepareLevel(int title) {
         this->progressRenderer->progressStage(IDS_PROGRESS_BUILDING_TERRAIN);
     }
 #ifdef __ANDROID__
-    int r = 16;
+    int r = g_mcplXboxPreset ? 128 : 16;
 #else
     int r = 128;
 #endif

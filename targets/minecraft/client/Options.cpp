@@ -190,6 +190,7 @@ void Options::init() {
     modShaderPreset = 0;
     modTexturePack = 0;
     modThermalProtection = 3;
+    xboxPreset = false;
     touchControlStyle = 0;
     touchControlScale = 1;
     touchControlOpacity = 1;
@@ -202,6 +203,9 @@ void Options::init() {
     particles = 1;
 #endif
 }
+
+// Runtime flag mirrored from Options::xboxPreset (read by server/renderer code)
+bool g_mcplXboxPreset = false;
 
 Options::Options(Minecraft* minecraft, File workingDirectory) {
     init();
@@ -469,6 +473,10 @@ void Options::load() {
             modShaderPreset = fromWString<int>(cmds[1]);
         if (cmds[0] == "modTexturePack")
             modTexturePack = fromWString<int>(cmds[1]);
+        if (cmds[0] == "xboxPreset") {
+            xboxPreset = fromWString<int>(cmds[1]) != 0;
+            g_mcplXboxPreset = xboxPreset;
+        }
         if (cmds[0] == "modThermalProtection")
             modThermalProtection = fromWString<int>(cmds[1]);
         if (cmds[0] == "touchControlStyle")
@@ -564,6 +572,7 @@ void Options::save() {
     dos.writeChars("modTexturePack:" + toWString<int>(modTexturePack) + "\n");
     dos.writeChars(
         "modThermalProtection:" + toWString<int>(modThermalProtection) + "\n");
+    dos.writeChars("xboxPreset:" + toWString<int>(xboxPreset ? 1 : 0) + "\n");
     dos.writeChars("touchControlStyle:" + toWString<int>(touchControlStyle) +
                    "\n");
     dos.writeChars("touchControlScale:" + toWString<int>(touchControlScale) +

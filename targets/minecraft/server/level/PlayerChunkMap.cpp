@@ -1,5 +1,6 @@
 #include "PlayerChunkMap.h"
 
+extern bool g_mcplXboxPreset;
 #include <assert.h>
 
 #include <algorithm>
@@ -636,7 +637,7 @@ void PlayerChunkMap::add(std::shared_ptr<ServerPlayer> player) {
     // the central region of chunks, which adds them to a queue of chunks which
     // are added one per tick per player.
 #if defined(__ANDROID__) || defined(ANDROID)
-    const int maxLegSizeToAddNow = 4;
+    const int maxLegSizeToAddNow = g_mcplXboxPreset ? 14 : 4;
 #else
     const int maxLegSizeToAddNow = 14;
 #endif

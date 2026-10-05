@@ -1,5 +1,6 @@
 #include "VideoSettingsScreen.h"
 
+extern bool g_mcplXboxPreset;
 #include <vector>
 
 #include "SlideButton.h"
@@ -18,6 +19,8 @@
 
 // 4jcraft
 #define ITEM_COUNT 10
+
+static Button* s_xboxButton = nullptr;
 
 VideoSettingsScreen::VideoSettingsScreen(Screen* lastScreen, Options* options) {
     this->title = "Video Settings";  // 4J - added
@@ -82,10 +85,14 @@ void VideoSettingsScreen::init() {
     }
 
     // Profile button (Row 5): Quick preset selector for performance vs high-end
-    int profW = (btnW * 2) + 10;
-    profileButton = new Button(300, width / 2 - profW / 2, startY + rowSpacing * 5, profW, btnH, "");
+    profileButton = new Button(300, width / 2 - (btnW + 5), startY + rowSpacing * 5, btnW, btnH, "");
     profileButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::apple_gold)));
     buttons.push_back(profileButton);
+
+    // Original Xbox preset: Xbox graphics + unthrottled chunk loading
+    s_xboxButton = new Button(301, width / 2 + 5, startY + rowSpacing * 5, btnW, btnH, "");
+    s_xboxButton->setIconItem(std::shared_ptr<ItemInstance>(new ItemInstance(Item::diamond)));
+    buttons.push_back(s_xboxButton);
     updateProfileButton();
 
     int doneW = (width >= 450) ? 230 : 190;
@@ -98,18 +105,54 @@ void VideoSettingsScreen::init() {
 
 void VideoSettingsScreen::updateProfileButton() {
     if (profileButton == nullptr) return;
+    if (s_xboxButton != nullptr) {
+        s_xboxButton->msg = options->xboxPreset ? "Preset Xbox: SI" : "Preset Xbox: NO";
+    }
     if (!options->fancyGraphics && !options->ambientOcclusion && options->viewDistance >= 2) {
-        profileButton->msg = "Perfil Grafico: RENDIMIENTO (Bajo / FPS+)";
+        profileButton->msg = "Perfil: Rendimiento";
     } else if (options->fancyGraphics && options->ambientOcclusion && options->viewDistance <= 1) {
-        profileButton->msg = "Perfil Grafico: ALTA CALIDAD (Gama Alta)";
+        profileButton->msg = "Perfil: Alta Calidad";
     } else {
-        profileButton->msg = "Perfil Grafico: EQUILIBRADO (Medio)";
+        profileButton->msg = "Perfil: Equilibrado";
     }
 }
 
 void VideoSettingsScreen::buttonClicked(Button* button) {
     if (!button->active) return;
+    if (button->id == 301) {
+        options->xboxPreset = !options->xboxPreset;
+        g_mcplXboxPreset = options->xboxPreset;
+        if (options->xboxPreset) {
+            // Original Xbox 360 look: fancy graphics, AO, clouds, far view, all particles
+            options->fancyGraphics = true;
+            options->ambientOcclusion = true;
+            options->renderClouds = true;
+            options->viewDistance = 0;
+            options->particles = 0;
+        } else {
+            // Back to the mobile-optimised look
+            options->fancyGraphics = false;
+            options->ambientOcclusion = false;
+            options->renderClouds = false;
+            options->viewDistance = 2;
+            options->particles = 1;
+        }
+        if (minecraft->level) {
+            minecraft->levelRenderer->allChanged();
+        }
+        minecraft->options->save();
+        for (auto b : buttons) {
+            if (b->id < 100) {
+                SmallButton* sb = dynamic_cast<SmallButton*>(b);
+                if (sb != nullptr) sb->msg = options->getMessage(sb->getOption());
+            }
+        }
+        updateProfileButton();
+        return;
+    }
     if (button->id == 300) {
+        options->xboxPreset = false;
+        g_mcplXboxPreset = false;
         // Preset cycle: Rendimiento -> Equilibrado -> Alta Calidad -> Rendimiento
         if (!options->fancyGraphics && !options->ambientOcclusion && options->viewDistance >= 2) {
             // Currently Rendimiento -> Switch to Equilibrado

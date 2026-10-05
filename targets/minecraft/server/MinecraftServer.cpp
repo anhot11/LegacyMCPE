@@ -1,5 +1,6 @@
 #include "MinecraftServer.h"
 
+extern bool g_mcplXboxPreset;
 #include <assert.h>
 #include <wchar.h>
 
@@ -549,7 +550,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
 #ifdef __ANDROID__
     // Mobile optimization: Spawn radius 16 blocks (3x3 chunks) for instant world loading (< 2 seconds)
-    int r = 16;
+    int r = g_mcplXboxPreset ? 64 : 16;
 #else
     int r = 64;
 #endif

@@ -126,6 +126,7 @@ public:
     int modShaderPreset;
     int modTexturePack;
     int modThermalProtection;
+    bool xboxPreset;  // Original Xbox graphics/chunk behaviour preset
     int touchControlStyle;
     int touchControlScale;
     int touchControlOpacity;
