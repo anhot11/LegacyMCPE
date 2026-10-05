@@ -33,6 +33,9 @@ float Camera::za = 0.0f;
 float Camera::xa2 = 0.0f;
 float Camera::za2 = 0.0f;
 
+static glm::mat4 s_invViewProj(1.0f);
+static bool s_hasInvViewProj = false;
+
 void Camera::prepare(std::shared_ptr<Player> player, bool mirror) {
     glGetFloat(GL_MODELVIEW_MATRIX, modelview);
     glGetFloat(GL_PROJECTION_MATRIX, projection);
@@ -84,9 +87,6 @@ zPlayerOffs = position->get(2);
     za2 = xa * sinf(xRot * std::numbers::pi / 180.0f) * (1 - flipCamera * 2);
     ya = cosf(xRot * std::numbers::pi / 180.0f);
 }
-
-static glm::mat4 s_invViewProj(1.0f);
-static bool s_hasInvViewProj = false;
 
 bool Camera::unprojectTouchRay(float normX, float normY, Vec3& outFrom,
                                Vec3& outDir) {
