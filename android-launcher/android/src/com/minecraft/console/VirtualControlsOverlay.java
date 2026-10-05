@@ -126,6 +126,8 @@ public class VirtualControlsOverlay extends View {
     private float mSecondDownX = 0;
     private float mSecondDownY = 0;
     private long mSecondDownTime = 0;
+    private float mSecondLastX = 0;
+    private float mSecondLastY = 0;
     private boolean mSecondMining = false;
     private Runnable mSecondHoldRunnable = null;
 
@@ -545,6 +547,26 @@ public class VirtualControlsOverlay extends View {
         return null;
     }
 
+    private float[] readNativeHotbarRect() {
+        try {
+            File f = new File(getContext().getFilesDir(), "hotbar.txt");
+            if (!f.exists()) return null;
+            java.io.BufferedReader br = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new FileInputStream(f)));
+            String line = br.readLine();
+            br.close();
+            if (line == null) return null;
+            String[] p = line.trim().split("\\s+");
+            if (p.length < 4) return null;
+            float[] r = new float[4];
+            for (int i = 0; i < 4; i++) r[i] = Float.parseFloat(p[i]);
+            if (r[2] <= 0 || r[3] <= 0) return null;
+            return r;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private boolean checkHotbarTap(float x, float y) {
         float w = getWidth();
         float h = getHeight();
@@ -567,6 +589,17 @@ public class VirtualControlsOverlay extends View {
         float hotbarWidth = 182.0f * guiScale;
         float left = (w - hotbarWidth) / 2.0f;
         float right = (w + hotbarWidth) / 2.0f;
+
+        // Prefer the exact hotbar rect written by the native HUD renderer.
+        float[] nat = readNativeHotbarRect();
+        if (nat != null) {
+            left = nat[0] * w;
+            hotbarWidth = nat[2] * w;
+            right = left + hotbarWidth;
+            float slotH = nat[3] * h;
+            top = nat[1] * h - slotH * 0.5f;
+            bottom = nat[1] * h + slotH * 1.6f;
+        }
 
         if (y >= top && y <= bottom && x >= left && x <= right) {
             float slotWidth = hotbarWidth / 9.0f;
@@ -744,6 +777,8 @@ public class VirtualControlsOverlay extends View {
                     mSecondPointerId = pointerId;
                     mSecondDownX = x;
                     mSecondDownY = y;
+                    mSecondLastX = x;
+                    mSecondLastY = y;
                     mSecondDownTime = SystemClock.uptimeMillis();
                     mSecondMining = false;
 
@@ -800,13 +835,14 @@ public class VirtualControlsOverlay extends View {
                             float distFromDown = (float) Math.hypot(curX - mWorldDownX, curY - mWorldDownY);
 
                             if (mIsMining) {
-                                // While actively mining a block, allow rotating camera smoothly to continue onto next block
-                                float dx = curX - mLastWorldX;
-                                float dy = curY - mLastWorldY;
-                                mLastWorldX = curX;
-                                mLastWorldY = curY;
-
-                                if (distFromDown > 12.0f * mDensity) {
+                                // While mining, keep the crosshair following the finger.
+                                // Small jitter is ignored, but once the finger really moves
+                                // every accumulated pixel is forwarded (no lost motion).
+                                if (distFromDown > 6.0f * mDensity) {
+                                    float dx = curX - mLastWorldX;
+                                    float dy = curY - mLastWorldY;
+                                    mLastWorldX = curX;
+                                    mLastWorldY = curY;
                                     float maxDelta = 300.0f * mDensity;
                                     dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
                                     dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
@@ -814,15 +850,18 @@ public class VirtualControlsOverlay extends View {
                                 }
                                 break;
                             } else if (!mIsPanning) {
-                                if (distFromDown > 22.0f * mDensity) {
+                                if (distFromDown > 10.0f * mDensity) {
                                     // Finger moved before hold time -> User is rotating camera
                                     if (mHoldToMineRunnable != null) {
                                         mTouchHandler.removeCallbacks(mHoldToMineRunnable);
                                         mHoldToMineRunnable = null;
                                     }
                                     mIsPanning = true;
-                                    mLastWorldX = curX;
-                                    mLastWorldY = curY;
+                                    // Keep the original down point so the first rotation
+                                    // includes the distance already travelled.
+                                    mLastWorldX = mWorldDownX;
+                                    mLastWorldY = mWorldDownY;
+                                    invalidate();
                                 }
                             }
 
@@ -850,9 +889,11 @@ public class VirtualControlsOverlay extends View {
                             float curY = event.getY(i);
                             float distFromDown = (float) Math.hypot(curX - mSecondDownX, curY - mSecondDownY);
                             if (mSecondMining) {
-                                float dx = curX - mSecondDownX;
-                                float dy = curY - mSecondDownY;
-                                if (distFromDown > 12.0f * mDensity) {
+                                if (distFromDown > 6.0f * mDensity) {
+                                    float dx = curX - mSecondLastX;
+                                    float dy = curY - mSecondLastY;
+                                    mSecondLastX = curX;
+                                    mSecondLastY = curY;
                                     float maxDelta = 300.0f * mDensity;
                                     dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
                                     dy = Math.max(-maxDelta, Math.min(maxDelta, dy));

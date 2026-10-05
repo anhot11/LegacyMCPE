@@ -833,3 +833,28 @@ int s_inputPrimaryPad = 0;
 }
 int SDL2Input::GetPrimaryPad() { return s_inputPrimaryPad; }
 void SDL2Input::SetPrimaryPad(int iPad) { s_inputPrimaryPad = iPad; }
+
+#ifdef __ANDROID__
+// Publishes the in-game hotbar rectangle (normalized 0..1 of the screen) so
+// the Java touch overlay can hit-test taps against the real HUD layout.
+extern "C" void Platform_WriteHotbarRect(float fx, float fy, float fw,
+                                         float fh) {
+    static float s_last[4] = {-1.f, -1.f, -1.f, -1.f};
+    if (s_last[0] == fx && s_last[1] == fy && s_last[2] == fw &&
+        s_last[3] == fh)
+        return;
+    const char* base = SDL_AndroidGetInternalStoragePath();
+    if (!base) return;
+    std::string path = std::string(base) + "/hotbar.txt";
+    std::string tmp = path + ".tmp";
+    FILE* f = fopen(tmp.c_str(), "w");
+    if (!f) return;
+    fprintf(f, "%f %f %f %f\n", fx, fy, fw, fh);
+    fclose(f);
+    rename(tmp.c_str(), path.c_str());
+    s_last[0] = fx;
+    s_last[1] = fy;
+    s_last[2] = fw;
+    s_last[3] = fh;
+}
+#endif

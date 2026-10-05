@@ -67,6 +67,11 @@ ResourceLocation Gui::GUI_ICONS_LOCATION = ResourceLocation(TN_GUI_ICONS);
 #endif
 
 float Gui::currentGuiBlendFactor = 1.0f;  // 4J added
+#ifdef __ANDROID__
+extern "C" void Platform_WriteHotbarRect(float fx, float fy, float fw,
+                                         float fh);
+#endif
+
 float Gui::currentGuiScaleFactor = 1.0f;  // 4J added
 ItemRenderer* Gui::itemRenderer = new ItemRenderer();
 
@@ -394,6 +399,17 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse) {
                          iTooltipsYOffset - 1,
                      0, 22, 24, 22);
             } else {
+#ifdef __ANDROID__
+                Platform_WriteHotbarRect(
+                    (float)(iWidthOffset + screenWidth / 2 -
+                            quickSelectWidth / 2) /
+                        (float)screenWidth,
+                    (float)(iHeightOffset + screenHeight - iSafezoneYHalf -
+                            iTooltipsYOffset) /
+                        (float)screenHeight,
+                    (float)quickSelectWidth / (float)screenWidth,
+                    (float)quickSelectHeight / (float)screenHeight);
+#endif
                 blit(iWidthOffset + screenWidth / 2 - quickSelectWidth / 2,
                      iHeightOffset + screenHeight - iSafezoneYHalf -
                          iTooltipsYOffset,
@@ -419,7 +435,8 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse) {
                     blit(iWidthOffset + screenWidth / 2 - 7,
                          (iHeightOffset + screenHeight) / 2 - 7, 0, 0, 16, 16);
                 } else {
-                    blit(screenWidth / 2 - 7, screenHeight / 2 - 7, 0, 0, 16, 16);
+                    blit(screenWidth / 2 - 7, screenHeight / 2 - 7, 0, 0, 16,
+                         16);
                 }
             }
             glDisable(GL_BLEND);
