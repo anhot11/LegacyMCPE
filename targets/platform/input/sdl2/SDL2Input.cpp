@@ -765,6 +765,9 @@ void SDL2Input::SetMenuDisplayed(int iPad, bool bVal) {
     if (!s_sdlInitialized || bVal == s_prevMenuDisplayed) return;
     SDL_SetRelativeMouseMode(bVal ? SDL_FALSE : SDL_TRUE);
     s_prevMenuDisplayed = bVal;
+#ifdef __ANDROID__
+    SDL_AndroidSendMessage(0x8001, bVal ? 1 : 0);
+#endif
 }
 
 int SDL2Input::GetScrollDelta() {

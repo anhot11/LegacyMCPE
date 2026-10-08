@@ -1182,6 +1182,14 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return SDLActivity.getMotionListener().setRelativeMouseEnabled(enabled);
     }
 
+    public static boolean isRelativeMouseMode() {
+        try {
+            return getMotionListener() != null && getMotionListener().inRelativeMode();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     /**
      * This method is called by SDL using JNI.
      */

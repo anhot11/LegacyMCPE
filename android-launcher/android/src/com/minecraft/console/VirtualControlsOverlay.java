@@ -200,6 +200,20 @@ public class VirtualControlsOverlay extends View {
         }
     }
 
+    public void setInMenu(final boolean inMenu) {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                mControlsVisible = !inMenu;
+                setVisibility(!inMenu ? View.VISIBLE : View.GONE);
+                if (inMenu) {
+                    resetAllInputs();
+                }
+                invalidate();
+            }
+        });
+    }
+
     public VirtualControlsOverlay(Context context, SDLSurface surface) {
         super(context);
         this.mSurface = surface;
@@ -249,17 +263,7 @@ public class VirtualControlsOverlay extends View {
         SDLActivity.mRelativeMouseCallback = new SDLActivity.RelativeMouseCallback() {
             @Override
             public void onRelativeMouseChanged(final boolean enabled) {
-                post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mControlsVisible = enabled;
-                        setVisibility(enabled ? View.VISIBLE : View.GONE);
-                        if (!enabled) {
-                            resetAllInputs();
-                        }
-                        invalidate();
-                    }
-                });
+                setInMenu(!enabled);
             }
         };
     }
@@ -773,6 +777,7 @@ public class VirtualControlsOverlay extends View {
         }
         if (mIsMining) {
             SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+            SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
             mIsMining = false;
         }
         mWorldPointerId = -1;
@@ -785,6 +790,7 @@ public class VirtualControlsOverlay extends View {
         }
         if (mSecondMining) {
             SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+            SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
             mSecondMining = false;
         }
         mSecondPointerId = -1;
@@ -880,18 +886,19 @@ public class VirtualControlsOverlay extends View {
                     mIsPanning = false;
                     mIsMining = false;
 
-                    // Schedule Hold to Mine after 320ms steady hold
+                    // Schedule Hold to Mine after 260ms steady hold
                     mHoldToMineRunnable = new Runnable() {
                         @Override
                         public void run() {
                             if (mWorldPointerId != -1 && !mIsPanning) {
                                 mIsMining = true;
                                 SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, true);
+                                SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
                                 invalidate();
                             }
                         }
                     };
-                    mTouchHandler.postDelayed(mHoldToMineRunnable, 320);
+                    mTouchHandler.postDelayed(mHoldToMineRunnable, 260);
                     return true;
                 } else if (mSecondPointerId == -1 && mIsPanning) {
                     // Multitouch: second finger taps/mines while first finger pans camera
@@ -909,11 +916,12 @@ public class VirtualControlsOverlay extends View {
                             if (mSecondPointerId != -1) {
                                 mSecondMining = true;
                                 SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, true);
+                                SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
                                 invalidate();
                             }
                         }
                     };
-                    mTouchHandler.postDelayed(mSecondHoldRunnable, 320);
+                    mTouchHandler.postDelayed(mSecondHoldRunnable, 260);
                     return true;
                 }
                 break;
@@ -975,7 +983,7 @@ public class VirtualControlsOverlay extends View {
                                 invalidate();
                                 break;
                             } else if (!mIsPanning) {
-                                if (distFromDown > 8.0f * mDensity) {
+                                if (distFromDown > 18.0f * mDensity) {
                                     // Finger moved before hold time -> User is rotating camera
                                     if (mHoldToMineRunnable != null) {
                                         mTouchHandler.removeCallbacks(mHoldToMineRunnable);
@@ -1054,9 +1062,10 @@ public class VirtualControlsOverlay extends View {
                     }
                     if (mSecondMining) {
                         SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+                        SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
                         mSecondMining = false;
                         invalidate();
-                    } else if ((SystemClock.uptimeMillis() - mSecondDownTime) < 320) {
+                    } else if ((SystemClock.uptimeMillis() - mSecondDownTime) < 260) {
                         SDLActivity.onNativeMouse(3, MotionEvent.ACTION_DOWN, 0, 0, true);
                         SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_F);
                         postDelayed(new Runnable() {
@@ -1081,9 +1090,10 @@ public class VirtualControlsOverlay extends View {
                     if (mIsMining) {
                         // Finished mining
                         SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+                        SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
                         mIsMining = false;
                         invalidate();
-                    } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 320) {
+                    } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 260) {
                         // TAP DETECTED: Place block / Interact / Attack at the tapped point!
                         wasTap = true;
                         SDLActivity.onNativeMouse(3, MotionEvent.ACTION_DOWN, 0, 0, true);

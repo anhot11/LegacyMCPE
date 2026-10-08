@@ -32,6 +32,7 @@ public class MainActivity2 extends SDLActivity
 {
     private static final String TAG = "MCPL-MainActivity2";
     private RelativeLayout loadingScreenView;
+    private VirtualControlsOverlay mControlsOverlay;
 
     private boolean isValidGameDir(String path) {
         if (path == null || path.isEmpty()) return false;
@@ -188,6 +189,7 @@ public class MainActivity2 extends SDLActivity
         if (mLayout != null && mSurface != null) {
             // 1. Add virtual touch controls overlay
             final VirtualControlsOverlay overlay = new VirtualControlsOverlay(this, mSurface);
+            mControlsOverlay = overlay;
             mLayout.addView(overlay, new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT
@@ -415,6 +417,21 @@ public class MainActivity2 extends SDLActivity
         } catch (Throwable t) {
             Log.e("MCPL", "Failed extracting bundled skins", t);
         }
+    }
+
+    @Override
+    protected boolean onUnhandledMessage(int command, Object param) {
+        if (command == 0x8001) {
+            boolean inMenu = false;
+            if (param instanceof Integer) {
+                inMenu = ((Integer) param) == 1;
+            }
+            if (mControlsOverlay != null) {
+                mControlsOverlay.setInMenu(inMenu);
+            }
+            return true;
+        }
+        return super.onUnhandledMessage(command, param);
     }
 
     @Override protected String getMainFunction() {
