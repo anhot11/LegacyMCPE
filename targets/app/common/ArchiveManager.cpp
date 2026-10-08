@@ -16,17 +16,17 @@ ArchiveManager::ArchiveManager()
     : m_mediaArchive(nullptr), m_dwRequiredTexturePackID(0) {}
 
 void ArchiveManager::loadMediaArchive() {
-    std::string mediapath = "";
-
-    mediapath = "Common\\Media\\MediaWindows64.arc";
-
-    if (!mediapath.empty()) {
-        std::string exeDirW = PlatformFilesystem.getBasePath().string();
-        std::string candidate = exeDirW + File::pathSeparator + mediapath;
-        if (File(candidate).exists()) {
-            m_mediaArchive = new ArchiveFile(File(candidate));
-        } else {
-            m_mediaArchive = new ArchiveFile(File(mediapath));
+    std::string mediapath = "Common/Media/MediaWindows64.arc";
+    std::string exeDirW = PlatformFilesystem.getBasePath().string();
+    std::string candidate = exeDirW + "/" + mediapath;
+    if (File(candidate).exists()) {
+        m_mediaArchive = new ArchiveFile(File(candidate));
+    } else if (File(mediapath).exists()) {
+        m_mediaArchive = new ArchiveFile(File(mediapath));
+    } else {
+        std::string fallback = "/sdcard/LegacyMCPE/" + mediapath;
+        if (File(fallback).exists()) {
+            m_mediaArchive = new ArchiveFile(File(fallback));
         }
     }
 }
@@ -40,7 +40,7 @@ int ArchiveManager::getArchiveFileSize(const std::string& filename) {
         tPack->getArchiveFile()->hasFile(filename)) {
         return tPack->getArchiveFile()->getFileSize(filename);
     } else
-        return m_mediaArchive->getFileSize(filename);
+        return m_mediaArchive ? m_mediaArchive->getFileSize(filename) : 0;
 }
 
 bool ArchiveManager::hasArchiveFile(const std::string& filename) {
@@ -52,7 +52,7 @@ bool ArchiveManager::hasArchiveFile(const std::string& filename) {
         tPack->getArchiveFile()->hasFile(filename))
         return true;
     else
-        return m_mediaArchive->hasFile(filename);
+        return m_mediaArchive ? m_mediaArchive->hasFile(filename) : false;
 }
 
 std::vector<uint8_t> ArchiveManager::getArchiveFile(
@@ -65,7 +65,7 @@ std::vector<uint8_t> ArchiveManager::getArchiveFile(
         tPack->getArchiveFile()->hasFile(filename)) {
         return tPack->getArchiveFile()->getFile(filename);
     } else
-        return m_mediaArchive->getFile(filename);
+        return m_mediaArchive ? m_mediaArchive->getFile(filename) : std::vector<uint8_t>();
 }
 
 void ArchiveManager::addMemoryTPDFile(int iConfig, std::uint8_t* pbData,

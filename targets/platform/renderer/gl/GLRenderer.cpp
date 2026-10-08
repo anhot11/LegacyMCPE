@@ -1070,7 +1070,8 @@ void GLRenderer::Present() {
     glFlush();
     SDL_GL_SwapWindow(s_window);
 
-    // 60 FPS frame limiter (16.6ms) to prevent phone overheating and CPU spin
+#if !defined(__ANDROID__)
+    // 60 FPS frame limiter for platforms without hardware vsync compositor
     static auto s_lastFrameTime = std::chrono::steady_clock::now();
     auto now = std::chrono::steady_clock::now();
     auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(now - s_lastFrameTime).count();
@@ -1079,11 +1080,7 @@ void GLRenderer::Present() {
         std::this_thread::sleep_for(std::chrono::microseconds(targetFrameUs - elapsedUs));
     }
     s_lastFrameTime = std::chrono::steady_clock::now();
-
-    static uint32_t s_presentCount = 0;
-    if (++s_presentCount % 120 == 1) {
-        Log::info("[4J_Render] Present frame #%u (win=%dx%d)\n", s_presentCount, s_windowWidth, s_windowHeight);
-    }
+#endif
 }
 
 void GLRenderer::SetWindowSize(int w, int h) {

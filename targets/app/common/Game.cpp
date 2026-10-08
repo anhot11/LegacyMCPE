@@ -147,6 +147,23 @@ Game::Game() {
     LocaleAndLanguageInit();
 }
 
+#if defined(__ANDROID__)
+static void LogToDisk(const char* buf) {
+    static FILE* s_logFile = nullptr;
+    static bool s_logFileAttempted = false;
+    if (!s_logFileAttempted) {
+        s_logFileAttempted = true;
+        s_logFile = fopen("/sdcard/LegacyMCPE/latest_log.txt", "w");
+        if (s_logFile) {
+            setvbuf(s_logFile, nullptr, _IOLBF, 4096);
+        }
+    }
+    if (s_logFile) {
+        fputs(buf, s_logFile);
+    }
+}
+#endif
+
 void Game::DebugPrintf(const char* szFormat, ...) {
 #if !defined(_FINAL_BUILD)
     char buf[1024];
@@ -156,11 +173,7 @@ void Game::DebugPrintf(const char* szFormat, ...) {
     va_end(ap);
 #if defined(__ANDROID__)
     __android_log_print(ANDROID_LOG_INFO, "LegacyMCPE", "%s", buf);
-    FILE* f = fopen("/sdcard/LegacyMCPE/latest_log.txt", "a");
-    if (f) {
-        fputs(buf, f);
-        fclose(f);
-    }
+    LogToDisk(buf);
 #else
     fputs(buf, stderr);
 #endif
@@ -177,11 +190,7 @@ void Game::DebugPrintf(int user, const char* szFormat, ...) {
     va_end(ap);
 #if defined(__ANDROID__)
     __android_log_print(ANDROID_LOG_INFO, "LegacyMCPE", "%s", buf);
-    FILE* f = fopen("/sdcard/LegacyMCPE/latest_log.txt", "a");
-    if (f) {
-        fputs(buf, f);
-        fclose(f);
-    }
+    LogToDisk(buf);
 #else
     fputs(buf, stderr);
 #endif
