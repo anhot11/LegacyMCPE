@@ -223,6 +223,7 @@ SelectWorldScreen::SelectWorldScreen(Screen* lastScreen) {
     title = "Select world";
     done = false;
     selectedWorld = 0;
+    levelList = nullptr;
     worldSelectionList = nullptr;
     serverSelectionList = nullptr;
     isDeleting = false;
@@ -800,7 +801,7 @@ SelectWorldScreen::WorldSelectionList::WorldSelectionList(
 }
 
 int SelectWorldScreen::WorldSelectionList::getNumberOfItems() {
-    return (int)this->parent->levelList->size();
+    return (this->parent && this->parent->levelList) ? (int)this->parent->levelList->size() : 0;
 }
 
 void SelectWorldScreen::WorldSelectionList::selectItem(int item,

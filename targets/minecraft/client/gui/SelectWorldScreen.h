@@ -57,30 +57,30 @@ protected:
     Tab currentTab;
 
 private:
-    bool done;
-    int selectedWorld;
-    std::vector<LevelSummary*>* levelList;
-    WorldSelectionList* worldSelectionList;
+    bool done = false;
+    int selectedWorld = 0;
+    std::vector<LevelSummary*>* levelList = nullptr;
+    WorldSelectionList* worldSelectionList = nullptr;
     std::string worldLang;
     std::string conversionLang;
-    bool isDeleting;
+    bool isDeleting = false;
 
-    Button* deleteButton;
-    Button* selectButton;
-    Button* renameButton;
-    Button* createButton;
-    Button* cancelButton;
-    Button* tabWorldsButton;
-    Button* tabServersButton;
+    Button* deleteButton = nullptr;
+    Button* selectButton = nullptr;
+    Button* renameButton = nullptr;
+    Button* createButton = nullptr;
+    Button* cancelButton = nullptr;
+    Button* tabWorldsButton = nullptr;
+    Button* tabServersButton = nullptr;
 
     // Server tab controls
-    ServerSelectionList* serverSelectionList;
+    ServerSelectionList* serverSelectionList = nullptr;
     std::vector<ServerData> serverList;
-    int selectedServer;
-    Button* connectServerButton;
-    Button* addServerButton;
-    Button* deleteServerButton;
-    Button* editServerButton;
+    int selectedServer = -1;
+    Button* connectServerButton = nullptr;
+    Button* addServerButton = nullptr;
+    Button* deleteServerButton = nullptr;
+    Button* editServerButton = nullptr;
 
 public:
     SelectWorldScreen(Screen* lastScreen);
