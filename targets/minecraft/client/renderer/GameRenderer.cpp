@@ -2204,14 +2204,14 @@ void GameRenderer::setupFog(int i, float alpha) {
             }
         }
 
+        float fogStartRatio =
+            (mc->options && mc->options->modSodiumFogOcclusion) ? 0.75f : 0.25f;
         glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogf(GL_FOG_START, distance * 0.25f);
-        glFogf(GL_FOG_END, distance);
         if (i < 0) {
             glFogf(GL_FOG_START, 0);
             glFogf(GL_FOG_END, distance * 0.8f);
         } else {
-            glFogf(GL_FOG_START, distance * 0.25f);
+            glFogf(GL_FOG_START, distance * fogStartRatio);
             glFogf(GL_FOG_END, distance);
         }
         /* 4J - removed - TODO investigate

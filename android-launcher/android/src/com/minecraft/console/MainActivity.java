@@ -372,8 +372,12 @@ public class MainActivity extends Activity {
 
     private boolean isGameInstalled(String dirPath) {
         if (dirPath == null || dirPath.isEmpty()) return false;
-        File arcFile = new File(dirPath, "Common/Media/MediaWindows64.arc");
-        return arcFile.exists() && arcFile.canRead() && arcFile.length() > 5 * 1024 * 1024;
+        try {
+            File arcFile = new File(dirPath, "Common/Media/MediaWindows64.arc");
+            return arcFile.exists() && arcFile.length() > 5 * 1024 * 1024;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     private boolean hasBundledAssets() {

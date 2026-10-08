@@ -572,27 +572,6 @@ void PlayerChunkMap::broadcastTileUpdate(std::shared_ptr<Packet> packet, int x,
     int xc = x >> 4;
     int zc = z >> 4;
     PlayerChunk* chunk = getChunk(xc, zc, false);
-    if (chunk == nullptr) {
-        // Only materialise the chunk if a player is waiting in the queue for it
-        bool pending = false;
-        for (auto it = addRequests.begin(); it != addRequests.end(); ++it) {
-            if (it->x == xc && it->z == zc) {
-                pending = true;
-                break;
-            }
-        }
-        if (pending) {
-            chunk = getChunk(xc, zc, true);
-            for (auto it = addRequests.begin(); it != addRequests.end();) {
-                if (it->x == xc && it->z == zc) {
-                    chunk->add(it->player);
-                    it = addRequests.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
     if (chunk != nullptr) {
         chunk->broadcast(packet);
     }
@@ -602,27 +581,6 @@ void PlayerChunkMap::tileChanged(int x, int y, int z) {
     int xc = x >> 4;
     int zc = z >> 4;
     PlayerChunk* chunk = getChunk(xc, zc, false);
-    if (chunk == nullptr) {
-        // Only materialise the chunk if a player is waiting in the queue for it
-        bool pending = false;
-        for (auto it = addRequests.begin(); it != addRequests.end(); ++it) {
-            if (it->x == xc && it->z == zc) {
-                pending = true;
-                break;
-            }
-        }
-        if (pending) {
-            chunk = getChunk(xc, zc, true);
-            for (auto it = addRequests.begin(); it != addRequests.end();) {
-                if (it->x == xc && it->z == zc) {
-                    chunk->add(it->player);
-                    it = addRequests.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
     if (chunk != nullptr) {
         chunk->tileChanged(x & 15, y, z & 15);
     }

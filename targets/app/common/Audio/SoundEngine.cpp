@@ -467,7 +467,30 @@ void SoundEngine::playMusicTick() {
                 m_iMusicDelay--;
                 return;
             }
+            if (m_musicID == -1) {
+                int dim = LevelData::DIMENSION_OVERWORLD;
+                Minecraft* pMc = Minecraft::GetInstance();
+                if (pMc) {
+                    for (int i = 0; i < MAX_LOCAL_PLAYERS; i++) {
+                        if (pMc->localplayers[i]) {
+                            dim = pMc->localplayers[i]->dimension;
+                            break;
+                        }
+                    }
+                }
+                m_musicID = getMusicID(dim);
+                SetIsPlayingEndMusic(dim == LevelData::DIMENSION_END);
+                SetIsPlayingNetherMusic(dim == LevelData::DIMENSION_NETHER);
+            }
             if (m_musicID != -1) {
+                static bool s_missingStreamTrack[eStream_Max] = {false};
+                if (m_musicID >= 0 && m_musicID < eStream_Max &&
+                    s_missingStreamTrack[m_musicID]) {
+                    m_musicID = -1;
+                    m_iMusicDelay = 20 * 120 + (rand() % (20 * 120));
+                    return;
+                }
+
                 std::string base =
                     PlatformFilesystem.getBasePath().string() + "/";
                 bool isCD = (m_musicID >= m_iStream_CD_1);
@@ -507,12 +530,14 @@ void SoundEngine::playMusicTick() {
                     m_openStreamThread->run();
                     m_StreamState = eMusicStreamState_Opening;
                 } else {
+                    if (m_musicID >= 0 && m_musicID < eStream_Max) {
+                        s_missingStreamTrack[m_musicID] = true;
+                    }
                     app.DebugPrintf(
-                        "[SoundEngine] oh noes couldn't find music track '%s', "
-                        "retrying "
-                        "in 1min\n",
+                        "[SoundEngine] music track '%s' not found, backing off\n",
                         track);
-                    m_iMusicDelay = 20 * 60;
+                    m_musicID = -1;
+                    m_iMusicDelay = isCD ? (20 * 10) : (20 * 120 + (rand() % (20 * 120)));
                 }
             }
             break;

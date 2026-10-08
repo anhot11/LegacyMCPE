@@ -20,13 +20,21 @@ static std::array<float, SIN_TAB_CNT> makeSinTable() {
     return t;
 }
 
+bool g_optifineFastMath = true;
+
 static const std::array<float, SIN_TAB_CNT> sinTable = makeSinTable();
 
 float Mth::sin(float i) {
+    if (g_optifineFastMath) {
+        return sinTable[(int32_t)(i * 10430.378f) & (SIN_TAB_CNT - 1)];
+    }
     return sinTable[(int32_t)(i * SIN_SCALE) & (SIN_TAB_CNT - 1)];
 }
 
 float Mth::cos(float i) {
+    if (g_optifineFastMath) {
+        return sinTable[(int32_t)(i * 10430.378f + 16384.0f) & (SIN_TAB_CNT - 1)];
+    }
     return sinTable[(int32_t)(i * SIN_SCALE + (float)SIN_TAB_CNT * 0.25f) &
                     (SIN_TAB_CNT - 1)];
 }

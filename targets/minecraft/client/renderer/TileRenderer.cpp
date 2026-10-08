@@ -5554,6 +5554,11 @@ bool TileRenderer::tesselateBlockInWorldWithAmbienceOcclusionTexLighting(
 
         Icon* tex =
             uniformTex ? uniformTex : getTexture(tt, level, pX, pY, pZ, 2);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            c1r *= pBaseRed; c2r *= pBaseRed; c3r *= pBaseRed; c4r *= pBaseRed;
+            c1g *= pBaseGreen; c2g *= pBaseGreen; c3g *= pBaseGreen; c4g *= pBaseGreen;
+            c1b *= pBaseBlue; c2b *= pBaseBlue; c3b *= pBaseBlue; c4b *= pBaseBlue;
+        }
         renderNorth(tt, (double)pX, (double)pY, (double)pZ, tex);
 
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
@@ -5721,6 +5726,11 @@ bool TileRenderer::tesselateBlockInWorldWithAmbienceOcclusionTexLighting(
 
         Icon* tex =
             uniformTex ? uniformTex : getTexture(tt, level, pX, pY, pZ, 3);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            c1r *= pBaseRed; c2r *= pBaseRed; c3r *= pBaseRed; c4r *= pBaseRed;
+            c1g *= pBaseGreen; c2g *= pBaseGreen; c3g *= pBaseGreen; c4g *= pBaseGreen;
+            c1b *= pBaseBlue; c2b *= pBaseBlue; c3b *= pBaseBlue; c4b *= pBaseBlue;
+        }
         renderSouth(tt, (double)pX, (double)pY, (double)pZ, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {
@@ -5886,6 +5896,11 @@ bool TileRenderer::tesselateBlockInWorldWithAmbienceOcclusionTexLighting(
         c4b *= ll4;
         Icon* tex =
             uniformTex ? uniformTex : getTexture(tt, level, pX, pY, pZ, 4);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            c1r *= pBaseRed; c2r *= pBaseRed; c3r *= pBaseRed; c4r *= pBaseRed;
+            c1g *= pBaseGreen; c2g *= pBaseGreen; c3g *= pBaseGreen; c4g *= pBaseGreen;
+            c1b *= pBaseBlue; c2b *= pBaseBlue; c3b *= pBaseBlue; c4b *= pBaseBlue;
+        }
         renderWest(tt, (double)pX, (double)pY, (double)pZ, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {
@@ -6052,6 +6067,11 @@ bool TileRenderer::tesselateBlockInWorldWithAmbienceOcclusionTexLighting(
         c4b *= ll4;
 
         Icon* tex = getTexture(tt, level, pX, pY, pZ, 5);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            c1r *= pBaseRed; c2r *= pBaseRed; c3r *= pBaseRed; c4r *= pBaseRed;
+            c1g *= pBaseGreen; c2g *= pBaseGreen; c3g *= pBaseGreen; c4g *= pBaseGreen;
+            c1b *= pBaseBlue; c2b *= pBaseBlue; c3b *= pBaseBlue; c4b *= pBaseBlue;
+        }
         renderEast(tt, (double)pX, (double)pY, (double)pZ, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {
@@ -6188,6 +6208,9 @@ bool TileRenderer::tesselateBlockInWorld(Tile* tt, int x, int y, int z, float r,
         }
 
         Icon* tex = getTexture(tt, level, x, y, z, 2);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            t->color(r2 * r, g2 * g, b2 * b);
+        }
         renderNorth(tt, x, y, z, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {
@@ -6208,6 +6231,9 @@ bool TileRenderer::tesselateBlockInWorld(Tile* tt, int x, int y, int z, float r,
             t->color(r2 * br, g2 * br, b2 * br);
         }
         Icon* tex = getTexture(tt, level, x, y, z, 3);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            t->color(r2 * r, g2 * g, b2 * b);
+        }
         renderSouth(tt, x, y, z, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {
@@ -6228,6 +6254,9 @@ bool TileRenderer::tesselateBlockInWorld(Tile* tt, int x, int y, int z, float r,
             t->color(r3 * br, g3 * br, b3 * br);
         }
         Icon* tex = getTexture(tt, level, x, y, z, 4);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            t->color(r3 * r, g3 * g, b3 * b);
+        }
         renderWest(tt, x, y, z, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {
@@ -6248,6 +6277,9 @@ bool TileRenderer::tesselateBlockInWorld(Tile* tt, int x, int y, int z, float r,
             t->color(r3 * br, g3 * br, b3 * br);
         }
         Icon* tex = getTexture(tt, level, x, y, z, 5);
+        if (tex && (tex->getFlags() == Icon::IS_GRASS_TOP)) {
+            t->color(r3 * r, g3 * g, b3 * b);
+        }
         renderEast(tt, x, y, z, tex);
         if (fancy && (tex->getFlags() == Icon::IS_GRASS_SIDE) &&
             !hasFixedTexture()) {

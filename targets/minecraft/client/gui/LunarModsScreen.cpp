@@ -12,6 +12,7 @@
 #include "minecraft/world/item/ItemInstance.h"
 #include "minecraft/world/level/tile/Tile.h"
 #include "minecraft/world/level/tile/GrassTile.h"
+#include "minecraft/util/Mth.h"
 #include "platform/renderer/renderer.h"
 #include "platform/input/input.h"
 
@@ -400,10 +401,14 @@ void LunarModsScreen::buttonClicked(Button* button) {
         opt->modOptifineDynamicLights = !opt->modOptifineDynamicLights;
     } else if (button->id == 31) {
         opt->modOptifineFastMath = !opt->modOptifineFastMath;
+        g_optifineFastMath = opt->modOptifineFastMath;
     } else if (button->id == 32) {
         opt->modOptifineClearWater = !opt->modOptifineClearWater;
     } else if (button->id == 33) {
         opt->modOptifineBetterGrass = !opt->modOptifineBetterGrass;
+        if (minecraft && minecraft->levelRenderer) {
+            minecraft->levelRenderer->allChanged();
+        }
     }
 
     // Fullbright toggle

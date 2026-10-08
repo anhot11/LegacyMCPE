@@ -14,6 +14,7 @@
 #include "minecraft/locale/I18n.h"
 #include "minecraft/locale/Language.h"
 #include "minecraft/util/Log.h"
+#include "minecraft/util/Mth.h"
 #include "platform/stubs.h"
 #include "util/StringHelpers.h"
 
@@ -184,6 +185,7 @@ void Options::init() {
     modSodiumEntityCulling = true;
     modSodiumFogOcclusion = true;
     modOptifineFastMath = true;
+    g_optifineFastMath = modOptifineFastMath;
     modOptifineDynamicLights = true;
     modOptifineClearWater = false;
     modOptifineBetterGrass = false;
@@ -461,8 +463,10 @@ void Options::load() {
             modSodiumEntityCulling = cmds[1] == "true";
         if (cmds[0] == "modSodiumFogOcclusion")
             modSodiumFogOcclusion = cmds[1] == "true";
-        if (cmds[0] == "modOptifineFastMath")
+        if (cmds[0] == "modOptifineFastMath") {
             modOptifineFastMath = cmds[1] == "true";
+            g_optifineFastMath = modOptifineFastMath;
+        }
         if (cmds[0] == "modOptifineDynamicLights")
             modOptifineDynamicLights = cmds[1] == "true";
         if (cmds[0] == "modOptifineClearWater")

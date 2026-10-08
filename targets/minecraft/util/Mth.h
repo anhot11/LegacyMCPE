@@ -9,6 +9,8 @@
 
 class Random;
 
+extern bool g_optifineFastMath;
+
 class Mth {
 public:
     static constexpr float DEG_TO_RAD = std::numbers::pi_v<float> / 180.0f;
@@ -22,14 +24,49 @@ public:
     static float sin(float i);
     static float cos(float i);
 
-    static float sqrt(float x) { return (float)::sqrt(x); }
-    static float sqrt(double x) { return (float)::sqrt(x); }
+    static inline float sqrt(float x) {
+#if defined(__GNUC__) || defined(__clang__)
+        if (g_optifineFastMath) {
+            return __builtin_sqrtf(x);
+        }
+#endif
+        return (float)::sqrt(x);
+    }
+    static inline float sqrt(double x) {
+#if defined(__GNUC__) || defined(__clang__)
+        if (g_optifineFastMath) {
+            return (float)__builtin_sqrt(x);
+        }
+#endif
+        return (float)::sqrt(x);
+    }
 
-    static int floor(float v) { return (int)::floorf(v); }
-    static int floor(double v) { return (int)::floor(v); }
-    static int64_t lfloor(double v) { return (int64_t)::floor(v); }
+    static inline int floor(float v) {
+        if (g_optifineFastMath) {
+            int i = (int)v;
+            return v < (float)i ? i - 1 : i;
+        }
+        return (int)::floorf(v);
+    }
+    static inline int floor(double v) {
+        if (g_optifineFastMath) {
+            int i = (int)v;
+            return v < (double)i ? i - 1 : i;
+        }
+        return (int)::floor(v);
+    }
+    static inline int64_t lfloor(double v) {
+        if (g_optifineFastMath) {
+            int64_t i = (int64_t)v;
+            return v < (double)i ? i - 1 : i;
+        }
+        return (int64_t)::floor(v);
+    }
 
-    static int fastFloor(double x) { return (int)(x + 1024.0) - 1024; }
+    static inline int fastFloor(double x) {
+        int i = (int)x;
+        return x < (double)i ? i - 1 : i;
+    }
 
     static float abs(float v) { return v >= 0.0f ? v : -v; }
     static int abs(int v) { return v >= 0 ? v : -v; }

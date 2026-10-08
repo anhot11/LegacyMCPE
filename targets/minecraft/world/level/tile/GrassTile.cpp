@@ -6,6 +6,7 @@
 #include "minecraft/Facing.h"
 #include "minecraft/GameEnums.h"
 #include "minecraft/client/Minecraft.h"
+#include "minecraft/client/Options.h"
 #include "minecraft/client/resources/Colours/ColourTable.h"
 #include "minecraft/world/IconRegister.h"
 #include "minecraft/world/level/Level.h"
@@ -34,7 +35,28 @@ Icon* GrassTile::getTexture(LevelSource* level, int x, int y, int z, int face) {
     if (face == Facing::UP) return iconTop;
     if (face == Facing::DOWN) return Tile::dirt->getTexture(face);
     Material* above = level->getMaterial(x, y + 1, z);
-    if (above == Material::topSnow || above == Material::snow)
+    bool snowy = (above == Material::topSnow || above == Material::snow);
+
+    Minecraft* mc = Minecraft::GetInstance();
+    if (mc && mc->options && mc->options->modOptifineBetterGrass) {
+        int nx = 0, nz = 0;
+        if (face == Facing::NORTH) nz = -1;
+        else if (face == Facing::SOUTH) nz = 1;
+        else if (face == Facing::WEST) nx = -1;
+        else if (face == Facing::EAST) nx = 1;
+
+        if (nx != 0 || nz != 0) {
+            if (level->getTile(x + nx, y - 1, z + nz) == Tile::grass_Id) {
+                Material* aboveAdj = level->getMaterial(x + nx, y, z + nz);
+                if (snowy || aboveAdj == Material::topSnow || aboveAdj == Material::snow) {
+                    return iconSnowSide;
+                }
+                return iconTop;
+            }
+        }
+    }
+
+    if (snowy)
         return iconSnowSide;
     else
         return icon;

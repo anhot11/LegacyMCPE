@@ -3,11 +3,14 @@ package com.minecraft.console;
 import org.libsdl.app.SDLActivity;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.system.Os;
 import android.system.ErrnoException;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.view.Gravity;
@@ -22,11 +25,95 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import java.io.File;
 import y.MinecraftLegacyP.R;
 
 public class MainActivity2 extends SDLActivity 
 {
+    private static final String TAG = "MCPL-MainActivity2";
     private RelativeLayout loadingScreenView;
+
+    private boolean isValidGameDir(String path) {
+        if (path == null || path.isEmpty()) return false;
+        try {
+            File arcFile = new File(path, "Common/Media/MediaWindows64.arc");
+            return arcFile.exists() && arcFile.length() > 5 * 1024 * 1024;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private String resolveValidGameDirectory(String preferred) {
+        // 1. Check preferred from Intent extras
+        if (isValidGameDir(preferred)) {
+            Log.i(TAG, "Using preferred directory from Intent: " + preferred);
+            return preferred;
+        }
+
+        // 2. Check saved SharedPreferences
+        try {
+            SharedPreferences prefs = getSharedPreferences("dirPrefs", Context.MODE_PRIVATE);
+            String saved = prefs.getString("dir_path", null);
+            if (isValidGameDir(saved)) {
+                Log.i(TAG, "Using saved directory from SharedPreferences: " + saved);
+                return saved;
+            }
+        } catch (Throwable ignored) {}
+
+        // 3. Check legacy /sdcard/LegacyMCPE
+        try {
+            File sdcard = Environment.getExternalStorageDirectory();
+            if (sdcard != null) {
+                File legacy = new File(sdcard, "LegacyMCPE");
+                if (isValidGameDir(legacy.getAbsolutePath())) {
+                    Log.i(TAG, "Found valid game installation in /sdcard/LegacyMCPE");
+                    return legacy.getAbsolutePath();
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 4. Check app external files dir
+        try {
+            File extFiles = getExternalFilesDir(null);
+            if (extFiles != null && isValidGameDir(extFiles.getAbsolutePath())) {
+                Log.i(TAG, "Found valid game installation in externalFilesDir");
+                return extFiles.getAbsolutePath();
+            }
+        } catch (Throwable ignored) {}
+
+        // 5. Check app internal files dir
+        try {
+            File internal = getFilesDir();
+            if (internal != null && isValidGameDir(internal.getAbsolutePath())) {
+                Log.i(TAG, "Found valid game installation in internalFilesDir");
+                return internal.getAbsolutePath();
+            }
+        } catch (Throwable ignored) {}
+
+        // Fallbacks if not yet initialized or first boot
+        if (preferred != null && !preferred.trim().isEmpty()) {
+            return preferred.trim();
+        }
+
+        try {
+            File legacyFallback = new File(Environment.getExternalStorageDirectory(), "LegacyMCPE");
+            if (legacyFallback.exists()) {
+                return legacyFallback.getAbsolutePath();
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            File extFiles = getExternalFilesDir(null);
+            if (extFiles != null) return extFiles.getAbsolutePath();
+        } catch (Throwable ignored) {}
+
+        try {
+            File internal = getFilesDir();
+            if (internal != null) return internal.getAbsolutePath();
+        } catch (Throwable ignored) {}
+
+        return "/sdcard/LegacyMCPE";
+    }
 
     @Override protected void onCreate( Bundle savedInstanceState ) 
     {
@@ -44,30 +131,27 @@ public class MainActivity2 extends SDLActivity
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
 
-        String directory = getIntent().getStringExtra( "dir" );
-        if (directory == null || directory.isEmpty()) {
-            directory = getIntent().getStringExtra("game_dir");
+        String rawDir = getIntent().getStringExtra("dir");
+        if (rawDir == null || rawDir.isEmpty()) {
+            rawDir = getIntent().getStringExtra("game_dir");
         }
-        if (directory == null || directory.isEmpty()) {
-            android.content.SharedPreferences prefs = getSharedPreferences("dirPrefs", android.content.Context.MODE_PRIVATE);
-            directory = prefs.getString("dir_path", null);
-        }
-        if (directory == null || directory.isEmpty()) {
-            java.io.File extFiles = getExternalFilesDir(null);
-            if (extFiles != null) {
-                directory = extFiles.getAbsolutePath();
-            } else {
-                directory = getFilesDir().getAbsolutePath();
-            }
-        }
+
+        String directory = resolveValidGameDirectory(rawDir);
+
         try 
         {
             if (directory != null)
             {
-                if (directory.endsWith("/")) 
+                while (directory.endsWith("/") && directory.length() > 1) 
                 {
                     directory = directory.substring(0, directory.length() - 1);
                 }
+
+                // Persist the resolved path so the native engine and future starts use it
+                try {
+                    SharedPreferences prefs = getSharedPreferences("dirPrefs", Context.MODE_PRIVATE);
+                    prefs.edit().putString("dir_path", directory).apply();
+                } catch (Throwable ignored) {}
 
                 Os.setenv("MC_PATH", directory, true );
                 Os.setenv("HOME", directory, true );
@@ -82,15 +166,16 @@ public class MainActivity2 extends SDLActivity
                     chdir.invoke(os, directory);
                 } catch (Throwable ignored) {}
                 
-                Log.d( "ENVTEST", "MC_PATH=" + Os.getenv("MC_PATH") );
-                Log.d( "ENVTEST", "HOME=" + Os.getenv("HOME") );
+                Log.d( TAG, "MC_PATH=" + Os.getenv("MC_PATH") );
+                Log.d( TAG, "HOME=" + Os.getenv("HOME") );
                 ensureUiSoundsInstalled(directory);
             }
         }
         catch (ErrnoException e)
         {
-            e.printStackTrace();
+            Log.e(TAG, "ErrnoException configuring environment", e);
         }
+
         super.onCreate( savedInstanceState );
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK));
         getWindow().setFormat(android.graphics.PixelFormat.RGBA_8888);
@@ -230,14 +315,18 @@ public class MainActivity2 extends SDLActivity
     }
 
     private void hideSystemBars() {
+        if (getWindow() == null) return;
+        View decorView = getWindow().getDecorView();
+        if (decorView == null) return;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            final WindowInsetsController insetsController = getWindow().getInsetsController();
+            final WindowInsetsController insetsController = decorView.getWindowInsetsController();
             if (insetsController != null) {
                 insetsController.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                 insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
         } else {
-            getWindow().getDecorView().setSystemUiVisibility(
+            decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -267,7 +356,7 @@ public class MainActivity2 extends SDLActivity
     private void ensureUiSoundsInstalled(String directory) {
         if (directory == null || directory.isEmpty()) return;
         try {
-            java.io.File uiSoundDir = new java.io.File(directory, "Sound/Minecraft/UI");
+            File uiSoundDir = new File(directory, "Sound/Minecraft/UI");
             if (!uiSoundDir.exists()) {
                 uiSoundDir.mkdirs();
             }
@@ -275,7 +364,7 @@ public class MainActivity2 extends SDLActivity
             if (soundFiles != null) {
                 byte[] buf = new byte[4096];
                 for (String sf : soundFiles) {
-                    java.io.File targetSound = new java.io.File(uiSoundDir, sf);
+                    File targetSound = new File(uiSoundDir, sf);
                     if (!targetSound.exists() || targetSound.length() == 0) {
                         java.io.InputStream in = getAssets().open("sounds/ui/" + sf);
                         java.io.FileOutputStream out = new java.io.FileOutputStream(targetSound);
@@ -294,21 +383,21 @@ public class MainActivity2 extends SDLActivity
             Log.e("MCPL", "Failed extracting UI sounds", t);
         }
         try {
-            java.io.File skinsDir = new java.io.File(directory, "skins");
+            File skinsDir = new File(directory, "skins");
             if (!skinsDir.exists()) skinsDir.mkdirs();
-            java.io.File mobDir = new java.io.File(directory, "Common/res/mob");
+            File mobDir = new File(directory, "Common/res/mob");
             if (!mobDir.exists()) mobDir.mkdirs();
-            java.io.File mob122Dir = new java.io.File(directory, "Common/res/1_2_2/mob");
+            File mob122Dir = new File(directory, "Common/res/1_2_2/mob");
             if (!mob122Dir.exists()) mob122Dir.mkdirs();
 
             String[] skinFiles = getAssets().list("skins");
             if (skinFiles != null) {
                 byte[] buf = new byte[4096];
                 for (String sk : skinFiles) {
-                    java.io.File target1 = new java.io.File(skinsDir, sk);
-                    java.io.File target2 = new java.io.File(mobDir, sk);
-                    java.io.File target3 = new java.io.File(mob122Dir, sk);
-                    for (java.io.File target : new java.io.File[]{target1, target2, target3}) {
+                    File target1 = new File(skinsDir, sk);
+                    File target2 = new File(mobDir, sk);
+                    File target3 = new File(mob122Dir, sk);
+                    for (File target : new File[]{target1, target2, target3}) {
                         if (!target.exists() || target.length() == 0) {
                             java.io.InputStream in = getAssets().open("skins/" + sk);
                             java.io.FileOutputStream out = new java.io.FileOutputStream(target);

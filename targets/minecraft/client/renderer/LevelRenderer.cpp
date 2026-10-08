@@ -1853,6 +1853,15 @@ bool LevelRenderer::updateDirtyChunks() {
                 int py = (int)player->y;
                 int pz = (int)player->z;
 
+                float lookX = 0.0f;
+                float lookZ = 0.0f;
+                bool useSodiumEngine = (mc->options && mc->options->modSodiumChunkEngine);
+                if (useSodiumEngine) {
+                    float yawRad = player->yRot * (3.14159265358979323846f / 180.0f);
+                    lookX = -sinf(yawRad);
+                    lookZ = cosf(yawRad);
+                }
+
                 //			Log::info("!! %d %d %d, %d %d %d
                 //{%d,%d}
                 //",px,py,pz,stackChunkDirty,nonStackChunkDirty,onlyRebuild,
@@ -1878,6 +1887,15 @@ bool LevelRenderer::updateDirtyChunks() {
                                 zd * zd;  // Weighting against y to prioritise
                                           // things in same x/z plane as player
                                           // first
+
+                            if (useSodiumEngine) {
+                                float dot = xd * lookX + zd * lookZ;
+                                if (dot > 0.0f) {
+                                    distSqWeighted = (int)(distSqWeighted * 0.4f);
+                                } else {
+                                    distSqWeighted = distSqWeighted * 2;
+                                }
+                            }
 
                             if (globalChunkFlags[pClipChunk->globalIdx] &
                                 CHUNK_FLAG_DIRTY) {
