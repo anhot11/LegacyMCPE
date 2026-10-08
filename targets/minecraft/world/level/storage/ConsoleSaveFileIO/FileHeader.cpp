@@ -198,6 +198,7 @@ void FileHeader::ReadHeader(
         // based PlayerUID
         // : Bumped it to 8 for Durango v1 when to save the chunks in a
         // different compressed format
+        case SAVE_FILE_VERSION_CHUNK_INHABITED_TIME:
         case SAVE_FILE_VERSION_COMPRESSED_CHUNK_STORAGE:
         case SAVE_FILE_VERSION_DURANGO_CHANGE_MAP_DATA_MAPPING_SIZE:
         case SAVE_FILE_VERSION_CHANGE_MAP_DATA_MAPPING_SIZE:
@@ -275,8 +276,25 @@ void FileHeader::ReadHeader(
         } break;
         default:
 #if !defined(_CONTENT_PACKAGE)
-            Log::info("**********  Invalid save version %d\n", m_saveVersion);
-            assert(0);
+            Log::info("**********  Invalid save version %d, attempting to parse with latest format\n", m_saveVersion);
+            if (m_saveVersion > SAVE_FILE_VERSION_PRE_LAUNCH) {
+                FileEntrySaveData* fesdHeaderPosition =
+                    (FileEntrySaveData*)headerPosition;
+                for (unsigned int i = 0; i < headerSize; ++i) {
+                    FileEntry* entry = new FileEntry();
+                    memcpy(&entry->data, fesdHeaderPosition,
+                           sizeof(FileEntrySaveData));
+                    if (isSaveEndianDifferent()) {
+                        System::ReverseULONG(&entry->data.length);
+                        System::ReverseULONG(&entry->data.startOffset);
+                        System::ReverseULONGLONG(&entry->data.lastModifiedTime);
+                    }
+                    entry->currentFilePointer = entry->data.startOffset;
+                    lastFile = entry;
+                    fileTable.push_back(entry);
+                    fesdHeaderPosition++;
+                }
+            }
 #endif
             break;
     }
