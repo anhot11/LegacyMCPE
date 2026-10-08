@@ -1192,11 +1192,11 @@ void LevelRenderer::renderHaloRing(float alpha) {
 }
 
 void LevelRenderer::renderClouds(float alpha) {
-    if (mc->options && !mc->options->renderClouds) return;
-    int iTicks = ticks;
+    if (!mc || !mc->options || !mc->options->renderClouds || !mc->level || !mc->cameraTargetPlayer || !mc->player) return;
     int playerIndex = mc->player->GetXboxPad();
+    if (playerIndex < 0 || playerIndex >= XUSER_MAX_COUNT || !level[playerIndex] || !level[playerIndex]->dimension) return;
+    int iTicks = ticks;
 
-    // if the primary player has clouds off, so do all players on this machine
     if (gameServices().getGameSettings(PlatformInput.GetPrimaryPad(),
                                        eGameSetting_Clouds) == 0) {
         return;
@@ -1456,6 +1456,10 @@ void LevelRenderer::createCloudMesh() {
 }
 
 void LevelRenderer::renderAdvancedClouds(float alpha) {
+    if (!mc || !mc->options || !mc->options->renderClouds || !mc->level || !mc->cameraTargetPlayer || !mc->player) return;
+    int playerIndex = mc->player->GetXboxPad();
+    if (playerIndex < 0 || playerIndex >= XUSER_MAX_COUNT || !level[playerIndex] || !level[playerIndex]->dimension) return;
+
     // MGH - added, we were getting dark clouds sometimes on PS3, with this
     // being setup incorrectly
     glMultiTexCoord2f(GL_TEXTURE1, 0, 0);
@@ -2513,8 +2517,9 @@ bool inline clip(float* bb, float* frustum) {
 // 4jcraft: optional occlusion culling system, i hope to upgrade it soon
 // gives better performances but mostly breaks chunk rendering
 void LevelRenderer::cull(Culler* culler, float a) {
+    if (!mc || !mc->player) return;
     int playerIndex = mc->player->GetXboxPad();
-    if (chunks[playerIndex].empty()) return;
+    if (playerIndex < 0 || playerIndex >= XUSER_MAX_COUNT || chunks[playerIndex].empty()) return;
 
     FrustumCuller* fc = (FrustumCuller*)culler;
     FrustumData* fd = fc->frustum;
@@ -2610,6 +2615,7 @@ void LevelRenderer::cull(Culler* culler, float a) {
     // And https://tomcc.github.io/2014/08/31/visibility-2.html
     // And finally https://en.wikipedia.org/wiki/Breadth-first_search
     std::shared_ptr<LivingEntity> player = mc->cameraTargetPlayer;
+    if (!player) return;
     float camX = (float)(player->xOld + (player->x - player->xOld) * a);
     float camY = (float)(player->yOld + (player->y - player->yOld) * a);
     float camZ = (float)(player->zOld + (player->z - player->zOld) * a);

@@ -2242,7 +2242,7 @@ FloatBuffer* GameRenderer::getBuffer(float a, float b, float c, float d) {
 int GameRenderer::getFpsCap(int option) {
     int maxFps = 200;
     if (option == 1) maxFps = 120;
-    if (option == 2) maxFps = 35;
+    if (option == 2) maxFps = 30; // 30 FPS cap
 #ifndef ENABLE_VSYNC
     if (option == 3) maxFps = std::numeric_limits<int>::max();
 #endif

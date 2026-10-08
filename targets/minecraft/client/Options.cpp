@@ -118,12 +118,7 @@ void Options::init() {
     anaglyph3d = false;
     advancedOpengl = false;
 
-// 4JCRAFT V-Sync / VSync
-#if defined(ENABLE_VSYNC)
-    framerateLimit = 2;
-#else
-    framerateLimit = 3;
-#endif
+    framerateLimit = 2; // 30 FPS cap during debugging
     fancyGraphics = true;
     ambientOcclusion = true;
     renderClouds = true;

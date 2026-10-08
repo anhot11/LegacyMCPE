@@ -1070,12 +1070,12 @@ void GLRenderer::Present() {
     glFlush();
     SDL_GL_SwapWindow(s_window);
 
-#if !defined(__ANDROID__)
-    // 60 FPS frame limiter for platforms without hardware vsync compositor
+#if 1
+    // 30 FPS frame limiter during professional debugging: keeps phone cool and saves battery while app is left open
     static auto s_lastFrameTime = std::chrono::steady_clock::now();
     auto now = std::chrono::steady_clock::now();
     auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(now - s_lastFrameTime).count();
-    const int64_t targetFrameUs = 16666; // 60 FPS
+    const int64_t targetFrameUs = 33333; // 30 FPS (33.3ms)
     if (elapsedUs > 0 && elapsedUs < targetFrameUs) {
         std::this_thread::sleep_for(std::chrono::microseconds(targetFrameUs - elapsedUs));
     }
