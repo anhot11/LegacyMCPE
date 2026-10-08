@@ -1129,15 +1129,7 @@ void GameRenderer::render(float a, bool bFirst) {
     int maxFps = getFpsCap(mc->options->framerateLimit);
 
     if (mc->level != nullptr) {
-        if (mc->options->framerateLimit == 0
-#ifndef ENABLE_VSYNC
-            || mc->options->framerateLimit == 3
-#endif
-        ) {
-            renderLevel(a, 0);
-        } else {
-            renderLevel(a, lastNsTime + 1000000000 / maxFps);
-        }
+        renderLevel(a, lastNsTime + 1000000000 / maxFps);
 
         lastNsTime = System::nanoTime();
 
@@ -2240,13 +2232,8 @@ FloatBuffer* GameRenderer::getBuffer(float a, float b, float c, float d) {
 }
 
 int GameRenderer::getFpsCap(int option) {
-    int maxFps = 200;
-    if (option == 1) maxFps = 120;
-    if (option == 2) maxFps = 30; // 30 FPS cap
-#ifndef ENABLE_VSYNC
-    if (option == 3) maxFps = std::numeric_limits<int>::max();
-#endif
-    return maxFps;
+    // 30 FPS cap during debugging phase
+    return 30;
 }
 
 void GameRenderer::updateAllChunks() {

@@ -772,7 +772,7 @@ public class VirtualControlsOverlay extends View {
             mHoldToMineRunnable = null;
         }
         if (mIsMining) {
-            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
+            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
             mIsMining = false;
         }
         mWorldPointerId = -1;
@@ -784,7 +784,7 @@ public class VirtualControlsOverlay extends View {
             mSecondHoldRunnable = null;
         }
         if (mSecondMining) {
-            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
+            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
             mSecondMining = false;
         }
         mSecondPointerId = -1;
@@ -1053,15 +1053,17 @@ public class VirtualControlsOverlay extends View {
                         mSecondHoldRunnable = null;
                     }
                     if (mSecondMining) {
-                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
+                        SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
                         mSecondMining = false;
                         invalidate();
                     } else if ((SystemClock.uptimeMillis() - mSecondDownTime) < 320) {
-                        SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, true);
+                        SDLActivity.onNativeMouse(3, MotionEvent.ACTION_DOWN, 0, 0, true);
+                        SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_F);
                         postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
+                                SDLActivity.onNativeMouse(3, MotionEvent.ACTION_UP, 0, 0, true);
+                                SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_F);
                             }
                         }, 90);
                     }
@@ -1078,17 +1080,19 @@ public class VirtualControlsOverlay extends View {
                     boolean wasTap = false;
                     if (mIsMining) {
                         // Finished mining
-                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
+                        SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
                         mIsMining = false;
                         invalidate();
                     } else if (!mIsPanning && (SystemClock.uptimeMillis() - mWorldDownTime) < 320) {
                         // TAP DETECTED: Place block / Interact / Attack at the tapped point!
                         wasTap = true;
-                        SDLActivity.onNativeMouse(2, MotionEvent.ACTION_DOWN, 0, 0, true);
+                        SDLActivity.onNativeMouse(3, MotionEvent.ACTION_DOWN, 0, 0, true);
+                        SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_F);
                         postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
+                                SDLActivity.onNativeMouse(3, MotionEvent.ACTION_UP, 0, 0, true);
+                                SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_F);
                             }
                         }, 90);
                     }

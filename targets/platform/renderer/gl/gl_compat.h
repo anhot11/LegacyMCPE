@@ -475,7 +475,9 @@
                  || (cap) == 0x0C60 /*GL_TEXTURE_GEN_S*/                \
                  || (cap) == 0x0C61 /*GL_TEXTURE_GEN_T*/                \
                  || (cap) == 0x0C62 /*GL_TEXTURE_GEN_R*/                \
-                 || (cap) == 0x0C63 /*GL_TEXTURE_GEN_Q*/) { /* empty */ \
+                 || (cap) == 0x0C63 /*GL_TEXTURE_GEN_Q*/                \
+                 || (cap) == 0x2A02 /*GL_POLYGON_OFFSET_LINE*/          \
+                 || (cap) == 0x2A01 /*GL_POLYGON_OFFSET_POINT*/) { /* empty */ \
         } else                                                          \
             ::glEnable(cap);                                            \
     } while (0)
@@ -507,7 +509,9 @@
                  || (cap) == 0x0C60 /*GL_TEXTURE_GEN_S*/                \
                  || (cap) == 0x0C61 /*GL_TEXTURE_GEN_T*/                \
                  || (cap) == 0x0C62 /*GL_TEXTURE_GEN_R*/                \
-                 || (cap) == 0x0C63 /*GL_TEXTURE_GEN_Q*/) { /* empty */ \
+                 || (cap) == 0x0C63 /*GL_TEXTURE_GEN_Q*/                \
+                 || (cap) == 0x2A02 /*GL_POLYGON_OFFSET_LINE*/          \
+                 || (cap) == 0x2A01 /*GL_POLYGON_OFFSET_POINT*/) { /* empty */ \
         } else                                                          \
             ::glDisable(cap);                                           \
     } while (0)

@@ -819,8 +819,7 @@ static thread_local std::vector<ChunkDrawCall> s_recDraws;
 
 // Primitive helpers
 static bool isQuadPrim(int pt) {
-    return (pt == 0x0007 /*GL_QUADS*/ ||
-            pt == (int)GLRenderer::PRIMITIVE_TYPE_QUAD_LIST);
+    return (pt == 0x0007 /*GL_QUADS*/);
 }
 
 static GLenum mapPrim(int pt) {
@@ -831,7 +830,7 @@ static GLenum mapPrim(int pt) {
         case 1:
             return GL_LINES;
         case 2:
-            return GL_TRIANGLE_FAN;
+            return GL_LINE_LOOP;
         case 3:
             return GL_LINE_STRIP;
         case 4:
@@ -1234,22 +1233,7 @@ void GLRenderer::DrawVertices(ePrimitiveType ptype, int count, void* dataIn,
     bindStdAttribs();
     s_streamVBOSize = (GLsizeiptr)bytes;
 
-    static int s_loggedDraws = 0;
-    if (s_loggedDraws < 10) {
-        s_loggedDraws++;
-        GLenum errB = glGetError();
-        appendDiagnosticLog("Draw #%d: mode=%u, count=%d, bytes=%zu, prog=%u, vao=%u, vbo=%u, errB=0x%x\n",
-            s_loggedDraws, glMode, count, bytes, s_shader.prog, s_sVAO_std, s_sVBO_std, errB);
-    }
-
     glDrawArrays(glMode, 0, count);
-
-    if (s_loggedDraws <= 10) {
-        GLenum errA = glGetError();
-        if (errA != GL_NO_ERROR) {
-            appendDiagnosticLog("Draw #%d glDrawArrays error: 0x%x\n", s_loggedDraws, errA);
-        }
-    }
 
     if (s_sVAO_std) {
         glBindVertexArray(0);

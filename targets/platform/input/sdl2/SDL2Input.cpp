@@ -83,6 +83,8 @@ static bool s_mouseLeftCurrent = false, s_mouseLeftPrev = false;
 static bool s_mouseRightCurrent = false, s_mouseRightPrev = false;
 static bool s_mouseLeftQueued = false;
 static bool s_mouseRightQueued = false;
+static bool s_mouseLeftHeld = false;
+static bool s_mouseRightHeld = false;
 static bool s_fingerDown = false;
 static bool s_menuDisplayed[4] = {};
 static bool s_prevMenuDisplayed = false;
@@ -230,8 +232,10 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         s_hasTouchPos = true;
         if (e->button.button == SDL_BUTTON_LEFT) {
             s_mouseLeftQueued = true;
-        } else if (e->button.button == SDL_BUTTON_RIGHT) {
+            s_mouseLeftHeld = true;
+        } else if (e->button.button == SDL_BUTTON_RIGHT || e->button.button == SDL_BUTTON_MIDDLE) {
             s_mouseRightQueued = true;
+            s_mouseRightHeld = true;
         } else if (e->button.button == 4) {
             s_scrollTicksForGetValue++;
             s_scrollTicksForButtonPressed++;
@@ -257,14 +261,19 @@ static int SDLCALL EventWatcher(void*, SDL_Event* e) {
         }
         if (e->type == SDL_FINGERDOWN) {
             s_mouseLeftQueued = true;
+            s_mouseLeftHeld = true;
             s_fingerDown = true;
         }
     } else if (e->type == SDL_FINGERUP) {
         s_fingerDown = false;
+        s_mouseLeftHeld = false;
     } else if (e->type == SDL_MOUSEBUTTONUP) {
-        if (e->button.button == SDL_BUTTON_LEFT) {
+        if (e->button.button == SDL_BUTTON_LEFT || e->button.button == 0) {
             s_fingerDown = false;
-        } else if (e->button.button == SDL_BUTTON_RIGHT) {
+            s_mouseLeftHeld = false;
+        }
+        if (e->button.button == SDL_BUTTON_RIGHT || e->button.button == SDL_BUTTON_MIDDLE || e->button.button == 0) {
+            s_mouseRightHeld = false;
             s_mouseRightCurrent = false;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
@@ -432,10 +441,11 @@ void SDL2Input::Tick() {
         s_mouseY = my;
     }
     s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) ||
-                         s_mouseLeftQueued || s_fingerDown;
+                         s_mouseLeftQueued || s_fingerDown || s_mouseLeftHeld;
     s_mouseLeftQueued = false;
     s_mouseRightCurrent =
-        ((btns & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0) || s_mouseRightQueued;
+        ((btns & (SDL_BUTTON(SDL_BUTTON_RIGHT) | SDL_BUTTON(SDL_BUTTON_MIDDLE))) != 0) ||
+        s_mouseRightQueued || s_mouseRightHeld;
     s_mouseRightQueued = false;
 
     if (!SDL_GetRelativeMouseMode()) {
