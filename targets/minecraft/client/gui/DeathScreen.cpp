@@ -59,7 +59,7 @@ void DeathScreen::render(int xm, int ym, float a) {
     glPopMatrix();
     if (minecraft->player != nullptr) {
         drawCenteredString(
-            font, "Score: \xc2\xa7e" + std::to_string(minecraft->player->getScore()),
+            font, "Score: \xc2\xa7" "e" + std::to_string(minecraft->player->getScore()),
             width / 2, 100, 0xffffff);
     }
 
