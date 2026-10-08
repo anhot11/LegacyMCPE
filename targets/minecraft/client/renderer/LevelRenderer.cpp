@@ -1474,7 +1474,6 @@ void LevelRenderer::renderAdvancedClouds(float alpha) {
                 (mc->cameraTargetPlayer->y - mc->cameraTargetPlayer->yOld) *
                     alpha);
     Tesselator* t = Tesselator::getInstance();
-    int playerIndex = mc->player->GetXboxPad();
 
     int iTicks = ticks;
 
