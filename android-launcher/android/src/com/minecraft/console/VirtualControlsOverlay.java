@@ -139,6 +139,7 @@ public class VirtualControlsOverlay extends View {
     private long mSecondDownTime = 0;
 
     private static native void nativeSetTouchAim(float u, float v, boolean active);
+    private static native void nativeSetTouchMining(boolean mining);
     private static native boolean nativeIsFlying();
     private static native boolean nativeIsSneaking();
     private boolean mSneaking = false;
@@ -148,6 +149,13 @@ public class VirtualControlsOverlay extends View {
             nativeSetTouchAim(u, v, active);
         } catch (UnsatisfiedLinkError e) {
             // Native library without touch-aim support: crosshair fallback
+        }
+    }
+
+    private static void setTouchMining(boolean mining) {
+        try {
+            nativeSetTouchMining(mining);
+        } catch (UnsatisfiedLinkError e) {
         }
     }
 
@@ -776,12 +784,14 @@ public class VirtualControlsOverlay extends View {
             mHoldToMineRunnable = null;
         }
         if (mIsMining) {
-            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+            setTouchMining(false);
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
             SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
             mIsMining = false;
         }
-        mWorldPointerId = -1;
+        setTouchMining(false);
         aimTouch(0.5f, 0.5f, false);
+        mWorldPointerId = -1;
         mIsPanning = false;
 
         if (mSecondHoldRunnable != null) {
@@ -789,7 +799,8 @@ public class VirtualControlsOverlay extends View {
             mSecondHoldRunnable = null;
         }
         if (mSecondMining) {
-            SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+            setTouchMining(false);
+            SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
             SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
             mSecondMining = false;
         }
@@ -892,6 +903,7 @@ public class VirtualControlsOverlay extends View {
                         public void run() {
                             if (mWorldPointerId != -1 && !mIsPanning) {
                                 mIsMining = true;
+                                setTouchMining(true);
                                 SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, true);
                                 SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
                                 invalidate();
@@ -915,6 +927,7 @@ public class VirtualControlsOverlay extends View {
                         public void run() {
                             if (mSecondPointerId != -1) {
                                 mSecondMining = true;
+                                setTouchMining(true);
                                 SDLActivity.onNativeMouse(1, MotionEvent.ACTION_DOWN, 0, 0, true);
                                 SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
                                 invalidate();
@@ -973,13 +986,7 @@ public class VirtualControlsOverlay extends View {
                                 // 1. Update 3D raycast target to the finger position
                                 updateTouchAim(curX, curY);
 
-                                // 2. Allow camera rotation while mining so user can look around / continue to next block!
-                                float maxDelta = 300.0f * mDensity;
-                                dx = Math.max(-maxDelta, Math.min(maxDelta, dx));
-                                dy = Math.max(-maxDelta, Math.min(maxDelta, dy));
-                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_MOVE, dx, dy, true);
-
-                                // 3. Repaint circular mining indicator at moving finger position
+                                // 2. Repaint circular mining indicator at moving finger position
                                 invalidate();
                                 break;
                             } else if (!mIsPanning) {
@@ -1061,7 +1068,8 @@ public class VirtualControlsOverlay extends View {
                         mSecondHoldRunnable = null;
                     }
                     if (mSecondMining) {
-                        SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+                        setTouchMining(false);
+                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                         SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
                         mSecondMining = false;
                         invalidate();
@@ -1071,7 +1079,7 @@ public class VirtualControlsOverlay extends View {
                         postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                SDLActivity.onNativeMouse(3, MotionEvent.ACTION_UP, 0, 0, true);
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                                 SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_F);
                             }
                         }, 90);
@@ -1089,7 +1097,8 @@ public class VirtualControlsOverlay extends View {
                     boolean wasTap = false;
                     if (mIsMining) {
                         // Finished mining
-                        SDLActivity.onNativeMouse(1, MotionEvent.ACTION_UP, 0, 0, true);
+                        setTouchMining(false);
+                        SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                         SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
                         mIsMining = false;
                         invalidate();
@@ -1101,7 +1110,7 @@ public class VirtualControlsOverlay extends View {
                         postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                SDLActivity.onNativeMouse(3, MotionEvent.ACTION_UP, 0, 0, true);
+                                SDLActivity.onNativeMouse(0, MotionEvent.ACTION_UP, 0, 0, true);
                                 SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_F);
                             }
                         }, 90);
@@ -1112,11 +1121,13 @@ public class VirtualControlsOverlay extends View {
                             @Override
                             public void run() {
                                 if (mWorldPointerId == -1) {
+                                    setTouchMining(false);
                                     aimTouch(0.5f, 0.5f, false);
                                 }
                             }
                         }, 200);
                     } else {
+                        setTouchMining(false);
                         aimTouch(0.5f, 0.5f, false);
                     }
 

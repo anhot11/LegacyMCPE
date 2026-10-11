@@ -170,34 +170,28 @@ void ServerPlayerGameMode::startDestroyBlock(int x, int y, int z, int face) {
 
 void ServerPlayerGameMode::stopDestroyBlock(int x, int y, int z) {
     if (x == xDestroyBlock && y == yDestroyBlock && z == zDestroyBlock) {
-        //         int ticksSpentDestroying = gameTicks - destroyProgressStart;
-
         int t = level->getTile(x, y, z);
         if (t != 0) {
-            Tile* tile = Tile::tiles[t];
-
-            // MGH -	removed checking for the destroy progress here, it has
-            // already been checked on the client before it sent the packet.
-            //			fixes issues with this failing to destroy
-            // because of packets bunching up
-            //             float destroyProgress =
-            //             tile->getDestroyProgress(player, player->level, x, y,
-            //             z) * (ticksSpentDestroying + 1); if (destroyProgress
-            //             >= .7f || bIgnoreDestroyProgress)
-            {
+            isDestroyingBlock = false;
+            level->destroyTileProgress(player->entityId, x, y, z, -1);
+            destroyBlock(x, y, z);
+        }
+    } else if (isDestroyingBlock) {
+        // Fallback for touch mining jitter: if packet coordinates differ slightly from tracked block,
+        // destroy whichever of the two blocks still exists in the world so item drops spawn reliably.
+        int t = level->getTile(xDestroyBlock, yDestroyBlock, zDestroyBlock);
+        if (t != 0) {
+            isDestroyingBlock = false;
+            level->destroyTileProgress(player->entityId, xDestroyBlock,
+                                       yDestroyBlock, zDestroyBlock, -1);
+            destroyBlock(xDestroyBlock, yDestroyBlock, zDestroyBlock);
+        } else {
+            t = level->getTile(x, y, z);
+            if (t != 0) {
                 isDestroyingBlock = false;
                 level->destroyTileProgress(player->entityId, x, y, z, -1);
                 destroyBlock(x, y, z);
             }
-            // 			else if (!hasDelayedDestroy)
-            // 			{
-            // 				isDestroyingBlock = false;
-            //                 hasDelayedDestroy = true;
-            //                 delayedDestroyX = x;
-            //                 delayedDestroyY = y;
-            //                 delayedDestroyZ = z;
-            //                 delayedTickStart = destroyProgressStart;
-            //             }
         }
     }
 }

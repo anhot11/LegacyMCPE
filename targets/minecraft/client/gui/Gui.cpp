@@ -55,6 +55,10 @@
 #include "strings.h"
 #include "util/StringHelpers.h"
 
+#ifdef __ANDROID__
+extern "C" bool Platform_GetTouchAim(float* u, float* v);
+#endif
+
 ResourceLocation Gui::PUMPKIN_BLUR_LOCATION =
     ResourceLocation(TN__BLUR__MISC_PUMPKINBLUR);
 ResourceLocation Gui::GUI_GUI_LOCATION = ResourceLocation(TN_GUI_GUI);
@@ -430,7 +434,15 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse) {
             // glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
             //  4J Stu - We don't want to adjust the cursor by the safezone, we
             //  want it centred
-            if (minecraft->options && minecraft->options->splitControls) {
+            bool showCrosshair =
+                minecraft->options && minecraft->options->splitControls;
+#ifdef __ANDROID__
+            float aimU = 0.5f, aimV = 0.5f;
+            if (Platform_GetTouchAim(&aimU, &aimV)) {
+                showCrosshair = false;
+            }
+#endif
+            if (showCrosshair) {
                 if (bTwoPlayerSplitscreen) {
                     blit(iWidthOffset + screenWidth / 2 - 7,
                          (iHeightOffset + screenHeight) / 2 - 7, 0, 0, 16, 16);

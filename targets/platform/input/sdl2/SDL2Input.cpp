@@ -440,8 +440,19 @@ void SDL2Input::Tick() {
         s_mouseX = mx;
         s_mouseY = my;
     }
+#ifdef __ANDROID__
+    if (!s_touchMiningActive && !s_aimActive) {
+        s_mouseLeftHeld = false;
+        s_fingerDown = false;
+    }
+#endif
     s_mouseLeftCurrent = ((btns & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) ||
                          s_mouseLeftQueued || s_fingerDown || s_mouseLeftHeld;
+#ifdef __ANDROID__
+    if (!s_touchMiningActive && !s_aimActive && (btns == 0)) {
+        s_mouseLeftCurrent = false;
+    }
+#endif
     s_mouseLeftQueued = false;
     s_mouseRightCurrent =
         ((btns & (SDL_BUTTON(SDL_BUTTON_RIGHT) | SDL_BUTTON(SDL_BUTTON_MIDDLE))) != 0) ||
@@ -906,6 +917,7 @@ Java_com_minecraft_console_VirtualControlsOverlay_nativeIsSneaking(JNIEnv*,
 static volatile float s_aimU = 0.5f;
 static volatile float s_aimV = 0.5f;
 static volatile bool s_aimActive = false;
+static volatile bool s_touchMiningActive = false;
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_minecraft_console_VirtualControlsOverlay_nativeSetTouchAim(
@@ -913,6 +925,23 @@ Java_com_minecraft_console_VirtualControlsOverlay_nativeSetTouchAim(
     s_aimU = u;
     s_aimV = v;
     s_aimActive = active != JNI_FALSE;
+    if (!s_aimActive) {
+        s_fingerDown = false;
+        s_mouseLeftHeld = false;
+        s_mouseLeftQueued = false;
+    }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_minecraft_console_VirtualControlsOverlay_nativeSetTouchMining(
+    JNIEnv*, jclass, jboolean mining) {
+    s_touchMiningActive = (mining != JNI_FALSE);
+    if (!s_touchMiningActive) {
+        s_fingerDown = false;
+        s_mouseLeftHeld = false;
+        s_mouseLeftQueued = false;
+        s_mouseLeftCurrent = false;
+    }
 }
 
 extern "C" bool Platform_GetTouchAim(float* u, float* v) {

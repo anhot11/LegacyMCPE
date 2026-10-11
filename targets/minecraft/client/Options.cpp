@@ -191,13 +191,15 @@ void Options::init() {
     touchControlStyle = 0;
     touchControlScale = 1;
     touchControlOpacity = 1;
-    splitControls = true;
 
 #ifdef __ANDROID__
+    splitControls = false;
     fancyGraphics = false;
     renderClouds = false;
     viewDistance = 2;  // Short (8 chunks for 60fps mobile)
     particles = 1;
+#else
+    splitControls = true;
 #endif
 }
 
