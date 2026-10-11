@@ -94,6 +94,13 @@ static float s_snapRelX = 0, s_snapRelY = 0;
 static int s_mouseX = 0, s_mouseY = 0;
 static bool s_hasTouchPos = false;
 
+#ifdef __ANDROID__
+static volatile float s_aimU = 0.5f;
+static volatile float s_aimV = 0.5f;
+static volatile bool s_aimActive = false;
+static volatile bool s_touchMiningActive = false;
+#endif
+
 static int s_scrollTicksForButtonPressed = 0;
 static int s_scrollTicksForGetValue = 0;
 static int s_scrollTicksSnap = 0;
@@ -914,10 +921,6 @@ Java_com_minecraft_console_VirtualControlsOverlay_nativeIsSneaking(JNIEnv*,
 #ifdef __ANDROID__
 // Touch aim: the Java overlay publishes the finger position (normalized) while
 // the finger is aiming at the world, so block picking follows the finger.
-static volatile float s_aimU = 0.5f;
-static volatile float s_aimV = 0.5f;
-static volatile bool s_aimActive = false;
-static volatile bool s_touchMiningActive = false;
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_minecraft_console_VirtualControlsOverlay_nativeSetTouchAim(
